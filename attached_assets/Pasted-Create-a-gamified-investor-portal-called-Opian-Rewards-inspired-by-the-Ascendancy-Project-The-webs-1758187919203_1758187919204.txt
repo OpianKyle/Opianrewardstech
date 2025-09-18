@@ -1,0 +1,86 @@
+Create a gamified investor portal called Opian Rewards, inspired by the Ascendancy Project. The website should feel like a quest-based RPG dashboard where investors choose their "player tier," track progress, and unlock rewards.
+
+🔑 Core Features
+
+Hero Section / Landing Page
+
+Futuristic, AI-driven theme with tagline:
+“Join the Mission. Build the Future. Claim Your Tier.”
+
+Animated AI guide avatar (AETHER-style) that introduces the mission.
+
+Call-to-action button: “Press START” → leads to Tier Selection.
+
+Tier Selection (Gamified)
+
+Show the three roles as player classes:
+
+The Builder (R12K / grind style)
+
+The Innovator (R24K / balanced champion, most popular)
+
+The Visionary (R36K / all-in, high impact)
+
+Each tier should look like a game character card with “Unlock Fee,” “Playstyle,” and a select button.
+
+Quest Line (Progression System)
+
+Visual timeline/level system for the Innovator Tier:
+
+Level 1: Capital reclaimed after 24 months
+
+Level 2: 10 years of dividends
+
+Show progress bars, “achievement unlocked” icons, and reward summaries.
+
+Rewards & Recognition
+
+Digital Ascendancy Certificate (like a player card).
+
+Exclusive Partner Badge (displayable on LinkedIn-style networks).
+
+Priority Access unlocks (special project previews).
+
+Mission Briefing (Risk Protocol)
+
+Styled like an in-game warning screen with bold red/orange highlights.
+
+Message: “Every quest has risks. No guarantees. Past performance ≠ future performance.”
+
+Co-op Mode / Future Section
+
+Multiplayer style: show how early partners are building the future together.
+
+CTA: “Ready to press START?”
+
+🎨 Design & Styling
+
+Theme: Futuristic cyberpunk / AI console.
+
+Colour Scheme (from PDF & fitting gamified tone):
+
+Deep Navy / Black background (#0A0F1E)
+
+Neon Blue (#00E0FF) for highlights
+
+Electric Purple (#8A2BE2) for accents
+
+Bright Gold (#FFD700) for achievement/reward highlights
+
+Fonts: Bold futuristic fonts (Orbitron, Audiowide, or Exo).
+
+Animations:
+
+Hover effects (buttons glow).
+
+Progress bars animate as users scroll.
+
+Quest unlock animations with sound cues (optional).
+
+🛠️ Tech Stack Suggestion (for Replit)
+
+Frontend: React + TailwindCSS (clean + fast for gamified UI).
+
+Gamification: Framer Motion for animations.
+
+Backend (optional): Node.js + Express (if you need to track investor signups / tiers).
