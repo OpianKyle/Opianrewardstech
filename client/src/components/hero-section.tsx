@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { AnimatedButton } from "@/components/ui/animated-button";
+import { ShaderBackground } from "./shader-background";
 
 interface HeroSectionProps {
   onScrollToTiers: () => void;
@@ -7,10 +8,11 @@ interface HeroSectionProps {
 
 export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
   return (
-    <section className="min-h-screen flex items-center justify-center relative cyber-grid">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background"></div>
+    <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      <ShaderBackground className="opacity-100" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/20 to-background/60 pointer-events-none z-10"></div>
       
-      <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
+      <div className="relative z-30 max-w-6xl mx-auto px-4 text-center">
         
 
         <motion.div 
@@ -49,7 +51,7 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
       </div>
 
       {/* Floating particles effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
         <motion.div 
           className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full"
           animate={{ 
