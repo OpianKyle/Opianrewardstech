@@ -6,7 +6,6 @@ import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
 import { useToast } from "@/hooks/use-toast";
-import robot3d from "@assets/generated_images/3D_robot_mascot_logo_24aada45.png";
 
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -64,19 +63,12 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b border-border/40 bg-white/60 dark:bg-black/40 backdrop-blur-md supports-[backdrop-filter]:bg-white/30 text-foreground" data-testid="navigation">
+      <nav className="fixed top-0 w-full z-50 glass-morphism" data-testid="navigation">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <img 
-                src={robot3d} 
-                alt="OPIAN 3D Robot" 
-                width={40} 
-                height={40} 
-                className="h-10 w-10 rounded-xl ring-1 ring-border/50 shadow-lg shadow-primary/20 object-contain bg-white/5 dark:bg-white/10 transition-transform hover:scale-105" 
-                data-testid="img-logo-3drobot" 
-              />
-              <span className="font-orbitron font-bold text-xl neon-text text-foreground dark:text-white">
+            <div className="flex items-center space-x-2">
+              <i className="fas fa-rocket text-primary text-2xl"></i>
+              <span className="font-orbitron font-bold text-xl neon-text text-primary">
                 OPIAN REWARDS
               </span>
             </div>
@@ -120,15 +112,8 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <img 
-                  src={robot3d} 
-                  alt="OPIAN 3D Robot" 
-                  width={32} 
-                  height={32} 
-                  className="h-8 w-8 rounded-lg ring-1 ring-border/50 shadow-lg shadow-primary/20 object-contain bg-white/5 dark:bg-white/10" 
-                  data-testid="img-footer-logo-3drobot" 
-                />
+              <div className="flex items-center space-x-2 mb-4">
+                <i className="fas fa-rocket text-primary text-2xl"></i>
                 <span className="font-orbitron font-bold text-xl text-primary">OPIAN REWARDS</span>
               </div>
               <p className="text-muted-foreground mb-4">
