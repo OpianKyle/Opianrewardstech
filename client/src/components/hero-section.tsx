@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { AnimatedButton } from "@/components/ui/animated-button";
-import robot3d from "@assets/generated_images/3D_robot_mascot_logo_24aada45.png";
 
 interface HeroSectionProps {
   onScrollToTiers: () => void;
@@ -12,21 +11,7 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background"></div>
       
       <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
-        <motion.div 
-          className="mb-12"
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1 }}
-        >
-          <div className="w-32 h-32 mx-auto rounded-full avatar-glow border-2 border-primary bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-8">
-            <img
-              src={robot3d}
-              alt="AETHER 3D Robot"
-              className="h-24 w-24 object-contain drop-shadow-lg"
-              data-testid="img-hero-3drobot"
-            />
-          </div>
-        </motion.div>
+        
 
         <motion.div 
           className="space-y-8"
