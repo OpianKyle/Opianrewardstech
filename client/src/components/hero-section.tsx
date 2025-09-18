@@ -35,9 +35,6 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
           transition={{ duration: 1, delay: 0.3 }}
         >
           <div>
-            <p className="text-muted-foreground text-lg mb-2 font-exo">
-              Greetings, Future Innovator. I am AETHER.
-            </p>
             <h1 className="font-orbitron font-black text-5xl md:text-7xl mb-6 neon-text text-primary leading-tight">
               THE ASCENDANCY<br />PROJECT
             </h1>
