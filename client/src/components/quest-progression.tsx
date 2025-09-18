@@ -1,11 +1,15 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { ShaderBackground } from "./shader-background";
 
 export function QuestProgression() {
   return (
-    <section id="progression" className="py-20 bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-6xl mx-auto px-4">
+    <section id="progression" className="py-20 relative overflow-hidden">
+      <ShaderBackground className="opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 to-background/90 pointer-events-none z-10"></div>
+      <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
+      <div className="max-w-6xl mx-auto px-4 relative z-20">
         <motion.div 
           className="text-center mb-16"
           initial={{ opacity: 0, y: 50 }}

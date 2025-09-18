@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { TierCard } from "@/components/ui/tier-card";
 import { useQuery } from "@tanstack/react-query";
+import { ShaderBackground } from "./shader-background";
 
 type TierData = {
   name: string;
@@ -49,8 +50,11 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
   }
 
   return (
-    <section id="tiers" className="py-20 relative">
-      <div className="max-w-7xl mx-auto px-4">
+    <section id="tiers" className="py-20 relative overflow-hidden">
+      <ShaderBackground className="opacity-60" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/80 pointer-events-none z-10"></div>
+      <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
+      <div className="max-w-7xl mx-auto px-4 relative z-20">
         <motion.div 
           className="text-center mb-16"
           initial={{ opacity: 0, y: 50 }}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
+import { ShaderBackground } from "./shader-background";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,8 +133,11 @@ export function PaymentSection() {
 
   return (
     <>
-      <section id="payment" className="py-20">
-        <div className="max-w-4xl mx-auto px-4">
+      <section id="payment" className="py-20 relative overflow-hidden">
+        <ShaderBackground className="opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 to-background/95 pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
+        <div className="max-w-4xl mx-auto px-4 relative z-20">
           <motion.div 
             className="text-center mb-12"
             initial={{ opacity: 0, y: 50 }}
