@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(220, 25%, 6%);
+  --foreground: hsl(180, 100%, 90%);
+  --card: hsl(220, 15%, 15%);
+  --card-foreground: hsl(180, 100%, 90%);
+  --popover: hsl(220, 25%, 6%);
+  --popover-foreground: hsl(180, 100%, 90%);
+  --primary: hsl(190, 100%, 50%);
+  --primary-foreground: hsl(220, 25%, 6%);
+  --secondary: hsl(270, 60%, 50%);
+  --secondary-foreground: hsl(180, 100%, 90%);
+  --muted: hsl(220, 15%, 20%);
+  --muted-foreground: hsl(180, 50%, 70%);
+  --accent: hsl(51, 100%, 50%);
+  --accent-foreground: hsl(220, 25%, 6%);
+  --destructive: hsl(0, 85%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(180, 30%, 25%);
+  --input: hsl(220, 15%, 20%);
+  --ring: hsl(190, 100%, 50%);
+  --chart-1: hsl(190, 100%, 50%);
+  --chart-2: hsl(159.7826, 100%, 36.0784%);
+  --chart-3: hsl(51, 100%, 50%);
+  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
+  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
+  --sidebar: hsl(220, 15%, 15%);
+  --sidebar-foreground: hsl(180, 100%, 90%);
+  --sidebar-primary: hsl(190, 100%, 50%);
+  --sidebar-primary-foreground: hsl(220, 25%, 6%);
+  --sidebar-accent: hsl(270, 60%, 50%);
+  --sidebar-accent-foreground: hsl(180, 100%, 90%);
+  --sidebar-border: hsl(180, 30%, 25%);
+  --sidebar-ring: hsl(190, 100%, 50%);
+  --font-sans: 'Exo 2', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'Orbitron', monospace;
+  --font-orbitron: 'Orbitron', monospace;
+  --font-exo: 'Exo 2', sans-serif;
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00), 0px 1px 2px -1px hsl(190, 100%, 50%, 0.00);
+  --shadow: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00), 0px 1px 2px -1px hsl(190, 100%, 50%, 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00), 0px 2px 4px -1px hsl(190, 100%, 50%, 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00), 0px 4px 6px -1px hsl(190, 100%, 50%, 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00), 0px 8px 10px -1px hsl(190, 100%, 50%, 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(190, 100%, 50%, 0.00);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: hsl(220, 25%, 6%);
+  --foreground: hsl(180, 100%, 90%);
+  --card: hsl(220, 15%, 15%);
+  --card-foreground: hsl(180, 100%, 90%);
+  --popover: hsl(220, 25%, 6%);
+  --popover-foreground: hsl(180, 100%, 90%);
+  --primary: hsl(190, 100%, 50%);
+  --primary-foreground: hsl(220, 25%, 6%);
+  --secondary: hsl(270, 60%, 50%);
+  --secondary-foreground: hsl(180, 100%, 90%);
+  --muted: hsl(220, 15%, 20%);
+  --muted-foreground: hsl(180, 50%, 70%);
+  --accent: hsl(51, 100%, 50%);
+  --accent-foreground: hsl(220, 25%, 6%);
+  --destructive: hsl(0, 85%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(180, 30%, 25%);
+  --input: hsl(220, 15%, 20%);
+  --ring: hsl(190, 100%, 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background: linear-gradient(135deg, #0A0F1E 0%, #1a1f3a 50%, #2d1b69 100%);
+    font-family: var(--font-exo);
+  }
+}
+
+@layer components {
+  .cyber-grid {
+    background-image: 
+      linear-gradient(rgba(0, 224, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 224, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  .glass-morphism {
+    background: rgba(10, 15, 30, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 224, 255, 0.2);
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .avatar-glow {
+    filter: drop-shadow(0 0 20px rgba(0, 224, 255, 0.6));
+  }
+
+  .tier-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tier-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 224, 255, 0.2), transparent);
+    transition: left 0.6s;
+  }
+
+  .tier-card:hover::before {
+    left: 100%;
+  }
+
+  .tier-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 224, 255, 0.3);
+  }
+
+  .progress-bar {
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 224, 255, 0.3) 50%, transparent 100%);
+    animation: progress-scan 2s linear infinite;
+  }
+
+  @keyframes progress-scan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 0 20px var(--primary); }
+    to { box-shadow: 0 0 30px var(--primary), 0 0 40px var(--primary); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
