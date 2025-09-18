@@ -1,13 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { TierSelection } from "@/components/tier-selection";
 import { QuestProgression } from "@/components/quest-progression";
 import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Handle payment return from Adumo
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const reference = urlParams.get('reference');
+
+    if (paymentStatus) {
+      switch (paymentStatus) {
+        case 'success':
+          toast({
+            title: "Payment Successful! 🎉",
+            description: `Your investment has been processed successfully. Reference: ${reference}. Welcome to the Ascendancy Project!`,
+          });
+          break;
+        case 'failed':
+          toast({
+            title: "Payment Failed",
+            description: "Your payment could not be processed. Please try again or contact support.",
+            variant: "destructive",
+          });
+          break;
+        case 'error':
+          toast({
+            title: "Payment Error",
+            description: "An error occurred during payment processing. Please contact support.",
+            variant: "destructive",
+          });
+          break;
+      }
+      
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
 
   const scrollToTiers = () => {
     const tiersSection = document.getElementById('tiers');

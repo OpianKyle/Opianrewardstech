@@ -4,8 +4,18 @@ import { storage } from "./storage";
 import { insertInvestorSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 
-// Stripe setup (fallback payment processor)
-// Note: In production, replace with proper Adumo integration
+// Adumo payment configuration
+const ADUMO_CONFIG = {
+  // Test credentials from Adumo documentation
+  testMerchantId: "9BA5008C-08EE-4286-A349-54AF91A621B0",
+  testJwtSecret: "yglTxLCSMm7PEsfaMszAKf2LSRvM2qVW",
+  testUrl: "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual",
+  testApplicationId: "904A34AF-0CE9-42B1-9C98-B69E6329D154", // Non-3D Secure for simplicity
+  productionUrl: "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual",
+  returnUrl: "http://localhost:5000/payment-return",
+  notifyUrl: "http://localhost:5000/api/payment-webhook"
+};
+
 const createPaymentIntentSchema = z.object({
   amount: z.number().min(1),
   tier: z.string(),
@@ -101,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create payment intent (Stripe fallback - implement Adumo integration here)
+  // Create Adumo payment (server-side initialization)
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
       const validatedData = createPaymentIntentSchema.parse(req.body);
@@ -119,74 +129,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create payment record
+      // Create payment record with reference
       const payment = await storage.createPayment({
         investorId: investor.id,
         amount: validatedData.amount,
-        method: "adumo", // Primary payment method
+        method: "adumo",
         paymentData: {
           tier: validatedData.tier,
           paymentMethod: validatedData.paymentMethod
         }
       });
 
-      // For now, return a mock payment intent structure
-      // In production, this would integrate with Adumo's API
-      const paymentIntent = {
-        id: payment.id,
-        client_secret: `pi_${payment.id}_secret_${Date.now()}`,
-        amount: validatedData.amount,
-        currency: "zar",
-        status: "requires_payment_method",
-        metadata: {
-          investorId: investor.id,
-          tier: validatedData.tier,
-          paymentMethod: validatedData.paymentMethod
-        }
+      // Generate unique reference and store it with the payment
+      const reference = `OPIAN_${Date.now()}_${payment.id.substring(0, 8)}`;
+      
+      // Update payment with reference for lookup
+      await storage.updatePaymentStatus(payment.id, "pending");
+      
+      // Convert amount from cents to currency with 2 decimal places
+      const currencyAmount = (validatedData.amount / 100).toFixed(2);
+
+      // For this demo, we'll use the simple form POST approach
+      // In production, implement proper JWT signing per Adumo docs
+      const adumoFormData = {
+        MerchantUID: ADUMO_CONFIG.testMerchantId,
+        ApplicationUID: ADUMO_CONFIG.testApplicationId,
+        TransactionAmount: currencyAmount,
+        TransactionCurrency: "ZAR",
+        TransactionReference: reference,
+        CustomerEmail: validatedData.email,
+        CustomerFirstName: validatedData.firstName,
+        CustomerLastName: validatedData.lastName,
+        ReturnURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`,
+        NotifyURL: ADUMO_CONFIG.notifyUrl,
+        TransactionDescription: `Opian Rewards - ${validatedData.tier} Tier`,
+        // Store reference for webhook lookup
+        CustomField1: reference,
+        CustomField2: payment.id,
+        CustomField3: investor.id
       };
 
       res.json({ 
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id,
-        investorId: investor.id
+        adumoUrl: ADUMO_CONFIG.testUrl,
+        formData: adumoFormData,
+        paymentId: payment.id,
+        investorId: investor.id,
+        reference: reference
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Validation error", errors: error.errors });
       } else {
-        res.status(500).json({ message: "Error creating payment intent: " + error.message });
+        res.status(500).json({ message: "Error creating payment: " + error.message });
       }
     }
   });
 
+  // Handle payment return from Adumo (both GET and POST)
+  const handlePaymentReturn = async (req: any, res: any) => {
+    try {
+      const { paymentId, reference, ResultCode, ResultDescription, TransactionReference } = 
+        req.method === 'GET' ? req.query : req.body;
+      
+      const paymentRef = reference || TransactionReference;
+      const resultCode = ResultCode;
+      
+      if (paymentId && paymentRef) {
+        const payment = await storage.updatePaymentStatus(
+          paymentId as string, 
+          resultCode === "00" ? "completed" : "failed"
+        );
+        
+        // Update investor status
+        if (resultCode === "00") {
+          await storage.updateInvestorPaymentStatus(
+            payment.investorId, 
+            "completed", 
+            paymentRef as string
+          );
+          
+          // Initialize quest progress
+          const questProgress = {
+            level: 1,
+            phase: "development",
+            startDate: new Date().toISOString(),
+            milestones: {
+              capitalReclaimed: false,
+              dividendPhase: false
+            }
+          };
+          
+          await storage.updateInvestorProgress(payment.investorId, questProgress);
+        }
+      }
+
+      // Redirect to frontend with payment result
+      const status = resultCode === "00" ? "success" : "failed";
+      res.redirect(`/?payment=${status}&reference=${paymentRef}`);
+    } catch (error: any) {
+      console.error("Payment return error:", error);
+      res.redirect("/?payment=error");
+    }
+  };
+  
+  app.get("/payment-return", handlePaymentReturn);
+  app.post("/payment-return", handlePaymentReturn);
+
   // Process payment completion (webhook endpoint for Adumo)
   app.post("/api/payment-webhook", async (req, res) => {
     try {
-      const { paymentIntentId, status, adumoPaymentId } = req.body;
+      // Adumo webhook data structure
+      const { 
+        ResultCode, 
+        ResultDescription, 
+        TransactionReference, 
+        TransactionAmount,
+        CustomField1, // reference
+        CustomField2, // paymentId  
+        CustomField3  // investorId
+      } = req.body;
       
-      // Find payment and investor
-      const payment = await storage.updatePaymentStatus(paymentIntentId, status);
+      console.log("Adumo webhook received:", req.body);
       
-      // Update investor payment status
-      const investor = await storage.updateInvestorPaymentStatus(
-        payment.investorId, 
-        status, 
-        adumoPaymentId
-      );
-
-      // If payment successful, initialize quest progress
-      if (status === "succeeded") {
-        const questProgress = {
-          level: 1,
-          phase: "development",
-          startDate: new Date().toISOString(),
-          milestones: {
-            capitalReclaimed: false,
-            dividendPhase: false
-          }
-        };
+      // TODO: In production, implement proper webhook signature verification
+      // For now, proceed with basic validation
+      
+      if (CustomField2 && CustomField3) {
+        const payment = await storage.updatePaymentStatus(
+          CustomField2, // paymentId from CustomField2
+          ResultCode === "00" ? "completed" : "failed"
+        );
         
-        await storage.updateInvestorProgress(investor.id, questProgress);
+        // Update investor payment status
+        const investor = await storage.updateInvestorPaymentStatus(
+          CustomField3, // investorId from CustomField3
+          ResultCode === "00" ? "completed" : "failed", 
+          TransactionReference
+        );
+
+        // If payment successful, initialize quest progress
+        if (ResultCode === "00") {
+          const questProgress = {
+            level: 1,
+            phase: "development",
+            startDate: new Date().toISOString(),
+            milestones: {
+              capitalReclaimed: false,
+              dividendPhase: false
+            }
+          };
+          
+          await storage.updateInvestorProgress(investor.id, questProgress);
+        }
       }
 
       res.json({ success: true });

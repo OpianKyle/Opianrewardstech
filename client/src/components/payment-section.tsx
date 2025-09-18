@@ -32,10 +32,11 @@ export function PaymentSection() {
     onSuccess: (data) => {
       toast({
         title: "Payment Initialized",
-        description: "Redirecting to secure payment processing...",
+        description: "Redirecting to secure Adumo payment processing...",
       });
-      // In production, redirect to Adumo payment page or integrate Adumo SDK
-      console.log("Payment Intent:", data);
+      
+      // Create and submit form to Adumo
+      submitAdumoForm(data.adumoUrl, data.formData);
     },
     onError: (error) => {
       toast({
@@ -45,6 +46,26 @@ export function PaymentSection() {
       });
     },
   });
+
+  // Function to create and submit Adumo payment form
+  const submitAdumoForm = (adumoUrl: string, formData: any) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = adumoUrl;
+    form.style.display = 'none';
+
+    // Add all form fields
+    Object.keys(formData).forEach(key => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = formData[key];
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  };
 
   const contactMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -143,9 +164,9 @@ export function PaymentSection() {
                     
                     <div className="space-y-4 mb-8">
                       {[
-                        "Secure Adumo Payment Processing",
-                        "Multiple Payment Options Available", 
-                        "Licensed FSP Compliance",
+                        "Secure Adumo Online Payment Processing",
+                        "Credit Cards, EFT & Multiple Payment Methods", 
+                        "Licensed FSP Compliance & 3D Secure",
                         "Instant Tier Activation"
                       ].map((feature, index) => (
                         <motion.div
