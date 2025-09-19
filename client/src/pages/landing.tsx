@@ -110,7 +110,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="py-12 relative overflow-hidden" data-testid="footer">
-        <ShaderBackground className="opacity-70" starsOnly={true} />
+        <ShaderBackground className="opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-black/80 pointer-events-none z-10"></div>
         <div className="absolute inset-0 bg-black/40 pointer-events-none z-10"></div>
         <div className="max-w-6xl mx-auto px-4 relative z-20">

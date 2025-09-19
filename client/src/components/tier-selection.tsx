@@ -51,7 +51,7 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
 
   return (
     <section id="tiers" className="py-20 relative overflow-hidden">
-      <ShaderBackground className="opacity-60" starsOnly={true} />
+      <ShaderBackground className="opacity-30" starsOnly={true} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/80 pointer-events-none z-10"></div>
       <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
       <div className="max-w-7xl mx-auto px-4 relative z-20">
