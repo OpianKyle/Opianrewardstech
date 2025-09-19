@@ -133,7 +133,7 @@ export function PaymentSection() {
 
   return (
     <>
-      <section id="payment" className="py-20 relative overflow-hidden">
+      <section id="payment" className="py-20 relative overflow-hidden bg-black">
         <StarsBackground className="opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 to-background/95 pointer-events-none z-10"></div>
         <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>

@@ -5,7 +5,7 @@ import { StarsBackground } from "./stars-background";
 
 export function QuestProgression() {
   return (
-    <section id="progression" className="py-20 relative overflow-hidden">
+    <section id="progression" className="py-20 relative overflow-hidden bg-black">
       <StarsBackground className="opacity-70" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 to-background/90 pointer-events-none z-10"></div>
       <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
