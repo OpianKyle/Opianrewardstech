@@ -9,6 +9,91 @@ export function ShaderBackground({ className }: ShaderBackgroundProps) {
   const rendererRef = useRef<any>(null);
   const pointersRef = useRef<any>(null);
   const frameRef = useRef<number>();
+  const isActiveRef = useRef(true);
+  const lastRenderRef = useRef(0);
+
+  // Mobile-optimized shader with reduced iterations
+  const fragmentShaderMobile = `#version 300 es
+/*********
+* Mobile-optimized cosmic shader
+*/
+precision mediump float;
+out vec4 O;
+uniform float time;
+uniform vec2 resolution;
+uniform vec2 move;
+#define FC gl_FragCoord.xy
+#define R resolution
+#define T time
+#define N normalize
+#define S smoothstep
+#define MN min(R.x,R.y)
+#define rot(a) mat2(cos((a)-vec4(0,11,33,0)))
+#define csqr(a) vec2(a.x*a.x-a.y*a.y,2.*a.x*a.y)
+float rnd(vec3 p) {
+        p=fract(p*vec3(12.9898,78.233,156.34));
+        p+=dot(p,p+34.56);
+        return fract(p.x*p.y*p.z);
+}
+float swirls(in vec3 p) {
+        float d=.0;
+        vec3 c=p;
+        for(float i=min(.0,time); i<6.; i++) {
+                p=.7*abs(p)/dot(p,p)-.7;
+                p.yz=csqr(p.yz);
+                p=p.zxy;
+                d+=exp(-19.*abs(dot(p,c)));
+        }
+        return d;
+}
+vec3 march(in vec3 p, vec3 rd) {
+        float d=.2, t=.0, c=.0, k=mix(.9,1.,rnd(rd)),
+        maxd=length(p)-1.;
+        vec3 col=vec3(0);
+        for(float i=min(.0,time); i<60.; i++) {
+                t+=d*exp(-2.*c)*k;
+                c=swirls(p+rd*t);
+                if (t<5e-2 || t>maxd) break;
+                col+=vec3(c*c,c/1.05,c)*8e-3;
+        }
+        return col;
+}
+float rnd(vec2 p) {
+        p=fract(p*vec2(12.9898,78.233));
+        p+=dot(p,p+34.56);
+        return fract(p.x*p.y);
+}
+vec3 sky(vec2 p, bool anim) {
+        p.x-=.17-(anim?2e-4*T:.0);
+        p*=500.;
+        vec2 id=floor(p), gv=fract(p)-.5;
+        float n=rnd(id), d=length(gv);
+        if (n<.975) return vec3(0);
+        return vec3(S(3e-2*n,1e-3*n,d*d));
+}
+void cam(inout vec3 p) {
+        p.yz*=rot(move.y*6.3/MN-T*.05);
+        p.xz*=rot(-move.x*6.3/MN+T*.025);
+}
+void main() {
+        vec2 uv=(FC-.5*R)/MN;
+        vec3 col=vec3(0),
+        p=vec3(0,0,-16),
+        rd=N(vec3(uv,1)), rdd=rd;
+        cam(p); cam(rd);
+        col=march(p,rd);
+        col=S(-.2,.9,col);
+        vec2 sn=.5+vec2(atan(rdd.x,rdd.z),atan(length(rdd.xz),rdd.y))/6.28318;
+        col=max(col,vec3(sky(sn,true)+sky(2.+sn*2.,true)));
+        float t=min((time-.5)*.3,1.);
+        uv=FC/R*2.-1.;
+        uv*=.7;
+        float v=pow(dot(uv,uv),1.8);
+        col=mix(col,vec3(0),v);
+        col=mix(vec3(0),col,t);
+        col=max(col,.08);
+  O=vec4(col,1);
+}`;
 
   const fragmentShader = `#version 300 es
 /*********
@@ -96,6 +181,27 @@ void main() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Setup IntersectionObserver for performance
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isActiveRef.current = entry.isIntersecting;
+          if (!entry.isIntersecting && frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+            frameRef.current = undefined;
+          } else if (entry.isIntersecting && !frameRef.current && rendererRef.current) {
+            loop(0);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    
+    observer.observe(canvas);
+
+    // Mobile detection and optimization
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     // Renderer class adapted for React
     class Renderer {
       private vertexSrc = "#version 300 es\nprecision highp float;\nin vec4 position;\nvoid main(){gl_Position=position;}";
@@ -110,14 +216,17 @@ void main() {
       private fs: WebGLShader | null = null;
       private buffer: WebGLBuffer | null = null;
 
-      constructor(canvas: HTMLCanvasElement, scale: number) {
-        const gl = canvas.getContext("webgl2");
+      constructor(canvas: HTMLCanvasElement, scale: number, isMobile: boolean) {
+        const gl = canvas.getContext("webgl2", {
+          antialias: !isMobile,
+          powerPreference: isMobile ? 'low-power' : 'default'
+        });
         if (!gl) throw new Error('WebGL2 not supported');
         
         this.gl = gl;
         this.scale = scale;
         this.gl.viewport(0, 0, canvas.width, canvas.height);
-        this.shaderSource = fragmentShader;
+        this.shaderSource = isMobile ? fragmentShaderMobile : fragmentShader;
       }
 
       updateMove(deltas: number[]) {
@@ -248,32 +357,46 @@ void main() {
       }
     }
 
-    // Initialize WebGL components
-    const dpr = Math.max(1, 0.5 * window.devicePixelRatio);
+    // Initialize WebGL components with mobile optimization
+    const dpr = isMobile ? 1 : Math.max(1, 0.5 * window.devicePixelRatio);
+    const scale = isMobile ? 0.75 : 1;
     
     const resize = () => {
       const { innerWidth: width, innerHeight: height } = window;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      canvas.width = width * dpr * scale;
+      canvas.height = height * dpr * scale;
       if (rendererRef.current) {
         rendererRef.current.updateScale(dpr);
       }
     };
 
     const loop = (now: number) => {
+      if (!isActiveRef.current) {
+        frameRef.current = undefined;
+        return;
+      }
+      
+      // FPS throttling for mobile (30fps)
+      if (isMobile && now - lastRenderRef.current < 33) {
+        frameRef.current = requestAnimationFrame(loop);
+        return;
+      }
+      
       if (rendererRef.current && pointersRef.current) {
-        rendererRef.current.updateMouse(pointersRef.current.first);
-        rendererRef.current.updateMove(pointersRef.current.move);
+        if (!isMobile) {
+          rendererRef.current.updateMouse(pointersRef.current.first);
+          rendererRef.current.updateMove(pointersRef.current.move);
+          pointersRef.current.dampen();
+        }
         rendererRef.current.render(now);
-        // Add damping to moves for smoother interaction
-        pointersRef.current.dampen();
+        lastRenderRef.current = now;
       }
       frameRef.current = requestAnimationFrame(loop);
     };
 
     try {
-      rendererRef.current = new Renderer(canvas, dpr);
-      pointersRef.current = new PointerHandler(canvas, dpr);
+      rendererRef.current = new Renderer(canvas, dpr, isMobile);
+      pointersRef.current = isMobile ? null : new PointerHandler(canvas, dpr);
       
       rendererRef.current.setup();
       rendererRef.current.init();
@@ -290,6 +413,7 @@ void main() {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
       }
+      observer.disconnect();
       window.removeEventListener('resize', resize);
     };
   }, []);

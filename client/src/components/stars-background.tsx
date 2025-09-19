@@ -8,6 +8,8 @@ export function StarsBackground({ className }: StarsBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<any>(null);
   const frameRef = useRef<number>();
+  const isActiveRef = useRef(true);
+  const lastRenderRef = useRef(0);
 
   const fragmentShader = `#version 300 es
 /*********
@@ -64,6 +66,27 @@ void main() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Setup IntersectionObserver for performance
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isActiveRef.current = entry.isIntersecting;
+          if (!entry.isIntersecting && frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+            frameRef.current = undefined;
+          } else if (entry.isIntersecting && !frameRef.current && rendererRef.current) {
+            loop(0);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    
+    observer.observe(canvas);
+
+    // Mobile detection and optimization
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     // Simplified Renderer class without mobile interaction
     class StarsRenderer {
       private vertexSrc = "#version 300 es\nprecision highp float;\nin vec4 position;\nvoid main(){gl_Position=position;}";
@@ -76,8 +99,7 @@ void main() {
       private fs: WebGLShader | null = null;
       private buffer: WebGLBuffer | null = null;
 
-      constructor(canvas: HTMLCanvasElement, scale: number) {
-        const gl = canvas.getContext("webgl2");
+      constructor(canvas: HTMLCanvasElement, scale: number, gl: WebGL2RenderingContext) {
         if (!gl) throw new Error('WebGL2 not supported');
         
         this.gl = gl;
@@ -147,27 +169,48 @@ void main() {
       }
     }
 
-    // Initialize WebGL components
-    const dpr = Math.max(1, 0.5 * window.devicePixelRatio);
+    // Initialize WebGL components with mobile optimization
+    const dpr = isMobile ? 1 : Math.max(1, 0.5 * window.devicePixelRatio);
+    const scale = isMobile ? 0.75 : 1;
     
     const resize = () => {
       const { innerWidth: width, innerHeight: height } = window;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      canvas.width = width * dpr * scale;
+      canvas.height = height * dpr * scale;
       if (rendererRef.current) {
         rendererRef.current.updateScale(dpr);
       }
     };
 
     const loop = (now: number) => {
+      if (!isActiveRef.current) {
+        frameRef.current = undefined;
+        return;
+      }
+      
+      // FPS throttling for mobile (30fps)
+      if (isMobile && now - lastRenderRef.current < 33) {
+        frameRef.current = requestAnimationFrame(loop);
+        return;
+      }
+      
       if (rendererRef.current) {
         rendererRef.current.render(now);
+        lastRenderRef.current = now;
       }
       frameRef.current = requestAnimationFrame(loop);
     };
 
     try {
-      rendererRef.current = new StarsRenderer(canvas, dpr);
+      // Create WebGL context with mobile-friendly options
+      const gl = canvas.getContext('webgl2', { 
+        antialias: !isMobile,
+        powerPreference: isMobile ? 'low-power' : 'default'
+      });
+      
+      if (!gl) throw new Error('WebGL2 not supported');
+      
+      rendererRef.current = new StarsRenderer(canvas, dpr, gl);
       
       rendererRef.current.setup();
       rendererRef.current.init();
@@ -184,6 +227,7 @@ void main() {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
       }
+      observer.disconnect();
       window.removeEventListener('resize', resize);
     };
   }, []);
