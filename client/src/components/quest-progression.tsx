@@ -6,7 +6,7 @@ import { ShaderBackground } from "./shader-background";
 export function QuestProgression() {
   return (
     <section id="progression" className="py-20 relative overflow-hidden">
-      <ShaderBackground className="opacity-30" starsOnly={true} />
+      <ShaderBackground className="opacity-60" starsOnly={true} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 to-background/90 pointer-events-none z-10"></div>
       <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
       <div className="max-w-6xl mx-auto px-4 relative z-20">
