@@ -6,6 +6,7 @@ import { QuestProgression } from "@/components/quest-progression";
 import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
+import { BookingSection } from "@/components/booking-section";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Landing() {
@@ -107,6 +108,8 @@ export default function Landing() {
       <RiskProtocol />
 
       <PaymentSection />
+
+      <BookingSection />
 
       {/* Footer */}
       <footer className="py-12 relative overflow-hidden" data-testid="footer">
