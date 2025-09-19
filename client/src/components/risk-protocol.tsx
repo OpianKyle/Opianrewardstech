@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShaderBackground } from "./shader-background";
+import { StarsBackground } from "./stars-background";
 
 export function RiskProtocol() {
   const riskFactors = [
@@ -55,7 +55,7 @@ export function RiskProtocol() {
 
   return (
     <section id="briefing" className="py-20 relative overflow-hidden">
-      <ShaderBackground className="opacity-40" />
+      <StarsBackground className="opacity-60" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/70 to-background/95 pointer-events-none z-10"></div>
       <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
       <div className="max-w-4xl mx-auto px-4 relative z-20">
