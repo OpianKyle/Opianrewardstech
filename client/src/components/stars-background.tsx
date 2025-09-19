@@ -195,7 +195,11 @@ void main() {
       style={{ 
         width: '100%', 
         height: '100%',
-        pointerEvents: 'none' // Disable all pointer interactions
+        pointerEvents: 'none',
+        touchAction: 'auto',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none'
       }}
       data-testid="stars-background"
     />
