@@ -136,7 +136,7 @@ export function PaymentSection() {
       <section id="payment" className="py-20 relative overflow-hidden">
         <ShaderBackground className="opacity-30" starsOnly={true} />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 to-background/95 pointer-events-none z-10"></div>
-        <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-black/60 pointer-events-none z-10"></div>
         <div className="max-w-4xl mx-auto px-4 relative z-20">
           <motion.div 
             className="text-center mb-12"
