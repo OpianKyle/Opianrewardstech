@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 
 interface ShaderBackgroundProps {
   className?: string;
+  starsOnly?: boolean;
 }
 
-export function ShaderBackground({ className }: ShaderBackgroundProps) {
+export function ShaderBackground({ className, starsOnly = false }: ShaderBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<any>(null);
   const pointersRef = useRef<any>(null);
@@ -19,6 +20,7 @@ out vec4 O;
 uniform float time;
 uniform vec2 resolution;
 uniform vec2 move;
+uniform bool starsOnly;
 #define FC gl_FragCoord.xy
 #define R resolution
 #define T time
@@ -78,8 +80,10 @@ void main() {
         p=vec3(0,0,-16),
         rd=N(vec3(uv,1)), rdd=rd;
         cam(p); cam(rd);
-        col=march(p,rd);
-        col=S(-.2,.9,col);
+        if (!starsOnly) {
+                col=march(p,rd);
+                col=S(-.2,.9,col);
+        }
         vec2 sn=.5+vec2(atan(rdd.x,rdd.z),atan(length(rdd.xz),rdd.y))/6.28318;
         col=max(col,vec3(sky(sn,true)+sky(2.+sn*2.,true)));
         float t=min((time-.5)*.3,1.);
@@ -106,16 +110,18 @@ void main() {
       private mouseMove = [0, 0];
       private mouseCoords = [0, 0];
       private program: WebGLProgram | null = null;
+      private starsOnly: boolean;
       private vs: WebGLShader | null = null;
       private fs: WebGLShader | null = null;
       private buffer: WebGLBuffer | null = null;
 
-      constructor(canvas: HTMLCanvasElement, scale: number) {
+      constructor(canvas: HTMLCanvasElement, scale: number, starsOnly: boolean = false) {
         const gl = canvas.getContext("webgl2");
         if (!gl) throw new Error('WebGL2 not supported');
         
         this.gl = gl;
         this.scale = scale;
+        this.starsOnly = starsOnly;
         this.gl.viewport(0, 0, canvas.width, canvas.height);
         this.shaderSource = fragmentShader;
       }
@@ -174,6 +180,7 @@ void main() {
         (program as any).resolution = gl.getUniformLocation(program, "resolution");
         (program as any).time = gl.getUniformLocation(program, "time");
         (program as any).move = gl.getUniformLocation(program, "move");
+        (program as any).starsOnly = gl.getUniformLocation(program, "starsOnly");
       }
 
       render(now = 0) {
@@ -187,6 +194,7 @@ void main() {
         gl.uniform2f((program as any).resolution, canvas.width, canvas.height);
         gl.uniform1f((program as any).time, now * 1e-3);
         gl.uniform2f((program as any).move, mouseMove[0], mouseMove[1]);
+        gl.uniform1i((program as any).starsOnly, this.starsOnly ? 1 : 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
     }
@@ -272,7 +280,7 @@ void main() {
     };
 
     try {
-      rendererRef.current = new Renderer(canvas, dpr);
+      rendererRef.current = new Renderer(canvas, dpr, starsOnly);
       pointersRef.current = new PointerHandler(canvas, dpr);
       
       rendererRef.current.setup();

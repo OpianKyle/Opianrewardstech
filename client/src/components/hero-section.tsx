@@ -11,7 +11,7 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
       <ShaderBackground className="opacity-100" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background/80 pointer-events-none z-10"></div>
-      <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
+      <div className="absolute inset-0 bg-black/70 pointer-events-none z-10"></div>
       
       <div className="relative z-30 max-w-6xl mx-auto px-4 text-center">
         
