@@ -12,10 +12,26 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
-export function PaymentSection() {
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+interface PaymentSectionProps {
+  selectedTier?: string | null;
+  showPaymentModal?: boolean;
+  setShowPaymentModal?: (show: boolean) => void;
+}
+
+export function PaymentSection({ 
+  selectedTier: externalSelectedTier, 
+  showPaymentModal: externalShowPaymentModal, 
+  setShowPaymentModal: externalSetShowPaymentModal 
+}: PaymentSectionProps) {
+  const [internalShowPaymentModal, internalSetShowPaymentModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
-  const [selectedTier, setSelectedTier] = useState("");
+  const [internalSelectedTier, internalSetSelectedTier] = useState("");
+  
+  // Use external state if provided, otherwise use internal state
+  const showPaymentModal = externalShowPaymentModal ?? internalShowPaymentModal;
+  const setShowPaymentModal = externalSetShowPaymentModal ?? internalSetShowPaymentModal;
+  const selectedTier = externalSelectedTier ?? internalSelectedTier;
+  const setSelectedTier = externalSetShowPaymentModal ? () => {} : internalSetSelectedTier;
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [formData, setFormData] = useState({
     firstName: "",
@@ -271,7 +287,7 @@ export function PaymentSection() {
 
             <div>
               <Label htmlFor="tier">Select Tier</Label>
-              <Select onValueChange={setSelectedTier} required>
+              <Select onValueChange={setSelectedTier} value={selectedTier || ""} required>
                 <SelectTrigger data-testid="select-tier">
                   <SelectValue placeholder="Choose your tier" />
                 </SelectTrigger>

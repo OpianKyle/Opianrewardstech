@@ -4,16 +4,17 @@ import { storage } from "./storage";
 import { insertInvestorSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 
-// Adumo payment configuration
+// Adumo payment configuration using environment variables
 const ADUMO_CONFIG = {
-  // Test credentials from Adumo documentation
-  testMerchantId: "9BA5008C-08EE-4286-A349-54AF91A621B0",
-  testJwtSecret: "yglTxLCSMm7PEsfaMszAKf2LSRvM2qVW",
-  testUrl: "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual",
-  testApplicationId: "904A34AF-0CE9-42B1-9C98-B69E6329D154", // Non-3D Secure for simplicity
-  productionUrl: "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual",
-  returnUrl: "http://localhost:5000/payment-return",
-  notifyUrl: "http://localhost:5000/api/payment-webhook"
+  merchantId: process.env.ADUMO_MERCHANT_ID || "9BA5008C-08EE-4286-A349-54AF91A621B0",
+  jwtSecret: process.env.ADUMO_JWT_SECRET || "yglTxLCSMm7PEsfaMszAKf2LSRvM2qVW",
+  applicationId: process.env.ADUMO_APPLICATION_ID || "904A34AF-0CE9-42B1-9C98-B69E6329D154",
+  // URLs - using staging for development, production when deployed
+  apiUrl: process.env.NODE_ENV === "production" 
+    ? "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual"
+    : "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual",
+  returnUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/payment-return`,
+  notifyUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/payment-webhook`
 };
 
 const createPaymentIntentSchema = z.object({
@@ -152,8 +153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For this demo, we'll use the simple form POST approach
       // In production, implement proper JWT signing per Adumo docs
       const adumoFormData = {
-        MerchantUID: ADUMO_CONFIG.testMerchantId,
-        ApplicationUID: ADUMO_CONFIG.testApplicationId,
+        MerchantUID: ADUMO_CONFIG.merchantId,
+        ApplicationUID: ADUMO_CONFIG.applicationId,
         TransactionAmount: currencyAmount,
         TransactionCurrency: "ZAR",
         TransactionReference: reference,
@@ -170,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       res.json({ 
-        adumoUrl: ADUMO_CONFIG.testUrl,
+        adumoUrl: ADUMO_CONFIG.apiUrl,
         formData: adumoFormData,
         paymentId: payment.id,
         investorId: investor.id,

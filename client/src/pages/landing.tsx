@@ -11,6 +11,7 @@ import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
 
@@ -61,6 +62,7 @@ export default function Landing() {
 
   const handleTierSelect = (tier: string) => {
     setSelectedTier(tier);
+    setShowPaymentModal(true);
   };
 
   const toggleMobileMenu = () => {
@@ -162,7 +164,11 @@ export default function Landing() {
 
       <RiskProtocol />
 
-      <PaymentSection />
+      <PaymentSection 
+        selectedTier={selectedTier}
+        showPaymentModal={showPaymentModal}
+        setShowPaymentModal={setShowPaymentModal}
+      />
 
       {/* Footer */}
       <footer className="py-12 relative overflow-hidden" data-testid="footer">
