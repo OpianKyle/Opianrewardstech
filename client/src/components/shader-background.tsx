@@ -181,8 +181,10 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Mobile detection
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    // Improved mobile detection - more conservative approach
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isActualMobile = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent) && window.innerWidth < 1024;
+    const isMobile = isActualMobile || (window.innerWidth < 768 && window.innerHeight < 1024);
     
     // Performance constants
     const dpr = isMobile ? 1 : Math.max(1, 0.5 * window.devicePixelRatio);
@@ -226,12 +228,16 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
 
       constructor(canvas: HTMLCanvasElement, starsOnly: boolean, isMobile: boolean) {
         this.canvas = canvas;
-        const gl = canvas.getContext("webgl2", {
+        const contextOptions = {
           powerPreference: isMobile ? "low-power" : "default",
           antialias: !isMobile,
           alpha: false,
-          preserveDrawingBuffer: false
-        });
+          preserveDrawingBuffer: false,
+          failIfMajorPerformanceCaveat: false
+        };
+        
+        // Only use WebGL2 as shaders are designed for it
+        const gl = canvas.getContext("webgl2", contextOptions) as WebGL2RenderingContext | null;
         if (!gl) throw new Error("WebGL2 not supported");
         this.gl = gl;
         this.starsOnly = starsOnly;
@@ -271,7 +277,9 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
         gl.shaderSource(shader, source);
         gl.compileShader(shader);
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-          console.error(gl.getShaderInfoLog(shader));
+          const error = gl.getShaderInfoLog(shader);
+          console.error("Shader compilation failed:", error);
+          throw new Error(`Shader compilation failed: ${error}`);
         }
       }
 
@@ -287,7 +295,9 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
         gl.attachShader(this.program, this.fs);
         gl.linkProgram(this.program);
         if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
-          console.error(gl.getProgramInfoLog(this.program));
+          const error = gl.getProgramInfoLog(this.program);
+          console.error("Program linking failed:", error);
+          throw new Error(`Program linking failed: ${error}`);
         }
       }
 
@@ -382,9 +392,32 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
       
       window.addEventListener("resize", resize);
     } catch (error) {
-      console.error("Failed to initialize shader background:", error);
-      // Fallback: set canvas to black background
-      canvas.style.backgroundColor = '#000000';
+      console.warn("WebGL shader background not available:", error instanceof Error ? error.message : String(error));
+      // Enhanced fallback with stars-only mode or CSS animation
+      if (starsOnly) {
+        // Set up a simple CSS-based starfield for starsOnly mode
+        canvas.style.backgroundColor = '#000000';
+        canvas.style.background = `
+          radial-gradient(2px 2px at 20px 30px, #ffffff, transparent),
+          radial-gradient(2px 2px at 40px 70px, #ffffff, transparent),
+          radial-gradient(1px 1px at 90px 40px, #ffffff, transparent),
+          radial-gradient(1px 1px at 130px 80px, #ffffff, transparent),
+          radial-gradient(2px 2px at 160px 30px, #ffffff, transparent),
+          black
+        `;
+        canvas.style.backgroundRepeat = 'repeat';
+        canvas.style.backgroundSize = '200px 100px';
+      } else {
+        // Cosmic gradient fallback
+        canvas.style.backgroundColor = 'transparent';
+        canvas.style.background = `
+          radial-gradient(ellipse at center, 
+            hsl(270, 60%, 20%) 0%, 
+            hsl(220, 25%, 8%) 40%, 
+            hsl(220, 25%, 6%) 100%
+          )
+        `;
+      }
     }
 
     return () => {

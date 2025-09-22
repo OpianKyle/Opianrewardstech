@@ -13,7 +13,7 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background/80 pointer-events-none z-10"></div>
       <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
       
-      <div className="relative z-30 max-w-6xl mx-auto px-4 text-center">
+      <div className="relative z-30 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         
 
         <motion.div 
@@ -23,13 +23,13 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
           transition={{ duration: 1, delay: 0.3 }}
         >
           <div>
-            <h1 className="font-orbitron font-black text-5xl md:text-7xl mb-6 neon-text text-primary leading-tight">
+            <h1 className="font-orbitron font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-6 neon-text text-primary leading-tight px-2 sm:px-0">
               THE ASCENDANCY<br />PROJECT
             </h1>
-            <p className="text-xl md:text-2xl font-orbitron font-bold text-accent mb-4">
+            <p className="text-lg sm:text-xl md:text-2xl font-orbitron font-bold text-accent mb-4 px-2 sm:px-0">
               Join the Mission. Build the Future. Claim Your Tier.
             </p>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
               This isn't an investment. It's an upgrade. Step into the game and become part of something transformative.
             </p>
           </div>

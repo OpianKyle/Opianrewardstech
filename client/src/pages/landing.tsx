@@ -7,6 +7,7 @@ import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
 import { useToast } from "@/hooks/use-toast";
+import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -68,10 +69,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
-              <i className="fas fa-rocket text-primary text-2xl"></i>
-              <span className="font-orbitron font-bold text-xl neon-text text-primary">
-                OPIAN REWARDS
-              </span>
+              <img 
+                src={opianLogo} 
+                alt="Opian Rewards" 
+                className="h-10 w-auto object-contain"
+                data-testid="logo-image"
+              />
             </div>
             <div className="hidden md:flex space-x-8">
               <a href="#hero" className="hover:text-primary transition-colors" data-testid="nav-mission">
@@ -117,8 +120,12 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <i className="fas fa-rocket text-primary text-2xl"></i>
-                <span className="font-orbitron font-bold text-xl text-primary">OPIAN REWARDS</span>
+                <img 
+                  src={opianLogo} 
+                  alt="Opian Rewards" 
+                  className="h-10 w-auto object-contain"
+                  data-testid="footer-logo-image"
+                />
               </div>
               <p className="text-muted-foreground mb-4">
                 The future of AI and financial technology. Join the mission.
