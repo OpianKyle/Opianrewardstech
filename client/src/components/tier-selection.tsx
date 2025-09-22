@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { TierCard } from "@/components/ui/tier-card";
 import { useQuery } from "@tanstack/react-query";
-import { ShaderBackground } from "./shader-background";
+import { StarsBackground } from "./stars-background";
 
 type TierData = {
   name: string;
@@ -41,7 +41,7 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
 
   if (isLoading) {
     return (
-      <section className="py-20 relative">
+      <section className="py-20 relative bg-black">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
         </div>
@@ -50,8 +50,11 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
   }
 
   return (
-    <section id="tiers" className="py-20 relative overflow-hidden">
-      <ShaderBackground className="opacity-30" starsOnly={true} />
+
+    <section id="tiers" className="py-20 relative overflow-hidden bg-black">
+      <StarsBackground className="opacity-80" />
+
+
       <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/80 pointer-events-none z-10"></div>
       <div className="absolute inset-0 bg-black/60 pointer-events-none z-10"></div>
       <div className="max-w-7xl mx-auto px-4 relative z-20">
