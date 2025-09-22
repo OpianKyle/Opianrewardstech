@@ -6,6 +6,7 @@ import { QuestProgression } from "@/components/quest-progression";
 import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
+import { BookingSection } from "@/components/booking-section";
 import { useToast } from "@/hooks/use-toast";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 
@@ -164,11 +165,13 @@ export default function Landing() {
 
       <PaymentSection />
 
+      <BookingSection />
+
       {/* Footer */}
       <footer className="py-12 relative overflow-hidden" data-testid="footer">
         <ShaderBackground className="opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-black/80 pointer-events-none z-10"></div>
-        <div className="absolute inset-0 bg-black/40 pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-black/70 pointer-events-none z-10"></div>
         <div className="max-w-6xl mx-auto px-4 relative z-20">
           <div className="grid md:grid-cols-3 gap-8">
             <div>

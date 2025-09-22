@@ -96,6 +96,7 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
 
   // Desktop shader
   const fragmentShader = `#version 300 es
+
   precision highp float;
   out vec4 O;
   uniform float time;
@@ -177,6 +178,7 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
     O=vec4(col,1);
   }`;
 
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -219,6 +221,7 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
       private gl: WebGL2RenderingContext;
       private canvas: HTMLCanvasElement;
       private program: WebGLProgram | null = null;
+      private starsOnly: boolean;
       private vs: WebGLShader | null = null;
       private fs: WebGLShader | null = null;
       private buffer: WebGLBuffer | null = null;
@@ -320,10 +323,12 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
       }
 
       render(now = 0) {
+
         if (this.contextLost || !this.gl || !this.program || !canvas) return;
         
         try {
           const { gl, program, buffer } = this;
+
 
           // auto "move" values to keep cosmic effect alive
           const autoMoveX = Math.sin(now * 0.0001) * 0.5;
@@ -396,9 +401,11 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
 
     let renderer: Renderer;
     try {
+
       renderer = new Renderer(canvas, starsOnly, isMobile);
       renderer.setup();
       renderer.init();
+
       resize();
       
       // Only start animation loop if visible
