@@ -1,15 +1,36 @@
 import { motion } from "framer-motion";
 import { AnimatedButton } from "@/components/ui/animated-button";
 import { ShaderBackground } from "./shader-background";
+import { MobileCosmicBackground } from "./mobile-cosmic-background";
+import { useState, useEffect } from "react";
 
 interface HeroSectionProps {
   onScrollToTiers: () => void;
 }
 
 export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent) || window.innerWidth < 768;
+      setIsMobile(isMobileDevice);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
-      <ShaderBackground className="opacity-100" />
+      {isMobile ? (
+        <MobileCosmicBackground className="opacity-100" />
+      ) : (
+        <ShaderBackground className="opacity-100" />
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background/80 pointer-events-none z-10"></div>
       <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
       
