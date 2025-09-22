@@ -181,14 +181,14 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Improved mobile detection - more conservative approach
+    // More inclusive mobile detection for better cosmic effect visibility
     const userAgent = navigator.userAgent.toLowerCase();
-    const isActualMobile = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent) && window.innerWidth < 1024;
-    const isMobile = isActualMobile || (window.innerWidth < 768 && window.innerHeight < 1024);
+    const isActualMobile = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isMobile = isActualMobile || window.innerWidth < 768;
     
-    // Performance constants
-    const dpr = isMobile ? 1 : Math.max(1, 0.5 * window.devicePixelRatio);
-    const targetFPS = isMobile ? 30 : 60;
+    // Performance constants - less aggressive on mobile for better visibility
+    const dpr = isMobile ? Math.min(1.5, window.devicePixelRatio) : Math.max(1, 0.75 * window.devicePixelRatio);
+    const targetFPS = isMobile ? 45 : 60;
     const frameInterval = 1000 / targetFPS;
 
     // Define loop function early so it can be referenced in IntersectionObserver
@@ -348,12 +348,28 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
     const resize = () => {
       if (!canvas.parentElement) return;
       const rect = canvas.parentElement.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
+      let width = rect.width;
+      let height = rect.height;
+      
+      // Ensure minimum dimensions on mobile for better visibility
+      if (isMobile) {
+        width = Math.max(width, window.innerWidth);
+        height = Math.max(height, window.innerHeight);
+      }
+      
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       canvas.style.width = width + 'px';
       canvas.style.height = height + 'px';
+      
+      // Force canvas to fill parent completely
+      canvas.style.position = 'absolute';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.right = '0';
+      canvas.style.bottom = '0';
+      canvas.style.objectFit = 'cover';
+      
       if (renderer) {
         renderer.updateViewport(canvas.width, canvas.height);
       }
@@ -408,15 +424,36 @@ export function ShaderBackground({ className, starsOnly = false }: ShaderBackgro
         canvas.style.backgroundRepeat = 'repeat';
         canvas.style.backgroundSize = '200px 100px';
       } else {
-        // Cosmic gradient fallback
+        // Enhanced cosmic gradient fallback with animated starfield
         canvas.style.backgroundColor = 'transparent';
         canvas.style.background = `
-          radial-gradient(ellipse at center, 
+          radial-gradient(2px 2px at 25% 15%, #ffffff, transparent),
+          radial-gradient(1px 1px at 75% 35%, #00bfff, transparent),
+          radial-gradient(1px 1px at 45% 65%, #ffffff, transparent),
+          radial-gradient(2px 2px at 85% 80%, #00bfff, transparent),
+          radial-gradient(1px 1px at 15% 90%, #ffffff, transparent),
+          radial-gradient(ellipse 200% 100% at center 50%, 
             hsl(270, 60%, 20%) 0%, 
             hsl(220, 25%, 8%) 40%, 
             hsl(220, 25%, 6%) 100%
           )
         `;
+        canvas.style.backgroundSize = '300px 200px, 150px 100px, 250px 150px, 200px 120px, 180px 90px, 100% 100%';
+        canvas.style.backgroundPosition = '0px 0px, 40px 60px, 130px 270px, 70px 100px, 180px 30px, center';
+        canvas.style.animation = 'cosmic-drift 60s infinite linear';
+        
+        // Add CSS animation for moving stars
+        if (!document.getElementById('cosmic-animations')) {
+          const style = document.createElement('style');
+          style.id = 'cosmic-animations';
+          style.textContent = `
+            @keyframes cosmic-drift {
+              0% { background-position: 0px 0px, 40px 60px, 130px 270px, 70px 100px, 180px 30px, center; }
+              100% { background-position: 300px 200px, 340px 260px, 430px 470px, 370px 300px, 480px 230px, center; }
+            }
+          `;
+          document.head.appendChild(style);
+        }
       }
     }
 

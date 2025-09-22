@@ -11,6 +11,7 @@ import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
 
   // Handle payment return from Adumo
@@ -62,6 +63,14 @@ export default function Landing() {
     setSelectedTier(tier);
   };
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Navigation */}
@@ -90,9 +99,53 @@ export default function Landing() {
                 Protocol
               </a>
             </div>
-            <button className="md:hidden text-primary" data-testid="nav-mobile-menu">
-              <i className="fas fa-bars text-xl"></i>
+            <button 
+              className="md:hidden text-primary" 
+              onClick={toggleMobileMenu}
+              data-testid="nav-mobile-menu"
+            >
+              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'} text-xl`}></i>
             </button>
+          </div>
+        </div>
+        
+        {/* Mobile Menu */}
+        <div className={`md:hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+        } overflow-hidden bg-background/95 backdrop-blur-sm border-t border-primary/20`}>
+          <div className="px-4 py-6 space-y-4">
+            <a 
+              href="#hero" 
+              className="block text-foreground hover:text-primary transition-colors py-2"
+              onClick={closeMobileMenu}
+              data-testid="mobile-nav-mission"
+            >
+              Mission
+            </a>
+            <a 
+              href="#tiers" 
+              className="block text-foreground hover:text-primary transition-colors py-2"
+              onClick={closeMobileMenu}
+              data-testid="mobile-nav-tiers"
+            >
+              Tiers
+            </a>
+            <a 
+              href="#rewards" 
+              className="block text-foreground hover:text-primary transition-colors py-2"
+              onClick={closeMobileMenu}
+              data-testid="mobile-nav-rewards"
+            >
+              Rewards
+            </a>
+            <a 
+              href="#briefing" 
+              className="block text-foreground hover:text-primary transition-colors py-2"
+              onClick={closeMobileMenu}
+              data-testid="mobile-nav-protocol"
+            >
+              Protocol
+            </a>
           </div>
         </div>
       </nav>
