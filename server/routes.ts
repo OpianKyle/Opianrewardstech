@@ -150,8 +150,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert amount from cents to currency with 2 decimal places
       const currencyAmount = (validatedData.amount / 100).toFixed(2);
 
-      // For this demo, we'll use the simple form POST approach
-      // In production, implement proper JWT signing per Adumo docs
+      // For development mode with default credentials, simulate successful payment
+      if (process.env.NODE_ENV === "development" && 
+          (!process.env.ADUMO_MERCHANT_ID || !process.env.ADUMO_JWT_SECRET)) {
+        // Simulate successful payment processing for development
+        setTimeout(async () => {
+          try {
+            await storage.updatePaymentStatus(payment.id, "completed");
+            await storage.updateInvestorPaymentStatus(investor.id, "completed", reference);
+            
+            // Initialize quest progress
+            const questProgress = {
+              level: 1,
+              phase: "development",
+              startDate: new Date().toISOString(),
+              milestones: {
+                capitalReclaimed: false,
+                dividendPhase: false
+              }
+            };
+            await storage.updateInvestorProgress(investor.id, questProgress);
+          } catch (error) {
+            console.error("Error in simulated payment:", error);
+          }
+        }, 2000);
+
+        // Return development mode response with direct redirect
+        res.json({ 
+          devMode: true,
+          redirectUrl: `/?payment=success&reference=${reference}`,
+          message: "Development mode: Payment simulated successfully",
+          paymentId: payment.id,
+          investorId: investor.id,
+          reference: reference
+        });
+        return;
+      }
+
+      // For production with valid credentials, use proper JWT signing per Adumo docs
       const adumoFormData = {
         MerchantUID: ADUMO_CONFIG.merchantId,
         ApplicationUID: ADUMO_CONFIG.applicationId,

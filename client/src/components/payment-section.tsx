@@ -47,8 +47,24 @@ export function PaymentSection({
       return res.json();
     },
     onSuccess: (data) => {
+      // Handle development mode
+      if (data.devMode) {
+        toast({
+          title: "Development Mode",
+          description: data.message || "Payment simulated successfully. Redirecting...",
+        });
+        
+        // Close the modal and redirect after a short delay
+        setTimeout(() => {
+          setShowPaymentModal(false);
+          window.location.href = data.redirectUrl;
+        }, 2000);
+        return;
+      }
+      
+      // Handle production mode with Adumo
       toast({
-        title: "Payment Initialized",
+        title: "Payment Initialized", 
         description: "Redirecting to secure Adumo payment processing...",
       });
       
