@@ -3,19 +3,29 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertInvestorSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 
-// Adumo payment configuration using environment variables
+// Adumo payment configuration using environment variables (required)
 const ADUMO_CONFIG = {
-  merchantId: process.env.ADUMO_MERCHANT_ID || "9BA5008C-08EE-4286-A349-54AF91A621B0",
-  jwtSecret: process.env.ADUMO_JWT_SECRET || "yglTxLCSMm7PEsfaMszAKf2LSRvM2qVW",
-  // Use correct test ApplicationUID for Non-3D Secure transactions
-  applicationId: process.env.ADUMO_APPLICATION_ID || "904A34AF-0CE9-42B1-9C98-B69E6329D154",
+  merchantId: process.env.ADUMO_MERCHANT_ID,
+  jwtSecret: process.env.ADUMO_JWT_SECRET,
+  applicationId: process.env.ADUMO_APPLICATION_ID,
   // URLs - using staging for development, production when deployed
   apiUrl: process.env.NODE_ENV === "production" 
     ? "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual"
     : "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual",
   returnUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/payment-return`,
   notifyUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/payment-webhook`
+};
+
+// Validate required Adumo configuration
+const validateAdumoConfig = () => {
+  const required = ['merchantId', 'jwtSecret', 'applicationId'];
+  const missing = required.filter(key => !ADUMO_CONFIG[key as keyof typeof ADUMO_CONFIG]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required Adumo environment variables: ${missing.map(k => `ADUMO_${k.toUpperCase()}`).join(', ')}`);
+  }
 };
 
 const createPaymentIntentSchema = z.object({
@@ -116,6 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create Adumo payment (server-side initialization)
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
+      // Validate Adumo configuration first
+      validateAdumoConfig();
+      
       const validatedData = createPaymentIntentSchema.parse(req.body);
       
       // Create or get investor
@@ -151,23 +164,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert amount from cents to currency with 2 decimal places
       const currencyAmount = (validatedData.amount / 100).toFixed(2);
 
-      // Use Adumo's Virtual Payment integration - simplified form data
-      const adumoFormData = {
+      // Generate JWT token for Adumo API authentication
+      const jwtPayload = {
+        MerchantUID: ADUMO_CONFIG.merchantId,
+        ApplicationUID: ADUMO_CONFIG.applicationId,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (60 * 15) // 15 minutes expiry
+      };
+      
+      const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret);
+
+      // Prepare payload for Adumo's server-to-server API
+      const adumoPayload = {
         MerchantUID: ADUMO_CONFIG.merchantId,
         ApplicationUID: ADUMO_CONFIG.applicationId,
         TransactionAmount: currencyAmount,
+        TransactionCurrency: "ZAR",
         TransactionReference: reference,
-        ReturnURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`
+        CustomerEmail: validatedData.email,
+        CustomerFirstName: validatedData.firstName,
+        CustomerLastName: validatedData.lastName,
+        ReturnURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`,
+        CancelURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}&status=cancelled`,
+        NotifyURL: ADUMO_CONFIG.notifyUrl,
+        TransactionDescription: `Opian Rewards - ${validatedData.tier} Tier`,
+        CustomField1: reference,
+        CustomField2: payment.id,
+        CustomField3: investor.id
       };
 
+      console.log('🔍 Sending to Adumo:', JSON.stringify(adumoPayload, null, 2));
+
+      // Make server-to-server call to Adumo
+      const adumoResponse = await fetch(ADUMO_CONFIG.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwtToken}`
+        },
+        body: JSON.stringify(adumoPayload)
+      });
+
+      const adumoResult = await adumoResponse.json();
+      console.log('🎯 Adumo Response:', JSON.stringify(adumoResult, null, 2));
+
+      if (!adumoResponse.ok) {
+        throw new Error(`Adumo API error: ${adumoResult.message || 'Unknown error'}`);
+      }
+
+      // Return the redirect URL from Adumo
       res.json({ 
-        adumoUrl: ADUMO_CONFIG.apiUrl,
-        formData: adumoFormData,
+        redirectUrl: adumoResult.RedirectURL || adumoResult.redirectUrl,
         paymentId: payment.id,
         investorId: investor.id,
         reference: reference
       });
     } catch (error: any) {
+      console.error('❌ Payment creation error:', error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Validation error", errors: error.errors });
       } else {
