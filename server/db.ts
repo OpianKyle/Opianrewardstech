@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 import { drizzle } from 'drizzle-orm/mysql2';
 import * as schema from "@shared/schema";
 
-// Check if Xneelo database environment variables are available
+// Check if database is available (either Xneelo variables or DATABASE_URL)
 const isXneeloDatabaseAvailable = 
   process.env.XNEELO_DB_HOST && 
   process.env.XNEELO_DB_PORT && 
@@ -10,28 +10,48 @@ const isXneeloDatabaseAvailable =
   process.env.XNEELO_DB_USER && 
   process.env.XNEELO_DB_PASSWORD;
 
+const isDatabaseUrlAvailable = Boolean(process.env.DATABASE_URL);
+const isDatabaseAvailable = isXneeloDatabaseAvailable || isDatabaseUrlAvailable;
+
 // MySQL connection and database instance
 let pool: mysql.Pool | null = null;
 let db: any = null;
 
-// Only create MySQL connection if Xneelo environment variables are available
-if (isXneeloDatabaseAvailable) {
-  // MySQL connection configuration with SSL for Xneelo
-  const connectionConfig = {
-    host: process.env.XNEELO_DB_HOST!,
-    port: parseInt(process.env.XNEELO_DB_PORT!),
-    user: process.env.XNEELO_DB_USER!,
-    password: process.env.XNEELO_DB_PASSWORD!,
-    database: process.env.XNEELO_DB_NAME!,
-    ssl: {
-      rejectUnauthorized: false, // Xneelo requires this for SSL connections
-    },
-    // Connection pool settings
-    connectionLimit: 10,
-    queueLimit: 0,
-    connectTimeout: 60000,
-    waitForConnections: true,
-  };
+// Create MySQL connection based on available environment variables
+if (isDatabaseAvailable) {
+  let connectionConfig: any;
+
+  if (isDatabaseUrlAvailable) {
+    // Use DATABASE_URL connection string
+    connectionConfig = {
+      uri: process.env.DATABASE_URL!,
+      ssl: {
+        rejectUnauthorized: false, // Common for cloud databases
+      },
+      // Connection pool settings
+      connectionLimit: 10,
+      queueLimit: 0,
+      connectTimeout: 60000,
+      waitForConnections: true,
+    };
+  } else {
+    // Use Xneelo individual environment variables
+    connectionConfig = {
+      host: process.env.XNEELO_DB_HOST!,
+      port: parseInt(process.env.XNEELO_DB_PORT!),
+      user: process.env.XNEELO_DB_USER!,
+      password: process.env.XNEELO_DB_PASSWORD!,
+      database: process.env.XNEELO_DB_NAME!,
+      ssl: {
+        rejectUnauthorized: false, // Xneelo requires this for SSL connections
+      },
+      // Connection pool settings
+      connectionLimit: 10,
+      queueLimit: 0,
+      connectTimeout: 60000,
+      waitForConnections: true,
+    };
+  }
 
   // Create connection pool
   pool = mysql.createPool(connectionConfig);
@@ -44,8 +64,8 @@ export { pool, db };
 
 // Test connection and create tables
 export async function initializeDatabase() {
-  if (!isXneeloDatabaseAvailable) {
-    console.log('⚠️ Xneelo database environment variables not configured');
+  if (!isDatabaseAvailable) {
+    console.log('⚠️ Database environment variables not configured');
     console.log('🔄 Using in-memory storage for development');
     return;
   }
@@ -56,7 +76,8 @@ export async function initializeDatabase() {
   }
 
   try {
-    console.log('🔌 Testing Xneelo database connection...');
+    const connectionType = isDatabaseUrlAvailable ? 'DATABASE_URL' : 'Xneelo variables';
+    console.log(`🔌 Testing database connection (${connectionType})...`);
     const connection = await pool.getConnection();
     await connection.ping();
     
@@ -65,7 +86,7 @@ export async function initializeDatabase() {
     await createTablesIfNotExist(connection);
     
     connection.release();
-    console.log('✅ Xneelo database connection successful');
+    console.log('✅ Database connection successful');
     console.log('✅ Database initialized');
   } catch (error) {
     console.error('❌ Database connection failed:', error);
@@ -74,8 +95,8 @@ export async function initializeDatabase() {
   }
 }
 
-export function isDatabaseAvailable(): boolean {
-  return Boolean(isXneeloDatabaseAvailable) && pool !== null && db !== null;
+export function isDatabaseConnected(): boolean {
+  return Boolean(isDatabaseAvailable) && pool !== null && db !== null;
 }
 
 // Create database tables if they don't exist

@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
-import { db, isDatabaseAvailable } from "./db";
+import { db, isDatabaseConnected } from "./db";
 import { 
   InsertUser, 
   User, 
@@ -128,7 +128,8 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Investor not found");
     }
     
-    const updatedProgress = { ...investor.questProgress, ...progress };
+    const currentProgress = investor.questProgress || {};
+    const updatedProgress = { ...currentProgress, ...progress };
     
     await db.update(investors)
       .set({ 
@@ -436,7 +437,7 @@ let storageInstance: IStorage;
 
 try {
   // Check if database is available and configured
-  if (isDatabaseAvailable()) {
+  if (isDatabaseConnected()) {
     console.log("🗄️ Using MySQL Database Storage (Xneelo)");
     storageInstance = new DatabaseStorage();
   } else {
