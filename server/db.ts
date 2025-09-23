@@ -29,8 +29,8 @@ if (isXneeloDatabaseAvailable) {
     // Connection pool settings
     connectionLimit: 10,
     queueLimit: 0,
-    acquireTimeout: 60000,
-    timeout: 60000,
+    connectTimeout: 60000,
+    waitForConnections: true,
   };
 
   // Create connection pool
@@ -83,10 +83,10 @@ async function createTablesIfNotExist(connection: mysql.Connection) {
   const tables = [
     // Users table
     `CREATE TABLE IF NOT EXISTS users (
-      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-      email TEXT NOT NULL UNIQUE,
-      first_name TEXT,
-      last_name TEXT,
+      id VARCHAR(36) PRIMARY KEY,
+      email VARCHAR(191) NOT NULL UNIQUE,
+      first_name VARCHAR(255),
+      last_name VARCHAR(255),
       phone VARCHAR(15),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -94,16 +94,16 @@ async function createTablesIfNotExist(connection: mysql.Connection) {
     
     // Investors table
     `CREATE TABLE IF NOT EXISTS investors (
-      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-      email TEXT NOT NULL UNIQUE,
-      first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL,
-      tier TEXT NOT NULL,
-      payment_method TEXT NOT NULL,
+      id VARCHAR(36) PRIMARY KEY,
+      email VARCHAR(191) NOT NULL UNIQUE,
+      first_name VARCHAR(255) NOT NULL,
+      last_name VARCHAR(255) NOT NULL,
+      tier VARCHAR(50) NOT NULL,
+      payment_method VARCHAR(50) NOT NULL,
       amount INT NOT NULL,
-      payment_status TEXT NOT NULL DEFAULT 'pending',
-      stripe_payment_intent_id TEXT,
-      adumo_payment_id TEXT,
+      payment_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+      stripe_payment_intent_id VARCHAR(255),
+      adumo_payment_id VARCHAR(255),
       quest_progress JSON,
       certificate_generated TIMESTAMP NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -112,11 +112,11 @@ async function createTablesIfNotExist(connection: mysql.Connection) {
     
     // Payments table
     `CREATE TABLE IF NOT EXISTS payments (
-      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      id VARCHAR(36) PRIMARY KEY,
       investor_id VARCHAR(36) NOT NULL,
       amount INT NOT NULL,
-      method TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending',
+      method VARCHAR(50) NOT NULL,
+      status VARCHAR(50) NOT NULL DEFAULT 'pending',
       payment_data JSON,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -145,7 +145,7 @@ async function createTablesIfNotExist(connection: mysql.Connection) {
     
     // Payment methods table
     `CREATE TABLE IF NOT EXISTS payment_methods (
-      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      id VARCHAR(36) PRIMARY KEY,
       user_id VARCHAR(36) NOT NULL,
       card_type VARCHAR(50),
       last_four_digits CHAR(4),

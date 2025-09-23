@@ -4,41 +4,41 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = mysqlTable("users", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
-  email: text("email").notNull().unique(),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
+  id: varchar("id", { length: 36 }).primaryKey(),
+  email: varchar("email", { length: 191 }).notNull().unique(),
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
   phone: varchar("phone", { length: 15 }),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 export const investors = mysqlTable("investors", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
-  email: text("email").notNull().unique(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  tier: text("tier").notNull(), // "builder", "innovator", "visionary"
-  paymentMethod: text("payment_method").notNull(), // "lump_sum", "12_months", "24_months"
+  id: varchar("id", { length: 36 }).primaryKey(),
+  email: varchar("email", { length: 191 }).notNull().unique(),
+  firstName: varchar("first_name", { length: 255 }).notNull(),
+  lastName: varchar("last_name", { length: 255 }).notNull(),
+  tier: varchar("tier", { length: 50 }).notNull(), // "builder", "innovator", "visionary"
+  paymentMethod: varchar("payment_method", { length: 50 }).notNull(), // "lump_sum", "12_months", "24_months"
   amount: int("amount").notNull(), // Amount in cents
-  paymentStatus: text("payment_status").notNull().default("pending"), // "pending", "processing", "completed", "failed"
-  stripePaymentIntentId: text("stripe_payment_intent_id"),
-  adumoPaymentId: text("adumo_payment_id"),
+  paymentStatus: varchar("payment_status", { length: 50 }).notNull().default("pending"), // "pending", "processing", "completed", "failed"
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
+  adumoPaymentId: varchar("adumo_payment_id", { length: 255 }),
   questProgress: json("quest_progress"),
   certificateGenerated: timestamp("certificate_generated"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 export const payments = mysqlTable("payments", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  id: varchar("id", { length: 36 }).primaryKey(),
   investorId: varchar("investor_id", { length: 36 }).notNull().references(() => investors.id),
   amount: int("amount").notNull(),
-  method: text("method").notNull(), // "stripe", "adumo", "bank_transfer"
-  status: text("status").notNull().default("pending"),
+  method: varchar("method", { length: 50 }).notNull(), // "stripe", "adumo", "bank_transfer"
+  status: varchar("status", { length: 50 }).notNull().default("pending"),
   paymentData: json("payment_data"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Adumo Online Integration Tables
@@ -57,11 +57,11 @@ export const transactions = mysqlTable("transactions", {
   errorDetail: text("error_detail"),
   paymentId: varchar("payment_id", { length: 36 }).references(() => payments.id),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 export const paymentMethods = mysqlTable("payment_methods", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  id: varchar("id", { length: 36 }).primaryKey(),
   userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
   cardType: varchar("card_type", { length: 50 }),
   lastFourDigits: char("last_four_digits", { length: 4 }),
@@ -70,7 +70,7 @@ export const paymentMethods = mysqlTable("payment_methods", {
   puid: varchar("puid", { length: 36 }), // Profile UID for tokenized cards
   isActive: int("is_active").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
