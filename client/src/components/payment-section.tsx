@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AnimatedButton } from "@/components/ui/animated-button";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
@@ -14,12 +15,14 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface PaymentSectionProps {
   selectedTier?: string | null;
+  setSelectedTier?: (tier: string) => void;
   showPaymentModal?: boolean;
   setShowPaymentModal?: (show: boolean) => void;
 }
 
 export function PaymentSection({ 
-  selectedTier: externalSelectedTier, 
+  selectedTier: externalSelectedTier,
+  setSelectedTier: externalSetSelectedTier,
   showPaymentModal: externalShowPaymentModal, 
   setShowPaymentModal: externalSetShowPaymentModal 
 }: PaymentSectionProps) {
@@ -31,13 +34,15 @@ export function PaymentSection({
   const showPaymentModal = externalShowPaymentModal ?? internalShowPaymentModal;
   const setShowPaymentModal = externalSetShowPaymentModal ?? internalSetShowPaymentModal;
   const selectedTier = externalSelectedTier ?? internalSelectedTier;
-  const setSelectedTier = externalSetShowPaymentModal ? () => {} : internalSetSelectedTier;
+  const setSelectedTier = externalSetSelectedTier ?? internalSetSelectedTier;
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: ""
   });
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   const { toast } = useToast();
 
@@ -148,6 +153,15 @@ export function PaymentSection({
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!acceptTerms || !acceptPrivacy) {
+      toast({
+        title: "Agreement Required",
+        description: "Please accept the Terms & Conditions and Privacy Policy to continue.",
         variant: "destructive",
       });
       return;
@@ -359,6 +373,63 @@ export function PaymentSection({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Terms & Conditions and Privacy Policy */}
+            <div className="space-y-3 py-4 border-t border-border">
+              <div className="flex items-start space-x-3">
+                <Checkbox 
+                  id="terms"
+                  checked={acceptTerms}
+                  onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                  data-testid="checkbox-terms"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label 
+                    htmlFor="terms" 
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I accept the{" "}
+                    <a 
+                      href="/terms" 
+                      target="_blank"
+                      className="text-primary hover:text-primary/80 underline"
+                      data-testid="link-terms"
+                    >
+                      Terms & Conditions
+                    </a>
+                  </Label>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <Checkbox 
+                  id="privacy"
+                  checked={acceptPrivacy}
+                  onCheckedChange={(checked) => setAcceptPrivacy(checked as boolean)}
+                  data-testid="checkbox-privacy"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label 
+                    htmlFor="privacy" 
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I accept the{" "}
+                    <a 
+                      href="/privacy" 
+                      target="_blank"
+                      className="text-primary hover:text-primary/80 underline"
+                      data-testid="link-privacy"
+                    >
+                      Privacy Policy
+                    </a>
+                  </Label>
+                </div>
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                By proceeding, you confirm that you understand and agree to our terms regarding investment risks, payment processing, and data protection.
+              </p>
             </div>
 
             <div className="flex space-x-4">

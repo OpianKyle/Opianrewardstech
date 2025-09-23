@@ -196,7 +196,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JWT: jwtToken
       };
 
-      console.log('🔍 Prepared Adumo form data:', JSON.stringify(formData, null, 2));
+      // Log payment creation without sensitive data
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Payment intent created:', {
+          paymentId: payment.id,
+          investorId: investor.id,
+          tier: validatedData.tier,
+          amount: currencyAmount,
+          reference: reference
+        });
+      }
 
       // Return form data for client-side POST
       res.json({ 
