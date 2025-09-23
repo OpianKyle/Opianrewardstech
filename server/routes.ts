@@ -8,7 +8,8 @@ import { z } from "zod";
 const ADUMO_CONFIG = {
   merchantId: process.env.ADUMO_MERCHANT_ID || "9BA5008C-08EE-4286-A349-54AF91A621B0",
   jwtSecret: process.env.ADUMO_JWT_SECRET || "yglTxLCSMm7PEsfaMszAKf2LSRvM2qVW",
-  applicationId: process.env.ADUMO_APPLICATION_ID || "4196B0B8-DB88-42E5-A06D-294A5E4DED87",
+  // Use correct test ApplicationUID for Non-3D Secure transactions
+  applicationId: process.env.ADUMO_APPLICATION_ID || "904A34AF-0CE9-42B1-9C98-B69E6329D154",
   // URLs - using staging for development, production when deployed
   apiUrl: process.env.NODE_ENV === "production" 
     ? "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual"
@@ -150,23 +151,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert amount from cents to currency with 2 decimal places
       const currencyAmount = (validatedData.amount / 100).toFixed(2);
 
-      // Use Adumo's Virtual Payment integration
+      // Use Adumo's Virtual Payment integration - simplified form data
       const adumoFormData = {
         MerchantUID: ADUMO_CONFIG.merchantId,
         ApplicationUID: ADUMO_CONFIG.applicationId,
         TransactionAmount: currencyAmount,
-        TransactionCurrency: "ZAR",
         TransactionReference: reference,
-        CustomerEmail: validatedData.email,
-        CustomerFirstName: validatedData.firstName,
-        CustomerLastName: validatedData.lastName,
-        ReturnURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`,
-        NotifyURL: ADUMO_CONFIG.notifyUrl,
-        TransactionDescription: `Opian Rewards - ${validatedData.tier} Tier`,
-        // Store reference for webhook lookup
-        CustomField1: reference,
-        CustomField2: payment.id,
-        CustomField3: investor.id
+        ReturnURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`
       };
 
       res.json({ 
