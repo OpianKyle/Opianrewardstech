@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, isDatabaseConnected } from "./db";
 import { 
   InsertUser, 
@@ -35,6 +35,7 @@ export interface IStorage {
   // Payment operations
   createPayment(payment: InsertPayment): Promise<Payment>;
   getPaymentsByInvestor(investorId: string): Promise<Payment[]>;
+  getPaymentByMerchantReference(reference: string): Promise<Payment | undefined>;
   updatePaymentStatus(id: string, status: string): Promise<Payment>;
   
   // Transaction operations (Adumo integration)
@@ -157,6 +158,12 @@ export class DatabaseStorage implements IStorage {
 
   async getPaymentsByInvestor(investorId: string): Promise<Payment[]> {
     return await db.select().from(payments).where(eq(payments.investorId, investorId));
+  }
+
+  async getPaymentByMerchantReference(reference: string): Promise<Payment | undefined> {
+    // Since merchant reference is stored in paymentData JSON field, we need to use JSON query
+    const result = await db.select().from(payments).where(sql`JSON_EXTRACT(payment_data, '$.merchantReference') = ${reference}`).limit(1);
+    return result[0];
   }
 
   async updatePaymentStatus(id: string, status: string): Promise<Payment> {
@@ -358,6 +365,13 @@ export class MemStorage implements IStorage {
 
   async getPaymentsByInvestor(investorId: string): Promise<Payment[]> {
     return Array.from(this.payments.values()).filter((payment) => payment.investorId === investorId);
+  }
+
+  async getPaymentByMerchantReference(reference: string): Promise<Payment | undefined> {
+    return Array.from(this.payments.values()).find(payment => {
+      const paymentData = payment.paymentData as any;
+      return paymentData?.merchantReference === reference;
+    });
   }
 
   async updatePaymentStatus(id: string, status: string): Promise<Payment> {

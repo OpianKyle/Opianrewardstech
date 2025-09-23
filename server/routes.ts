@@ -4,16 +4,17 @@ import { storage } from "./storage";
 import { insertInvestorSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
+import { randomUUID } from "crypto";
 
 // Adumo payment configuration using environment variables (required)
 const ADUMO_CONFIG = {
   merchantId: process.env.ADUMO_MERCHANT_ID,
-  jwtSecret: process.env.ADUMO_JWT_SECRET,
+  jwtSecret: process.env.ADUMO_CLIENT_SECRET, // Use CLIENT_SECRET for JWT verification
   applicationId: process.env.ADUMO_APPLICATION_ID,
   // URLs - using staging for development, production when deployed
-  apiUrl: process.env.NODE_ENV === "production" 
+  apiUrl: process.env.ADUMO_BASE_URL || (process.env.NODE_ENV === "production" 
     ? "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual"
-    : "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual",
+    : "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual"),
   returnUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/payment-return`,
   notifyUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/payment-webhook`
 };
@@ -166,22 +167,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create payment record with reference
+      // Generate unique reference first
+      const tempId = randomUUID().substring(0, 8);
+      const reference = `OPIAN_${Date.now()}_${tempId}`;
+      
+      // Create payment record with reference stored in paymentData
       const payment = await storage.createPayment({
         investorId: investor.id,
         amount: validatedData.amount,
         method: "adumo",
         paymentData: {
           tier: validatedData.tier,
-          paymentMethod: validatedData.paymentMethod
+          paymentMethod: validatedData.paymentMethod,
+          merchantReference: reference
         }
       });
-
-      // Generate unique reference and store it with the payment
-      const reference = `OPIAN_${Date.now()}_${payment.id.substring(0, 8)}`;
-      
-      // Update payment with reference for lookup
-      await storage.updatePaymentStatus(payment.id, "pending");
       
       // Convert amount from cents to currency with 2 decimal places
       const currencyAmount = (validatedData.amount / 100).toFixed(2);
@@ -314,74 +314,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/payment-return", handlePaymentReturn);
   app.post("/payment-return", handlePaymentReturn);
 
+  // Extract JWT token from various sources (case-insensitive)
+  const extractJwtToken = (req: any): string | null => {
+    // Check Authorization header
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && typeof authHeader === 'string') {
+      const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+      if (bearerMatch) return bearerMatch[1];
+    }
+
+    // Check body fields (case-insensitive)
+    const body = req.body || {};
+    const bodyKeys = Object.keys(body);
+    
+    for (const key of bodyKeys) {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey === 'token' || lowerKey === 'jwt') {
+        return body[key];
+      }
+    }
+
+    // Check query parameters
+    const query = req.query || {};
+    return query.token || query.jwt || query.Token || query.JWT || null;
+  };
+
+  // Verify and validate Adumo JWT token
+  const verifyAdumoJWT = (token: string): any => {
+    if (!ADUMO_CONFIG.jwtSecret) {
+      throw new Error("JWT secret not configured");
+    }
+
+    // Verify JWT with signature validation
+    const decoded = jwt.verify(token, ADUMO_CONFIG.jwtSecret, {
+      algorithms: ['HS256'], // Only allow HS256 algorithm
+      clockTolerance: 30, // Allow 30 seconds clock skew
+    }) as any;
+
+    // Validate required claims according to Adumo spec
+    const requiredFields = ['cuid', 'auid', 'mref', 'amount', 'result'];
+    const missingFields = requiredFields.filter(field => decoded[field] === undefined);
+    
+    if (missingFields.length > 0) {
+      throw new Error(`Missing required JWT fields: ${missingFields.join(', ')}`);
+    }
+
+    // Validate merchant and application IDs match configuration
+    if (decoded.cuid !== ADUMO_CONFIG.merchantId) {
+      throw new Error(`JWT cuid mismatch: expected ${ADUMO_CONFIG.merchantId}, got ${decoded.cuid}`);
+    }
+
+    if (decoded.auid !== ADUMO_CONFIG.applicationId) {
+      throw new Error(`JWT auid mismatch: expected ${ADUMO_CONFIG.applicationId}, got ${decoded.auid}`);
+    }
+
+    return decoded;
+  };
+
   // Process payment completion (webhook endpoint for Adumo)
   app.post("/api/payment-webhook", async (req, res) => {
     try {
       console.log("🔔 Adumo webhook received at", new Date().toISOString());
-      console.log("📝 Webhook body:", JSON.stringify(req.body, null, 2));
       
-      // Adumo webhook data structure
-      const { 
-        ResultCode, 
-        ResultDescription, 
-        TransactionReference, 
-        TransactionAmount,
-        CustomField1, // reference
-        CustomField2, // paymentId  
-        CustomField3  // investorId
-      } = req.body;
+      // Extract JWT token
+      const jwtToken = extractJwtToken(req);
+      console.log("🔍 JWT token found:", jwtToken ? "YES" : "NO");
       
-      console.log("🔍 Webhook processing:");
-      console.log(`  ResultCode: ${ResultCode} (${ResultCode === "00" ? "SUCCESS" : "FAILED"})`);
-      console.log(`  PaymentId: ${CustomField2}`);
-      console.log(`  InvestorId: ${CustomField3}`);
-      console.log(`  TransactionRef: ${TransactionReference}`);
-      
-      // TODO: In production, implement proper webhook signature verification
-      // For now, proceed with basic validation
-      
-      if (CustomField2 && CustomField3) {
-        console.log("✅ Updating payment status...");
-        const payment = await storage.updatePaymentStatus(
-          CustomField2, // paymentId from CustomField2
-          ResultCode === "00" ? "completed" : "failed"
-        );
-        console.log(`💰 Payment ${payment.id} updated to: ${payment.status}`);
+      if (jwtToken) {
+        // Verify JWT token with signature validation and claim checks
+        console.log("🔐 Verifying JWT token signature and claims...");
+        const decoded = verifyAdumoJWT(jwtToken);
         
-        // Update investor payment status
-        console.log("👤 Updating investor status...");
-        const investor = await storage.updateInvestorPaymentStatus(
-          CustomField3, // investorId from CustomField3
-          ResultCode === "00" ? "completed" : "failed", 
-          TransactionReference
-        );
-        console.log(`🎯 Investor ${investor.id} payment status: ${investor.paymentStatus}`);
-
-        // If payment successful, initialize quest progress
-        if (ResultCode === "00") {
-          console.log("🎮 Initializing quest progress...");
-          const questProgress = {
-            level: 1,
-            phase: "development",
-            startDate: new Date().toISOString(),
-            milestones: {
-              capitalReclaimed: false,
-              dividendPhase: false
-            }
-          };
-          
-          await storage.updateInvestorProgress(investor.id, questProgress);
-          console.log("🎮 Quest progress initialized successfully");
+        // Extract validated fields from JWT
+        const {
+          result,           // Success/failure indicator (1 = success, -1 = failed, 0 = pending)
+          mref,            // Merchant reference
+          amount,          // Transaction amount
+          transactionIndex, // Transaction reference
+          puid,            // Payment UID
+        } = decoded;
+        
+        // Only log minimal, non-sensitive information in production
+        if (process.env.NODE_ENV === 'development') {
+          console.log("🔍 JWT webhook processing:");
+          console.log(`  Result: ${result} (${result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING"})`);
+          console.log(`  Merchant Ref: ${mref}`);
+          console.log(`  Amount: ${amount}`);
         }
+        
+        // Process payment using merchant reference
+        if (mref && mref.startsWith('OPIAN_')) {
+          console.log(`🔍 Processing payment with reference: ${mref.substring(0, 20)}...`);
+          
+          // Find payment by merchant reference
+          const payment = await storage.getPaymentByMerchantReference(mref);
+          
+          if (payment) {
+            // Map Adumo result codes: 1 = success, -1 = failed, 0 = pending
+            const isSuccess = result === 1;
+            const paymentStatus = isSuccess ? "completed" : result === -1 ? "failed" : "pending";
+            
+            console.log("✅ Found payment, updating status...");
+            console.log(`💰 Payment status: ${payment.status} → ${paymentStatus}`);
+            
+            // Update payment status
+            const updatedPayment = await storage.updatePaymentStatus(
+              payment.id,
+              paymentStatus
+            );
+            
+            // Update investor payment status
+            console.log("👤 Updating investor status...");
+            const investor = await storage.updateInvestorPaymentStatus(
+              payment.investorId,
+              paymentStatus,
+              transactionIndex
+            );
+            console.log(`🎯 Investor payment status: ${investor.paymentStatus}`);
+
+            // If payment successful, initialize quest progress
+            if (isSuccess) {
+              console.log("🎮 Initializing quest progress...");
+              const questProgress = {
+                level: 1,
+                phase: "development", 
+                startDate: new Date().toISOString(),
+                milestones: {
+                  capitalReclaimed: false,
+                  dividendPhase: false
+                }
+              };
+              
+              await storage.updateInvestorProgress(investor.id, questProgress);
+              console.log("🎮 Quest progress initialized");
+            }
+          } else {
+            console.log("❌ Payment not found for merchant reference");
+          }
+        } else {
+          console.log("❌ Invalid merchant reference format");
+        }
+        
       } else {
-        console.log("❌ Missing required fields: paymentId or investorId");
+        // Fallback to legacy format for compatibility
+        console.log("🔄 No JWT token found, trying legacy format...");
+        
+        const { 
+          ResultCode, 
+          CustomField2, // paymentId  
+          CustomField3  // investorId
+        } = req.body;
+        
+        if (CustomField2 && CustomField3) {
+          console.log("✅ Processing legacy webhook format...");
+          const paymentStatus = ResultCode === "00" ? "completed" : "failed";
+          
+          const payment = await storage.updatePaymentStatus(CustomField2, paymentStatus);
+          const investor = await storage.updateInvestorPaymentStatus(
+            CustomField3,
+            paymentStatus,
+            req.body.TransactionReference
+          );
+
+          if (ResultCode === "00") {
+            const questProgress = {
+              level: 1,
+              phase: "development",
+              startDate: new Date().toISOString(),
+              milestones: { capitalReclaimed: false, dividendPhase: false }
+            };
+            await storage.updateInvestorProgress(investor.id, questProgress);
+          }
+        } else {
+          console.log("❌ Missing required fields");
+        }
       }
 
       console.log("✅ Webhook processed successfully");
       res.json({ success: true });
     } catch (error: any) {
-      console.error("❌ Payment webhook error:", error);
-      res.status(500).json({ message: "Error processing payment webhook: " + error.message });
+      console.error("❌ Payment webhook error:", error.message);
+      
+      // Return appropriate error status based on error type
+      if (error.message.includes('JWT') || error.message.includes('signature')) {
+        res.status(401).json({ message: "Invalid authentication" });
+      } else {
+        res.status(500).json({ message: "Webhook processing error" });
+      }
     }
   });
 
