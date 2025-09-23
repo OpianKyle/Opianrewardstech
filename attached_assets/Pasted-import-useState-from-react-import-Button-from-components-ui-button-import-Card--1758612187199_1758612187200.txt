@@ -1,0 +1,1061 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, CreditCard, Shield, ExternalLink } from "lucide-react";
+
+interface PaymentFormProps {
+  planName: string;
+  planPrice: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }: PaymentFormProps) {
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [paymentData, setPaymentData] = useState<any>(null);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // Create subscription with Adumo
+      const response = await apiRequest("POST", "/api/subscriptions/create", { planName });
+      const data = await response.json();
+
+      if (data.paymentData) {
+        // Store payment data for form submission
+        setPaymentData(data.paymentData);
+        
+        toast({
+          title: "Redirecting to Payment",
+          description: "You'll be redirected to complete your payment securely with Adumo Online.",
+        });
+        
+        // Submit form to Adumo after a short delay
+        setTimeout(() => {
+          submitToAdumo(data.paymentData);
+        }, 1500);
+      } else {
+        // Development mode or immediate activation
+        toast({
+          title: "Subscription Activated",
+          description: `You've successfully subscribed to ${planName}!`,
+        });
+        onSuccess();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Subscription creation failed');
+      toast({
+        title: "Subscription Error",
+        description: err.message || 'Failed to create subscription. Please try again.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const submitToAdumo = (paymentData: any) => {
+    // Create a hidden form and submit to Adumo Virtual
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = paymentData.url;
+    form.style.display = 'none';
+
+    // Add all form fields
+    Object.entries(paymentData.formData).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value as string;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <CreditCard className="w-5 h-5" />
+          <span>Complete Your Subscription</span>
+        </CardTitle>
+        <div className="text-sm text-slate-600">
+          <p className="font-medium">{planName} Plan</p>
+          <p>R{planPrice}/month</p>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-900 mb-1">Secure Payment with Adumo Online</p>
+                <p className="text-blue-700">
+                  You'll be redirected to our secure payment partner, Adumo Online, to complete your subscription.
+                  Your payment information is protected with bank-level security.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Plan:</span>
+              <span className="font-medium">{planName}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Monthly Fee:</span>
+              <span className="font-medium">R{planPrice}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Currency:</span>
+              <span className="font-medium">South African Rand (ZAR)</span>
+            </div>
+            <hr className="border-slate-200" />
+            <div className="flex items-center justify-between font-medium">
+              <span>Total Monthly:</span>
+              <span className="text-lg">R{planPrice}</span>
+            </div>
+          </div>
+
+          <div className="flex space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isProcessing}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isProcessing}
+              className="flex-1"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Continue to Payment
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="text-xs text-slate-500 text-center">
+            By clicking "Continue to Payment", you agree to our terms of service and will be redirected to Adumo Online to complete your payment securely.
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+import type { Express, Request, Response, NextFunction } from "express";
+import express from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { AuthService } from "./services/auth";
+import { AdumoService } from "./services/adumo";
+import { getChatbotResponse } from "./openai";
+import { z } from "zod";
+import nodemailer from 'nodemailer';
+import PDFDocument from 'pdfkit';
+
+// Authentication middleware
+const authenticateToken = async (req: any, res: Response, next: NextFunction) => {
+  // Try to get token from Authorization header first, then from cookies
+  const authHeader = req.headers.authorization;
+  const headerToken = authHeader && authHeader.split(' ')[1];
+  const cookieToken = req.cookies?.accessToken;
+  
+  const token = headerToken || cookieToken;
+
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
+  }
+
+  try {
+    const decoded = AuthService.verifyToken(token);
+    const user = await storage.getUserById(decoded.userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: 'Invalid or expired token' });
+  }
+};
+
+// Admin middleware
+const requireAdmin = (req: any, res: Response, next: NextFunction) => {
+  if (req.user?.role !== 'ADMIN') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
+};
+
+// Validation schemas
+const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  name: z.string().min(2)
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string()
+});
+
+const createSubscriptionSchema = z.object({
+  planName: z.enum(['OPPORTUNITY', 'MOMENTUM', 'PROSPER', 'PRESTIGE', 'PINNACLE'])
+});
+
+const createExtendedCoverSchema = z.object({
+  name: z.string().min(2),
+  surname: z.string().min(2),
+  idNumber: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  age: z.number().min(0).max(120),
+  relation: z.enum(['SPOUSE', 'CHILD', 'PARENT', 'EXTENDED_FAMILY']),
+  coverAmount: z.number().min(1000)
+});
+
+// Premium calculation function based on the provided tables
+function calculatePremium(age: number, relation: string, coverAmount: number): number {
+  const coverPer1000 = coverAmount / 1000;
+  
+  // Single Funeral Cover rates (main member and spouse)
+  if (relation === 'SPOUSE') {
+    if (age >= 18 && age <= 45) return coverPer1000 * 2.55;
+    if (age >= 46 && age <= 50) return coverPer1000 * 2.95;
+    if (age >= 51 && age <= 60) return coverPer1000 * 3.55;
+    if (age >= 61 && age <= 70) return coverPer1000 * 3.55;
+  }
+  
+  // Children rates (0-20)
+  if (relation === 'CHILD') {
+    if (age >= 0 && age <= 5) return coverPer1000 * 1.95;
+    if (age >= 6 && age <= 13) return coverPer1000 * 2.05;
+    if (age >= 14 && age <= 20) return coverPer1000 * 2.25;
+  }
+  
+  // Parent funeral benefit (up to 75)
+  if (relation === 'PARENT') {
+    if (age >= 18 && age <= 25) return coverPer1000 * 2.48;
+    if (age >= 26 && age <= 30) return coverPer1000 * 3.88;
+    if (age >= 31 && age <= 35) return coverPer1000 * 4.72;
+    if (age >= 36 && age <= 40) return coverPer1000 * 5.48;
+    if (age >= 41 && age <= 45) return coverPer1000 * 5.64;
+    if (age >= 46 && age <= 50) return coverPer1000 * 6.44;
+    if (age >= 51 && age <= 55) return coverPer1000 * 6.44;
+    if (age >= 56 && age <= 60) return coverPer1000 * 8.94;
+    if (age >= 61 && age <= 65) return coverPer1000 * 13.12;
+    if (age >= 66 && age <= 70) return coverPer1000 * 20.08;
+    if (age >= 71 && age <= 75) return coverPer1000 * 21.84;
+  }
+  
+  // Extended family cover (18-64)
+  if (relation === 'EXTENDED_FAMILY') {
+    if (age >= 18 && age <= 45) return coverPer1000 * 2.55;
+    if (age >= 46 && age <= 55) return coverPer1000 * 3.55;
+    if (age >= 56 && age <= 64) return coverPer1000 * 4.55;
+  }
+  
+  // Default fallback
+  return coverPer1000 * 2.55;
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize subscription plans
+  const plans = [
+    {
+      name: 'OPPORTUNITY' as const,
+      price: '350.00',
+      description: 'Essential protection for everyday life',
+      features: ['EMS Assist', 'Legal Assist', 'Repatriation Cover', 'Celebrate Life', '24/7 Nurse On-Call', 'Funeral Cover', 'Accidental Death Cover', 'Funeral Assist', 'Family Income Benefit', 'Lawyer Assist', 'Virtual GP Assistant', 'Medical Second Opinion', 'Crime Victim Assist', 'Assault & Trauma Assist', 'Emergency Medical Services'],
+      adumoPriceId: 'adumo_dev_opportunity_350'
+    },
+    {
+      name: 'MOMENTUM' as const,
+      price: '450.00',
+      description: 'Enhanced protection with increased coverage',
+      features: ['Funeral Cover: R5,000', 'Funeral Assist', 'EMS Assist', 'Legal Assist', 'Repatriation Cover', 'Celebrate Life', '24/7 Nurse On-Call', 'Accidental Death Cover', 'Family Income Benefit', 'Lawyer Assist', 'Virtual GP Assistant', 'Medical Second Opinion', 'Crime Victim Assist', 'Assault & Trauma Assist', 'Emergency Medical Services'],
+      adumoPriceId: 'adumo_dev_momentum_450'
+    },
+    {
+      name: 'PROSPER' as const,
+      price: '550.00',
+      description: 'Comprehensive protection for growing families',
+      features: ['Funeral Cover: R10,000', 'Accidental Death Cover: R20,000', 'Funeral Assist', 'Family Income Benefit: R5,000 x6', 'EMS Assist', 'Legal Assist', 'Repatriation Cover', 'Celebrate Life', '24/7 Nurse On-Call', 'Virtual GP Assistant', 'Medical Second Opinion', 'Lawyer Assist', 'Crime Victim Assist', 'Assault & Trauma Assist', 'Emergency Medical Services'],
+      adumoPriceId: 'adumo_dev_prosper_550'
+    },
+    {
+      name: 'PRESTIGE' as const,
+      price: '695.00',
+      description: 'Premium protection with superior benefits',
+      features: ['Funeral Cover: R15,000', 'Accidental Death Cover: R50,000', 'Funeral Assist', 'Family Income Benefit: R5,000 x6', 'EMS Assist', 'Legal Assist', 'Repatriation Cover', 'Celebrate Life', '24/7 Nurse On-Call', 'Virtual GP Assistant', 'Medical Second Opinion', 'Crime Victim Assist', 'Assault & Trauma Assist', 'Emergency Medical Services', 'Lawyer Assist'],
+      adumoPriceId: 'adumo_dev_prestige_695'
+    },
+    {
+      name: 'PINNACLE' as const,
+      price: '825.00',
+      description: 'Ultimate protection with maximum coverage',
+      features: ['Funeral Cover: R20,000', 'Accidental Death Cover: R100,000', 'Funeral Assist', 'Family Income Benefit: R5,000 x6', 'EMS Assist', 'Legal Assist', 'Lawyer Assist', 'Repatriation Cover', 'Celebrate Life', '24/7 Nurse On-Call', 'Virtual GP Assistant', 'Medical Second Opinion', 'Crime Victim Assist', 'Assault & Trauma Assist', 'Emergency Medical Services'],
+      adumoPriceId: 'adumo_dev_pinnacle_825'
+    }
+  ];
+
+  // Initialize plans in database with retry logic
+  setTimeout(async () => {
+    for (const planData of plans) {
+      try {
+        const existingPlan = await storage.getSubscriptionPlanByName(planData.name);
+        if (!existingPlan) {
+          await storage.createSubscriptionPlan({
+            ...planData,
+            features: JSON.stringify(planData.features) // Serialize array to JSON string
+          });
+          console.log(`Created plan: ${planData.name}`);
+        }
+      } catch (error) {
+        console.error(`Error creating plan ${planData.name}:`, error);
+      }
+    }
+  }, 2000); // Wait 2 seconds for database migration to complete
+
+  // Auth routes
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
+    try {
+      const { email, password, name } = registerSchema.parse(req.body);
+      const result = await AuthService.register(email, password, name);
+      res.status(201).json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    try {
+      const { email, password } = loginSchema.parse(req.body);
+      const result = await AuthService.login(email, password);
+      
+      // Detect if we're running over HTTPS (important for Replit's proxy)
+      // Force secure cookies in Replit environment to handle proxy correctly
+      const isReplit = !!process.env.REPL_ID;
+      const isSecure = isReplit || req.secure || req.headers['x-forwarded-proto'] === 'https';
+      
+      // Set httpOnly cookies - use sameSite='none' + partitioned for iframe compatibility
+      const cookieOptions = {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: isSecure ? 'none' : 'lax', // Use 'none' only when secure
+        ...(isSecure && { partitioned: true }), // Add partitioned for third-party cookies in Replit
+      } as const;
+      
+      res.cookie('accessToken', result.tokens.accessToken, {
+        ...cookieOptions,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      });
+      
+      res.cookie('refreshToken', result.tokens.refreshToken, {
+        ...cookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+
+      res.json({ user: result.user, tokens: result.tokens });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/auth/verify-email', async (req: Request, res: Response) => {
+    try {
+      const { token } = req.body;
+      const user = await AuthService.verifyEmail(token);
+      res.json({ message: 'Email verified successfully', user });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/auth/request-password-reset', async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      const result = await AuthService.requestPasswordReset(email);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+      const user = await AuthService.resetPassword(token, password);
+      res.json({ message: 'Password reset successful', user });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/auth/user', authenticateToken, async (req: any, res: Response) => {
+    res.json(req.user);
+  });
+
+  app.post('/api/auth/logout', (req: Request, res: Response) => {
+    // Detect if we're running over HTTPS (important for Replit's proxy)
+    // Force secure cookies in Replit environment to handle proxy correctly
+    const isReplit = !!process.env.REPL_ID;
+    const isSecure = isReplit || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    
+    // Clear cookies with same options as when they were set
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: isSecure ? 'none' : 'lax',
+      ...(isSecure && { partitioned: true }), // Add partitioned for third-party cookies in Replit
+    } as const;
+    
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+    res.json({ message: 'Logged out successfully' });
+  });
+
+  // Configuration routes
+  app.get('/api/config/adumo', (_req: Request, res: Response) => {
+    res.json({
+      merchantId: process.env.ADUMO_MERCHANT_ID
+    });
+  });
+
+  // Subscription plan routes
+  app.get('/api/plans', async (_req: Request, res: Response) => {
+    try {
+      const plans = await storage.getAllSubscriptionPlans();
+      res.json({ plans });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Subscription routes
+  app.post('/api/subscriptions/create', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const { planName } = createSubscriptionSchema.parse(req.body);
+      const result = await AdumoService.createSubscription(req.user.id, planName);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Full subscription creation with form data
+  app.post('/api/subscriptions/create-full', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const subscriptionData = req.body;
+      
+      // First, get the plan by ID to get the plan name
+      const plan = await storage.getSubscriptionPlanById(subscriptionData.planId);
+      if (!plan) {
+        return res.status(404).json({ message: 'Plan not found' });
+      }
+
+      // Check if user already has a subscription to avoid duplicates
+      const existingSubscription = await storage.getUserSubscription(req.user.id);
+      
+      let adumoResult;
+      if (existingSubscription) {
+        // If subscription exists for the same plan, return existing info
+        const existingPlan = await storage.getSubscriptionPlanById(existingSubscription.planId);
+        if (existingPlan?.name === plan.name) {
+          const user = await storage.getUserById(req.user.id);
+          
+          // Check if subscription is incomplete and needs payment
+          if (existingSubscription.status === 'INCOMPLETE') {
+            const paymentData = AdumoService.generatePaymentData(plan, user);
+            return res.json({
+              message: 'Subscription exists but payment is incomplete',
+              subscription: existingSubscription,
+              subscriptionId: existingSubscription.adumoSubscriptionId,
+              requiresPayment: true,
+              paymentData: paymentData
+            });
+          }
+          
+          return res.json({
+            message: 'Subscription already exists for this plan - redirecting to dashboard',
+            subscription: existingSubscription,
+            subscriptionId: existingSubscription.adumoSubscriptionId,
+            requiresPayment: false
+          });
+        }
+        // Update existing subscription to new plan
+        adumoResult = await AdumoService.updateSubscription(req.user.id, plan.name);
+      } else {
+        // Create new subscription with Adumo using plan name
+        adumoResult = await AdumoService.createSubscription(req.user.id, plan.name);
+      }
+      
+      // Check if adumoResult has subscription info or is an error
+      if (!('subscriptionId' in adumoResult)) {
+        return res.status(400).json(adumoResult);
+      }
+
+      // Create extended cover entries for each family member
+      if (subscriptionData.extendedMembers && subscriptionData.extendedMembers.length > 0) {
+        for (const member of subscriptionData.extendedMembers) {
+          await storage.createExtendedCover({
+            userId: req.user.id,
+            name: member.firstName + ' ' + member.surname,
+            surname: member.surname,
+            age: 0, // Will be calculated from ID
+            relation: member.relation,
+            coverAmount: member.coverAmount.toString(),
+            monthlyPremium: '0', // Will be calculated
+            idNumber: member.idNumber,
+            dateOfBirth: null
+          });
+        }
+      }
+      
+      // Get the subscription that was created by AdumoService
+      const subscription = await storage.getUserSubscription(req.user.id);
+      
+      const response = {
+        message: (adumoResult as any).message || 'Subscription created successfully',
+        subscription: subscription,
+        subscriptionId: (adumoResult as any).subscriptionId,
+        requiresPayment: 'requiresPayment' in adumoResult ? (adumoResult as any).requiresPayment : false,
+        paymentData: 'paymentData' in adumoResult ? (adumoResult as any).paymentData : undefined
+      };
+      
+      res.json(response);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/subscriptions/current', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const subscription = await storage.getUserSubscription(req.user.id);
+      res.json({ subscription });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/subscriptions/update', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const { planName } = createSubscriptionSchema.parse(req.body);
+      const result = await AdumoService.updateSubscription(req.user.id, planName);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/subscriptions/cancel', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const result = await AdumoService.cancelSubscription(req.user.id);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Invoice routes
+  app.get('/api/invoices', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const invoices = await storage.getUserInvoices(req.user.id);
+      res.json({ invoices });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/invoices/:id/download', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const { id } = req.params;
+      const invoice = await storage.getInvoiceById(id);
+      
+      if (!invoice || invoice.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Invoice not found' });
+      }
+
+      const user = await storage.getUserById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      let subscription = null;
+      if (invoice.subscriptionId) {
+        subscription = await storage.getUserSubscription(req.user.id);
+      }
+
+      const doc = new PDFDocument();
+      
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="invoice-${invoice.id}.pdf"`);
+      
+      // Pipe the PDF document to the response
+      doc.pipe(res);
+
+      // Generate PDF content
+      // Header
+      doc.fontSize(20).text('OPIAN LIFESTYLE PROTECTION', 50, 50);
+      doc.fontSize(14).text('Invoice', 50, 80);
+      
+      // Invoice details
+      const formatDate = (date: any) => {
+        try {
+          return date ? new Date(date).toLocaleDateString('en-ZA') : 'N/A';
+        } catch (error) {
+          return 'Invalid Date';
+        }
+      };
+      
+      doc.fontSize(12)
+         .text(`Invoice ID: ${invoice.id}`, 50, 120)
+         .text(`Date: ${formatDate(invoice.createdAt)}`, 50, 140)
+         .text(`Due Date: ${formatDate(invoice.dueDate)}`, 50, 160)
+         .text(`Status: ${invoice.status.toUpperCase()}`, 50, 180);
+
+      // Customer details
+      doc.text('Bill To:', 50, 220)
+         .text(user.name, 50, 240)
+         .text(user.email, 50, 260);
+
+      // Invoice items
+      doc.text('Description', 50, 320)
+         .text('Amount', 400, 320);
+         
+      doc.moveTo(50, 340).lineTo(550, 340).stroke();
+      
+      let description = 'Subscription Payment';
+      if (subscription) {
+        description = `${subscription.plan.name} Plan - Monthly Subscription`;
+      }
+      
+      doc.text(description, 50, 360)
+         .text(`R${parseFloat(invoice.amount).toFixed(2)}`, 400, 360);
+
+      // Total
+      doc.moveTo(50, 400).lineTo(550, 400).stroke();
+      doc.fontSize(14)
+         .text('Total:', 350, 420)
+         .text(`R${parseFloat(invoice.amount).toFixed(2)}`, 400, 420);
+
+      // Payment info
+      if (invoice.status === 'paid' && invoice.paidAt) {
+        doc.fontSize(12)
+           .text(`Paid on: ${formatDate(invoice.paidAt)}`, 50, 480)
+           .text(`Payment Method: Credit Card`, 50, 500);
+      }
+
+      // Footer
+      doc.fontSize(10)
+         .text('Thank you for choosing Opian Lifestyle Protection!', 50, 600)
+         .text('For support, contact us at support@opianlifestyle.co.za', 50, 620);
+
+      // Finalize the PDF
+      doc.end();
+    } catch (error: any) {
+      console.error('Error generating invoice PDF:', error);
+      res.status(500).json({ message: 'Error generating invoice PDF' });
+    }
+  });
+
+  // Manual email verification route (temporary workaround)
+  app.post('/api/auth/manual-verify', async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const updatedUser = await storage.updateUser(user.id, { emailVerified: true });
+      res.json({ message: 'Email verified successfully', user: updatedUser });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Extended cover routes
+  app.get('/api/extended-cover', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const covers = await storage.getUserExtendedCover(req.user.id);
+      res.json({ covers });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/extended-cover', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const coverData = createExtendedCoverSchema.parse(req.body);
+      
+      // Calculate premium based on age, relation, and cover amount
+      const monthlyPremium = calculatePremium(coverData.age, coverData.relation, coverData.coverAmount);
+      
+      const cover = await storage.createExtendedCover({
+        ...coverData,
+        userId: req.user.id,
+        coverAmount: coverData.coverAmount.toString(),
+        monthlyPremium: monthlyPremium.toString()
+      });
+      
+      res.json({ cover });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: 'Invalid data provided', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/extended-cover/:id', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const { id } = req.params;
+      const coverData = createExtendedCoverSchema.partial().parse(req.body);
+      
+      // Recalculate premium if age, relation, or cover amount changed
+      let updateData: any = { ...coverData };
+      if (coverData.age || coverData.relation || coverData.coverAmount) {
+        const existingCover = await storage.getUserExtendedCover(req.user.id);
+        const cover = existingCover.find(c => c.id === id);
+        if (!cover) {
+          return res.status(404).json({ message: 'Extended cover not found' });
+        }
+        
+        const age = coverData.age || cover.age;
+        const relation = coverData.relation || cover.relation;
+        const coverAmount = coverData.coverAmount || Number(cover.coverAmount);
+        
+        const monthlyPremium = calculatePremium(age, relation, coverAmount);
+        updateData.monthlyPremium = monthlyPremium.toString();
+        if (coverData.coverAmount) {
+          updateData.coverAmount = coverData.coverAmount.toString();
+        }
+      }
+      
+      const cover = await storage.updateExtendedCover(id, updateData);
+      res.json({ cover });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: 'Invalid data provided', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/extended-cover/:id', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteExtendedCover(id);
+      res.json({ message: 'Extended cover deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Transaction routes
+  app.get('/api/transactions', authenticateToken, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const transactions = await storage.getTransactionsByUserId(userId);
+      
+      res.json({ 
+        transactions: transactions.map(transaction => ({
+          id: transaction.id,
+          invoiceId: transaction.invoiceId,
+          merchantReference: transaction.merchantReference,
+          adumoTransactionId: transaction.adumoTransactionId,
+          adumoStatus: transaction.adumoStatus,
+          paymentMethod: transaction.paymentMethod,
+          gateway: transaction.gateway,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          createdAt: transaction.createdAt,
+          updatedAt: transaction.updatedAt
+        }))
+      });
+    } catch (error: any) {
+      console.error('Error fetching user transactions:', error);
+      res.status(500).json({ message: 'Failed to fetch transactions' });
+    }
+  });
+
+  // Admin routes
+  app.get('/api/admin/users', authenticateToken, requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json({ users });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/admin/stats', authenticateToken, requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const stats = await storage.getSubscriptionStats();
+      res.json({ stats });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Chatbot endpoint
+  app.post('/api/chatbot', async (req: Request, res: Response) => {
+    try {
+      const { message } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'Message is required and must be a string' });
+      }
+
+      const response = await getChatbotResponse(message);
+      res.json(response);
+    } catch (error: any) {
+      console.error('Chatbot error:', error);
+      res.status(500).json({ 
+        error: 'Sorry, I\'m experiencing technical difficulties. Please try again later.',
+        response: 'I apologize, but I\'m having trouble processing your request right now. For immediate assistance with Opian Lifestyle services, please contact our support team directly.'
+      });
+    }
+  });
+
+  // Test endpoints for credential verification
+  app.get('/api/health/adumo', async (_req: Request, res: Response) => {
+    try {
+      // Test Adumo configuration and service initialization
+      const healthCheck = await AdumoService.healthCheck();
+      res.json(healthCheck);
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: `Adumo health check failed: ${error.message}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post('/api/test/adumo', async (_req: Request, res: Response) => {
+    try {
+      // Test current Adumo configuration - updated to match actual service config
+      const requiredFields = ['ADUMO_MERCHANT_ID', 'ADUMO_APPLICATION_ID', 'ADUMO_JWT_SECRET'];
+      const missing = requiredFields.filter(field => !process.env[field]);
+      
+      if (missing.length > 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Missing required Adumo configuration: ${missing.join(', ')}` 
+        });
+      }
+
+      // Test JWT token generation
+      const tokenTest = await AdumoService.testJwtGeneration();
+      
+      // Test API connectivity
+      const connectivityTest = await AdumoService.testApiConnectivity();
+      
+      res.json({ 
+        success: true, 
+        message: 'Adumo integration is properly configured',
+        details: {
+          configurationValid: true,
+          jwtGeneration: tokenTest,
+          apiConnectivity: connectivityTest,
+          environment: 'test',
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error: any) {
+      console.error('Adumo test error:', error);
+      res.status(400).json({ 
+        success: false, 
+        message: `Adumo test failed: ${error.message}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post('/api/test/smtp', async (_req: Request, res: Response) => {
+    try {
+      const emailUser = process.env.SMTP_USER;
+      const emailPass = process.env.SMTP_PASS;
+      
+      if (!emailUser || !emailPass) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'SMTP credentials not configured (missing SMTP_USER or SMTP_PASS)' 
+        });
+      }
+
+      const port = Number(process.env.SMTP_PORT || 587);
+      
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: port,
+        secure: port === 465,
+        auth: { 
+          user: emailUser, 
+          pass: emailPass 
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+
+      await transporter.verify(); // Test SMTP connection
+      
+      res.json({ success: true, message: 'SMTP credentials are working' });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: `SMTP error: ${error.message}` });
+    }
+  });
+
+  // Adumo webhook
+  // Webhook endpoint with raw body parsing for signature verification
+  app.post('/api/webhooks/adumo', express.raw({ type: 'application/json' }), async (req: Request, res: Response) => {
+    console.log('🔔 Adumo webhook received from IP:', req.ip);
+    console.log('📋 Request headers:', {
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length'],
+      'user-agent': req.headers['user-agent']
+    });
+
+    try {
+      // Verify webhook authenticity and parse payload in one step
+      const verificationResult = AdumoService.verifyWebhookSignature(req);
+      
+      if (!verificationResult.isValid) {
+        console.error('❌ Invalid webhook signature from:', req.ip);
+        return res.status(401).json({ message: 'Unauthorized - Invalid signature' });
+      }
+
+      if (!verificationResult.payload) {
+        console.error('❌ No payload found after verification');
+        return res.status(400).json({ message: 'No payload found' });
+      }
+
+      console.log('✅ Webhook signature verified, processing payment...');
+      
+      // Process the verified and parsed payload (no double parsing!)
+      await AdumoService.processPaymentWebhook(verificationResult.payload);
+      
+      console.log('🎉 Webhook processed successfully');
+      res.json({ received: true, status: 'processed' });
+    } catch (error: any) {
+      console.error('💥 Adumo webhook error:', error);
+      console.error('📊 Error stack:', error.stack);
+      res.status(400).json({ 
+        message: `Webhook Error: ${error.message}`,
+        error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+
+  // Health check endpoint
+  app.get('/api/health', (_req: Request, res: Response) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Test transactions endpoint
+  app.post('/api/test/transactions', async (req: Request, res: Response) => {
+    try {
+      // First get a test user and create an invoice
+      const [testUser] = await storage.getAllUsers();
+      if (!testUser) {
+        return res.status(400).json({ message: 'No test user found' });
+      }
+
+      // Create a test invoice
+      const testInvoice = await storage.createInvoice({
+        userId: testUser.id,
+        amount: "350.00",
+        currency: "ZAR",
+        status: "pending",
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      });
+
+      // Create test transaction
+      const merchantRef = `TEST_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const testTransaction = await storage.createTransaction({
+        invoiceId: testInvoice.id,
+        userId: testUser.id,
+        merchantReference: merchantRef,
+        adumoTransactionId: `ADU_${Date.now()}`,
+        adumoStatus: 'PENDING',
+        paymentMethod: 'CARD',
+        gateway: 'ADUMO',
+        amount: "350.00",
+        currency: "ZAR",
+        requestPayload: JSON.stringify({ test: 'data', amount: 350 }),
+        responsePayload: JSON.stringify({ status: 'pending' }),
+      });
+
+      // Test retrieval methods
+      const transactionById = await storage.getTransactionByMerchantReference(merchantRef);
+      const userTransactions = await storage.getTransactionsByUserId(testUser.id);
+      const invoiceTransactions = await storage.getTransactionsByInvoiceId(testInvoice.id);
+
+      res.json({
+        success: true,
+        data: {
+          createdTransaction: testTransaction,
+          retrievedByMerchantRef: transactionById,
+          userTransactionsCount: userTransactions.length,
+          invoiceTransactionsCount: invoiceTransactions.length,
+          latestUserTransaction: userTransactions[0]
+        }
+      });
+    } catch (error: any) {
+      console.error('Transaction test error:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Get transactions for user endpoint
+  app.get('/api/transactions/:userId', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const transactions = await storage.getTransactionsByUserId(userId);
+      res.json({ transactions });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
