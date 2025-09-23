@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exp: Math.floor(Date.now() / 1000) + (60 * 15) // 15 minutes expiry
       };
       
-      const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret);
+      const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret!);
 
       // Prepare payload for Adumo's server-to-server API
       const adumoPayload = {
