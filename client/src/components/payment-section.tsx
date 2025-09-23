@@ -62,14 +62,24 @@ export function PaymentSection({
         return;
       }
       
-      // Handle production mode with Adumo
-      if (data.redirectUrl) {
+      // Handle production mode with Adumo form data
+      if (data.formData && data.url) {
         toast({
           title: "Payment Initialized", 
           description: "Redirecting to secure Adumo payment processing...",
         });
         
-        // Redirect to Adumo's hosted payment page
+        // Submit form to Adumo's hosted payment page
+        setTimeout(() => {
+          submitAdumoForm(data.url, data.formData);
+        }, 1500);
+      } else if (data.redirectUrl) {
+        // Fallback for direct redirect URL
+        toast({
+          title: "Payment Initialized", 
+          description: "Redirecting to secure Adumo payment processing...",
+        });
+        
         setTimeout(() => {
           window.location.href = data.redirectUrl;
         }, 1500);

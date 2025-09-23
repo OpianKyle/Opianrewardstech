@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create Adumo payment (server-side initialization)
+  // Create Adumo payment (form data for Virtual integration)
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
       // Validate Adumo configuration first
@@ -174,8 +174,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret!);
 
-      // Prepare payload for Adumo's server-to-server API
-      const adumoPayload = {
+      // Return form data for client-side form POST to Adumo Virtual
+      const formData = {
         MerchantUID: ADUMO_CONFIG.merchantId,
         ApplicationUID: ADUMO_CONFIG.applicationId,
         TransactionAmount: currencyAmount,
@@ -190,31 +190,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         TransactionDescription: `Opian Rewards - ${validatedData.tier} Tier`,
         CustomField1: reference,
         CustomField2: payment.id,
-        CustomField3: investor.id
+        CustomField3: investor.id,
+        JWT: jwtToken
       };
 
-      console.log('🔍 Sending to Adumo:', JSON.stringify(adumoPayload, null, 2));
+      console.log('🔍 Prepared Adumo form data:', JSON.stringify(formData, null, 2));
 
-      // Make server-to-server call to Adumo
-      const adumoResponse = await fetch(ADUMO_CONFIG.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwtToken}`
-        },
-        body: JSON.stringify(adumoPayload)
-      });
-
-      const adumoResult = await adumoResponse.json();
-      console.log('🎯 Adumo Response:', JSON.stringify(adumoResult, null, 2));
-
-      if (!adumoResponse.ok) {
-        throw new Error(`Adumo API error: ${adumoResult.message || 'Unknown error'}`);
-      }
-
-      // Return the redirect URL from Adumo
+      // Return form data for client-side POST
       res.json({ 
-        redirectUrl: adumoResult.RedirectURL || adumoResult.redirectUrl,
+        formData: formData,
+        url: ADUMO_CONFIG.apiUrl,
         paymentId: payment.id,
         investorId: investor.id,
         reference: reference
