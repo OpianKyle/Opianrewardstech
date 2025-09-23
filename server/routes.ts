@@ -123,6 +123,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to check payments for an investor
+  app.get("/api/debug/payments/:investorId", async (req, res) => {
+    try {
+      const { investorId } = req.params;
+      const payments = await storage.getPaymentsByInvestor(investorId);
+      
+      console.log(`🔍 Debug: Found ${payments.length} payments for investor ${investorId}`);
+      payments.forEach(payment => {
+        console.log(`  Payment ${payment.id}: status=${payment.status}, amount=${payment.amount}, method=${payment.method}`);
+      });
+      
+      res.json({
+        investorId,
+        paymentCount: payments.length,
+        payments: payments
+      });
+    } catch (error: any) {
+      console.error("Error fetching payments:", error);
+      res.status(500).json({ message: "Error fetching payments: " + error.message });
+    }
+  });
+
   // Create Adumo payment (form data for Virtual integration)
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
@@ -228,20 +250,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Handle payment return from Adumo (both GET and POST)
   const handlePaymentReturn = async (req: any, res: any) => {
     try {
+      console.log("🔄 Payment return received at", new Date().toISOString());
+      console.log(`📝 Return method: ${req.method}`);
+      console.log("📝 Return params:", req.method === 'GET' ? req.query : req.body);
+      
       const { paymentId, reference, ResultCode, ResultDescription, TransactionReference } = 
         req.method === 'GET' ? req.query : req.body;
       
       const paymentRef = reference || TransactionReference;
       const resultCode = ResultCode;
       
+      console.log("🔍 Payment return processing:");
+      console.log(`  PaymentId: ${paymentId}`);
+      console.log(`  Reference: ${paymentRef}`);
+      console.log(`  ResultCode: ${resultCode} (${resultCode === "00" ? "SUCCESS" : "FAILED"})`);
+      
       if (paymentId && paymentRef) {
+        console.log("✅ Updating payment status via return...");
         const payment = await storage.updatePaymentStatus(
           paymentId as string, 
           resultCode === "00" ? "completed" : "failed"
         );
+        console.log(`💰 Payment ${payment.id} updated to: ${payment.status}`);
         
         // Update investor status
         if (resultCode === "00") {
+          console.log("👤 Updating investor status via return...");
           await storage.updateInvestorPaymentStatus(
             payment.investorId, 
             "completed", 
@@ -249,6 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
           
           // Initialize quest progress
+          console.log("🎮 Initializing quest progress via return...");
           const questProgress = {
             level: 1,
             phase: "development",
@@ -260,14 +295,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           await storage.updateInvestorProgress(payment.investorId, questProgress);
+          console.log("🎮 Quest progress initialized successfully via return");
         }
+      } else {
+        console.log("❌ Missing required fields in return: paymentId or reference");
       }
 
       // Redirect to frontend with payment result
       const status = resultCode === "00" ? "success" : "failed";
+      console.log(`🔄 Redirecting to frontend with status: ${status}`);
       res.redirect(`/?payment=${status}&reference=${paymentRef}`);
     } catch (error: any) {
-      console.error("Payment return error:", error);
+      console.error("❌ Payment return error:", error);
       res.redirect("/?payment=error");
     }
   };
@@ -278,6 +317,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Process payment completion (webhook endpoint for Adumo)
   app.post("/api/payment-webhook", async (req, res) => {
     try {
+      console.log("🔔 Adumo webhook received at", new Date().toISOString());
+      console.log("📝 Webhook body:", JSON.stringify(req.body, null, 2));
+      
       // Adumo webhook data structure
       const { 
         ResultCode, 
@@ -289,26 +331,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         CustomField3  // investorId
       } = req.body;
       
-      console.log("Adumo webhook received:", req.body);
+      console.log("🔍 Webhook processing:");
+      console.log(`  ResultCode: ${ResultCode} (${ResultCode === "00" ? "SUCCESS" : "FAILED"})`);
+      console.log(`  PaymentId: ${CustomField2}`);
+      console.log(`  InvestorId: ${CustomField3}`);
+      console.log(`  TransactionRef: ${TransactionReference}`);
       
       // TODO: In production, implement proper webhook signature verification
       // For now, proceed with basic validation
       
       if (CustomField2 && CustomField3) {
+        console.log("✅ Updating payment status...");
         const payment = await storage.updatePaymentStatus(
           CustomField2, // paymentId from CustomField2
           ResultCode === "00" ? "completed" : "failed"
         );
+        console.log(`💰 Payment ${payment.id} updated to: ${payment.status}`);
         
         // Update investor payment status
+        console.log("👤 Updating investor status...");
         const investor = await storage.updateInvestorPaymentStatus(
           CustomField3, // investorId from CustomField3
           ResultCode === "00" ? "completed" : "failed", 
           TransactionReference
         );
+        console.log(`🎯 Investor ${investor.id} payment status: ${investor.paymentStatus}`);
 
         // If payment successful, initialize quest progress
         if (ResultCode === "00") {
+          console.log("🎮 Initializing quest progress...");
           const questProgress = {
             level: 1,
             phase: "development",
@@ -320,12 +371,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           await storage.updateInvestorProgress(investor.id, questProgress);
+          console.log("🎮 Quest progress initialized successfully");
         }
+      } else {
+        console.log("❌ Missing required fields: paymentId or investorId");
       }
 
+      console.log("✅ Webhook processed successfully");
       res.json({ success: true });
     } catch (error: any) {
-      console.error("Payment webhook error:", error);
+      console.error("❌ Payment webhook error:", error);
       res.status(500).json({ message: "Error processing payment webhook: " + error.message });
     }
   });

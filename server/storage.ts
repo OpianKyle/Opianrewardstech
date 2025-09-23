@@ -336,14 +336,22 @@ export class MemStorage implements IStorage {
   async updateInvestorProgress(id: string, progress: any): Promise<Investor> {
     const investor = this.investors.get(id);
     if (!investor) throw new Error("Investor not found");
-    const updatedInvestor = { ...investor, questProgress: { ...investor.questProgress, ...progress }, updatedAt: new Date() };
+    const currentProgress = investor.questProgress || {};
+    const updatedInvestor = { ...investor, questProgress: { ...currentProgress, ...progress }, updatedAt: new Date() };
     this.investors.set(id, updatedInvestor);
     return updatedInvestor;
   }
 
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
     const id = randomUUID();
-    const payment: Payment = { ...insertPayment, id, status: "pending", createdAt: new Date(), updatedAt: new Date() };
+    const payment: Payment = { 
+      ...insertPayment, 
+      id, 
+      status: "pending", 
+      paymentData: insertPayment.paymentData || {}, 
+      createdAt: new Date(), 
+      updatedAt: new Date() 
+    };
     this.payments.set(id, payment);
     return payment;
   }
