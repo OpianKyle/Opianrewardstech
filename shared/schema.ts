@@ -1,41 +1,74 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
+import { mysqlTable, text, varchar, timestamp, int, json, char } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   email: text("email").notNull().unique(),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  phone: varchar("phone", { length: 15 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const investors = pgTable("investors", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const investors = mysqlTable("investors", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   email: text("email").notNull().unique(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   tier: text("tier").notNull(), // "builder", "innovator", "visionary"
   paymentMethod: text("payment_method").notNull(), // "lump_sum", "12_months", "24_months"
-  amount: integer("amount").notNull(), // Amount in cents
+  amount: int("amount").notNull(), // Amount in cents
   paymentStatus: text("payment_status").notNull().default("pending"), // "pending", "processing", "completed", "failed"
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   adumoPaymentId: text("adumo_payment_id"),
-  questProgress: jsonb("quest_progress").default({}),
+  questProgress: json("quest_progress"),
   certificateGenerated: timestamp("certificate_generated"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const payments = pgTable("payments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  investorId: varchar("investor_id").notNull().references(() => investors.id),
-  amount: integer("amount").notNull(),
+export const payments = mysqlTable("payments", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  investorId: varchar("investor_id", { length: 36 }).notNull().references(() => investors.id),
+  amount: int("amount").notNull(),
   method: text("method").notNull(), // "stripe", "adumo", "bank_transfer"
   status: text("status").notNull().default("pending"),
-  paymentData: jsonb("payment_data").default({}),
+  paymentData: json("payment_data"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Adumo Online Integration Tables
+export const transactions = mysqlTable("transactions", {
+  transactionId: varchar("transaction_id", { length: 36 }).primaryKey(),
+  merchantReference: varchar("merchant_reference", { length: 255 }).notNull(),
+  status: varchar("status", { length: 255 }).notNull(), // AUTHORIZED, DECLINED, SETTLED
+  amount: int("amount").notNull(), // Amount in cents
+  currencyCode: char("currency_code", { length: 3 }).notNull().default("ZAR"),
+  paymentMethod: varchar("payment_method", { length: 255 }).notNull(),
+  timestamp: timestamp("timestamp").defaultNow(),
+  puid: varchar("puid", { length: 36 }), // Profile UID for tokenized cards
+  token: text("token"), // JWT token containing transaction details
+  errorCode: int("error_code"),
+  errorMessage: varchar("error_message", { length: 255 }),
+  errorDetail: text("error_detail"),
+  paymentId: varchar("payment_id", { length: 36 }).references(() => payments.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const paymentMethods = mysqlTable("payment_methods", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
+  cardType: varchar("card_type", { length: 50 }),
+  lastFourDigits: char("last_four_digits", { length: 4 }),
+  expiryMonth: int("expiry_month"),
+  expiryYear: int("expiry_year"),
+  puid: varchar("puid", { length: 36 }), // Profile UID for tokenized cards
+  isActive: int("is_active").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -44,6 +77,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   firstName: true,
   lastName: true,
+  phone: true,
 });
 
 export const insertInvestorSchema = createInsertSchema(investors).pick({
@@ -62,9 +96,38 @@ export const insertPaymentSchema = createInsertSchema(payments).pick({
   paymentData: true,
 });
 
+// Additional schemas for Adumo integration
+export const insertTransactionSchema = createInsertSchema(transactions).pick({
+  transactionId: true,
+  merchantReference: true,
+  status: true,
+  amount: true,
+  currencyCode: true,
+  paymentMethod: true,
+  puid: true,
+  token: true,
+  errorCode: true,
+  errorMessage: true,
+  errorDetail: true,
+  paymentId: true,
+});
+
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).pick({
+  userId: true,
+  cardType: true,
+  lastFourDigits: true,
+  expiryMonth: true,
+  expiryYear: true,
+  puid: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertInvestor = z.infer<typeof insertInvestorSchema>;
 export type Investor = typeof investors.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Payment = typeof payments.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
+export type PaymentMethod = typeof paymentMethods.$inferSelect;

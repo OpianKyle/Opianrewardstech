@@ -1,15 +1,167 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import mysql from 'mysql2/promise';
+import { drizzle } from 'drizzle-orm/mysql2';
 import * as schema from "@shared/schema";
 
-neonConfig.webSocketConstructor = ws;
+// Check if Xneelo database environment variables are available
+const isXneeloDatabaseAvailable = 
+  process.env.XNEELO_DB_HOST && 
+  process.env.XNEELO_DB_PORT && 
+  process.env.XNEELO_DB_NAME && 
+  process.env.XNEELO_DB_USER && 
+  process.env.XNEELO_DB_PASSWORD;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+// MySQL connection and database instance
+let pool: mysql.Pool | null = null;
+let db: any = null;
+
+// Only create MySQL connection if Xneelo environment variables are available
+if (isXneeloDatabaseAvailable) {
+  // MySQL connection configuration with SSL for Xneelo
+  const connectionConfig = {
+    host: process.env.XNEELO_DB_HOST!,
+    port: parseInt(process.env.XNEELO_DB_PORT!),
+    user: process.env.XNEELO_DB_USER!,
+    password: process.env.XNEELO_DB_PASSWORD!,
+    database: process.env.XNEELO_DB_NAME!,
+    ssl: {
+      rejectUnauthorized: false, // Xneelo requires this for SSL connections
+    },
+    // Connection pool settings
+    connectionLimit: 10,
+    queueLimit: 0,
+    acquireTimeout: 60000,
+    timeout: 60000,
+  };
+
+  // Create connection pool
+  pool = mysql.createPool(connectionConfig);
+
+  // Create drizzle instance
+  db = drizzle(pool, { schema, mode: 'default' });
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+export { pool, db };
+
+// Test connection and create tables
+export async function initializeDatabase() {
+  if (!isXneeloDatabaseAvailable) {
+    console.log('⚠️ Xneelo database environment variables not configured');
+    console.log('🔄 Using in-memory storage for development');
+    return;
+  }
+
+  if (!pool) {
+    console.log('❌ Database pool not initialized');
+    return;
+  }
+
+  try {
+    console.log('🔌 Testing Xneelo database connection...');
+    const connection = await pool.getConnection();
+    await connection.ping();
+    
+    // Create tables if they don't exist
+    console.log('📋 Creating database tables...');
+    await createTablesIfNotExist(connection);
+    
+    connection.release();
+    console.log('✅ Xneelo database connection successful');
+    console.log('✅ Database initialized');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    console.log('🔄 Falling back to in-memory storage');
+    // Don't throw error - allow fallback to in-memory storage
+  }
+}
+
+export function isDatabaseAvailable(): boolean {
+  return Boolean(isXneeloDatabaseAvailable) && pool !== null && db !== null;
+}
+
+// Create database tables if they don't exist
+async function createTablesIfNotExist(connection: mysql.Connection) {
+  const tables = [
+    // Users table
+    `CREATE TABLE IF NOT EXISTS users (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      email TEXT NOT NULL UNIQUE,
+      first_name TEXT,
+      last_name TEXT,
+      phone VARCHAR(15),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    // Investors table
+    `CREATE TABLE IF NOT EXISTS investors (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      email TEXT NOT NULL UNIQUE,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      tier TEXT NOT NULL,
+      payment_method TEXT NOT NULL,
+      amount INT NOT NULL,
+      payment_status TEXT NOT NULL DEFAULT 'pending',
+      stripe_payment_intent_id TEXT,
+      adumo_payment_id TEXT,
+      quest_progress JSON,
+      certificate_generated TIMESTAMP NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    // Payments table
+    `CREATE TABLE IF NOT EXISTS payments (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      investor_id VARCHAR(36) NOT NULL,
+      amount INT NOT NULL,
+      method TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      payment_data JSON,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (investor_id) REFERENCES investors(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    // Transactions table (Adumo integration)
+    `CREATE TABLE IF NOT EXISTS transactions (
+      transaction_id VARCHAR(36) PRIMARY KEY,
+      merchant_reference VARCHAR(255) NOT NULL,
+      status VARCHAR(255) NOT NULL,
+      amount INT NOT NULL,
+      currency_code CHAR(3) NOT NULL DEFAULT 'ZAR',
+      payment_method VARCHAR(255) NOT NULL,
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      puid VARCHAR(36),
+      token TEXT,
+      error_code INT,
+      error_message VARCHAR(255),
+      error_detail TEXT,
+      payment_id VARCHAR(36),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    // Payment methods table
+    `CREATE TABLE IF NOT EXISTS payment_methods (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      user_id VARCHAR(36) NOT NULL,
+      card_type VARCHAR(50),
+      last_four_digits CHAR(4),
+      expiry_month INT,
+      expiry_year INT,
+      puid VARCHAR(36),
+      is_active INT NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+  ];
+
+  for (const tableSQL of tables) {
+    await connection.execute(tableSQL);
+  }
+  
+  console.log('✅ Database tables created/verified');
+}

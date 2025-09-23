@@ -1,0 +1,58 @@
+I want you to persist data to my Xneelo-hosted MySQL database.
+Use MySQL-compatible schema definitions.
+Ensure that automatic table creation happens during application startup if tables don’t already exist.
+
+Requirements:
+
+Create the connection configuration using SSL and proper pool settings.
+
+Include error handling for database operations.
+
+Use the following environment variables for configuration:
+
+XNEELO_DB_HOST
+XNEELO_DB_PORT
+XNEELO_DB_NAME
+XNEELO_DB_USER
+XNEELO_DB_PASSWORD
+
+
+Include the SSL certificate bundle required for secure connections to Xneelo’s MySQL servers.
+
+🗂️ Essential Database Fields for Adumo Online Integration
+1. Transaction Table
+
+This table stores details about each transaction initiated through the Virtual Payment Solution.
+
+Field Name	Type	Description
+transaction_id	UUID	Unique identifier for the transaction (e.g., ce02242d-1159-4c9f-9af1-f378ba4e4c1c).
+merchant_reference	VARCHAR(255)	Your order or invoice number (e.g., UMHUMH71GBR).
+status	VARCHAR(255)	Transaction status (e.g., AUTHORIZED, DECLINED, SETTLED).
+amount	DECIMAL(10,2)	Total transaction amount.
+currency_code	CHAR(3)	Currency code (e.g., USD).
+payment_method	VARCHAR(255)	Payment method used (e.g., CARD, ePay Virtual).
+timestamp	TIMESTAMP	Time when the transaction was processed.
+puid	UUID	Profile UID if the customer's card is saved (tokenized).
+token	VARCHAR(255)	JWT token containing transaction details.
+error_code	INT	Error code if any (e.g., 1004).
+error_message	VARCHAR(255)	Brief error message.
+error_detail	TEXT	Detailed error message.
+2. User Table (Optional)
+
+If you're associating transactions with user accounts, you might need to link users to their transactions.
+
+Field Name	Type	Description
+user_id	UUID	Unique identifier for the user.
+email	VARCHAR(255)	User's email address.
+phone_number	VARCHAR(15)	User's phone number.
+3. Payment Method Table (Optional)
+
+To manage saved payment methods for users.
+
+Field Name	Type	Description
+payment_method_id	UUID	Unique identifier for the payment method.
+user_id	UUID	Foreign key linking to the user.
+card_type	VARCHAR(50)	Type of card (e.g., Visa, MasterCard).
+last_four_digits	CHAR(4)	Last four digits of the card number.
+expiry_date	DATE	Expiry date of the card.
+puid	UUID	Profile UID if the card is tokenized.
