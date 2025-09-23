@@ -175,19 +175,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret!);
 
       // Return form data for client-side form POST to Adumo Virtual
+      // Using exact field names as per Adumo documentation
       const formData = {
-        MerchantUID: ADUMO_CONFIG.merchantId,
-        ApplicationUID: ADUMO_CONFIG.applicationId,
-        TransactionAmount: currencyAmount,
-        TransactionCurrency: "ZAR",
+        MerchantID: ADUMO_CONFIG.merchantId,
+        ApplicationID: ADUMO_CONFIG.applicationId,
         TransactionReference: reference,
-        CustomerEmail: validatedData.email,
+        MerchantReference: reference, // Using same reference for both
+        Amount: currencyAmount,
+        CurrencyCode: "ZAR",
+        Description: `Opian Rewards - ${validatedData.tier} Tier`,
         CustomerFirstName: validatedData.firstName,
         CustomerLastName: validatedData.lastName,
+        CustomerEmail: validatedData.email,
         ReturnURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`,
         CancelURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}&status=cancelled`,
         NotifyURL: ADUMO_CONFIG.notifyUrl,
-        TransactionDescription: `Opian Rewards - ${validatedData.tier} Tier`,
         CustomField1: reference,
         CustomField2: payment.id,
         CustomField3: investor.id,
