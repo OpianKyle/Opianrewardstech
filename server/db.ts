@@ -21,21 +21,8 @@ let db: any = null;
 if (isDatabaseAvailable) {
   let connectionConfig: any;
 
-  if (isDatabaseUrlAvailable) {
-    // Use DATABASE_URL connection string
-    connectionConfig = {
-      uri: process.env.DATABASE_URL!,
-      ssl: {
-        rejectUnauthorized: false, // Common for cloud databases
-      },
-      // Connection pool settings
-      connectionLimit: 10,
-      queueLimit: 0,
-      connectTimeout: 60000,
-      waitForConnections: true,
-    };
-  } else {
-    // Use Xneelo individual environment variables
+  if (isXneeloDatabaseAvailable) {
+    // Use Xneelo individual environment variables (preferred)
     connectionConfig = {
       host: process.env.XNEELO_DB_HOST!,
       port: parseInt(process.env.XNEELO_DB_PORT!),
@@ -44,6 +31,19 @@ if (isDatabaseAvailable) {
       database: process.env.XNEELO_DB_NAME!,
       ssl: {
         rejectUnauthorized: false, // Xneelo requires this for SSL connections
+      },
+      // Connection pool settings
+      connectionLimit: 10,
+      queueLimit: 0,
+      connectTimeout: 60000,
+      waitForConnections: true,
+    };
+  } else if (isDatabaseUrlAvailable) {
+    // Use DATABASE_URL connection string as fallback
+    connectionConfig = {
+      uri: process.env.DATABASE_URL!,
+      ssl: {
+        rejectUnauthorized: false, // Common for cloud databases
       },
       // Connection pool settings
       connectionLimit: 10,
@@ -76,7 +76,7 @@ export async function initializeDatabase() {
   }
 
   try {
-    const connectionType = isDatabaseUrlAvailable ? 'DATABASE_URL' : 'Xneelo variables';
+    const connectionType = isXneeloDatabaseAvailable ? 'Xneelo variables' : 'DATABASE_URL';
     console.log(`🔌 Testing database connection (${connectionType})...`);
     const connection = await pool.getConnection();
     await connection.ping();
