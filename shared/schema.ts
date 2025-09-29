@@ -18,12 +18,15 @@ export const investors = mysqlTable("investors", {
   email: varchar("email", { length: 191 }).notNull().unique(),
   firstName: varchar("first_name", { length: 255 }).notNull(),
   lastName: varchar("last_name", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 15 }).notNull(), // Cell phone number
   tier: varchar("tier", { length: 50 }).notNull(), // "builder", "innovator", "visionary"
   paymentMethod: varchar("payment_method", { length: 50 }).notNull(), // "lump_sum", "12_months", "24_months"
   amount: int("amount").notNull(), // Amount in cents
   paymentStatus: varchar("payment_status", { length: 50 }).notNull().default("pending"), // "pending", "processing", "completed", "failed"
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   adumoPaymentId: varchar("adumo_payment_id", { length: 255 }),
+  adumoCustomerId: varchar("adumo_customer_id", { length: 255 }), // Adumo customer ID
+  subscriptionId: varchar("subscription_id", { length: 255 }), // Subscription ID
   questProgress: json("quest_progress"),
   certificateGenerated: timestamp("certificate_generated"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -84,6 +87,7 @@ export const insertInvestorSchema = createInsertSchema(investors).pick({
   email: true,
   firstName: true,
   lastName: true,
+  phone: true,
   tier: true,
   paymentMethod: true,
   amount: true,

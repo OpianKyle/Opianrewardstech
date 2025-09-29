@@ -39,7 +39,8 @@ export function PaymentSection({
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: ""
+    email: "",
+    phone: ""
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
@@ -149,10 +150,10 @@ export function PaymentSection({
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedTier || !selectedPaymentMethod || !formData.firstName || !formData.lastName || !formData.email) {
+    if (!selectedTier || !selectedPaymentMethod || !formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields including phone number.",
         variant: "destructive",
       });
       return;
@@ -332,6 +333,19 @@ export function PaymentSection({
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 data-testid="input-email"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">Cell Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+27 82 123 4567"
+                required
+                data-testid="input-phone"
               />
             </div>
 

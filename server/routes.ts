@@ -36,6 +36,7 @@ const createPaymentIntentSchema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  phone: z.string().min(1),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -161,6 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: validatedData.email,
           firstName: validatedData.firstName,
           lastName: validatedData.lastName,
+          phone: validatedData.phone,
           tier: validatedData.tier,
           paymentMethod: validatedData.paymentMethod,
           amount: validatedData.amount,
