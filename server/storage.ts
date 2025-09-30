@@ -323,6 +323,8 @@ export class MemStorage implements IStorage {
       paymentStatus: "pending",
       stripePaymentIntentId: null,
       adumoPaymentId: null,
+      adumoCustomerId: null,
+      subscriptionId: null,
       questProgress: {},
       certificateGenerated: null,
       createdAt: new Date(),
