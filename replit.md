@@ -23,11 +23,13 @@ Implemented comprehensive authentication and security improvements:
 - **Periodic Cleanup**: Hourly automated cleanup of expired OTPs
 
 ### 2. Rate Limiting & Anti-Abuse Protection
-- **Email-Based Rate Limiting**: Limits tied to email addresses, not just IP addresses
+- **IPv6-Safe Rate Limiting**: Uses ipKeyGenerator for proper IPv4/IPv6 handling
+- **Email-Based Rate Limiting**: Limits tied to email addresses with IP fallback
 - **OTP Request Limits**: Maximum 5 OTP requests per email per 15 minutes
 - **Verification Limits**: Maximum 10 verification attempts per email per 15 minutes
 - **Login Protection**: Maximum 10 login attempts per 15 minutes
 - **Account Enumeration Prevention**: Generic responses prevent email discovery
+- **Production Security**: Debug endpoints disabled in production (410 status)
 
 ### 3. JWT Security Hardening
 - **Environment-Based Secrets**: JWT_SECRET required from environment variables
