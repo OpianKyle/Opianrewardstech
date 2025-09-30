@@ -2,6 +2,43 @@
 
 Opian Rewards is a gamified investor portal inspired by the Ascendancy Project, built as a full-stack web application. The platform presents investment opportunities as an RPG-style experience where investors choose "player tiers" (Builder, Innovator, Visionary) with different investment amounts and payment structures. The application features a futuristic AI-driven theme with quest-based progression tracking, animated shader backgrounds, and integrated payment processing through Adumo for South African users.
 
+# Recent Changes (September 30, 2025)
+
+## Replit Environment Setup
+- Configured MySQL database connection using Xneelo hosting credentials
+- Fixed drizzle.config.ts to use MySQL dialect (was incorrectly set to PostgreSQL)
+- Verified Vite configuration has allowedHosts enabled for Replit proxy support
+- Configured workflow for port 5000 with webview output
+- Configured autoscale deployment for production
+
+## Security Enhancements for Adumo Payment Integration
+Implemented critical security improvements to prevent payment fraud and ensure PCI compliance:
+
+### 1. Replay Attack Protection
+- Added duplicate webhook detection to prevent the same payment from being processed multiple times
+- Checks if payment status is already "completed" before processing webhook
+- Prevents attackers from replaying successful webhooks to gain unauthorized access
+
+### 2. Amount Validation
+- Validates that the amount received from Adumo matches the expected payment amount
+- Converts amounts correctly (cents vs currency) to prevent rounding errors
+- Rejects webhooks with amount mismatches to prevent payment manipulation
+
+### 3. Webhook Signature Verification
+- Implemented HMAC SHA-256 signature verification for webhooks
+- Uses timing-safe comparison to prevent timing attacks
+- Supports configurable ADUMO_WEBHOOK_SECRET environment variable
+
+### 4. Transaction Tracking
+- Creates transaction records at payment initiation with PENDING status
+- Updates transaction status only after webhook confirmation
+- Links transactions properly to payments and investors
+
+### 5. Idempotency Improvements
+- Quest progress only initialized once (checks if already exists)
+- Payment status transitions are one-way (pending → completed)
+- Legacy format support maintains backwards compatibility
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
