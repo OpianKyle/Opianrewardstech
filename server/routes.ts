@@ -373,10 +373,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return decoded;
   };
 
+  // Verify webhook signature (HMAC SHA-256)
+  const verifyWebhookSignature = (req: any): boolean => {
+    try {
+      const crypto = require('crypto');
+      const webhookSecret = process.env.ADUMO_WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.warn('⚠️ ADUMO_WEBHOOK_SECRET not configured, skipping signature verification');
+        return true; // Allow in development if not configured
+      }
+
+      // Get signature from headers (try common header names)
+      const signature = req.headers['x-signature'] || 
+                       req.headers['x-adumo-signature'] || 
+                       req.headers['signature'];
+      
+      if (!signature) {
+        console.error('❌ No signature header found in webhook request');
+        return false;
+      }
+
+      // Get raw payload
+      const payload = JSON.stringify(req.body);
+      
+      // Generate expected signature using HMAC SHA-256
+      const hmac = crypto.createHmac('sha256', webhookSecret);
+      const expectedSignature = hmac.update(payload, 'utf8').digest('hex');
+      
+      // Remove 'sha256=' prefix if present
+      const receivedSignature = signature.replace(/^sha256=/i, '');
+      
+      // Use timing-safe comparison to prevent timing attacks
+      const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+      const receivedBuffer = Buffer.from(receivedSignature, 'hex');
+      
+      if (expectedBuffer.length !== receivedBuffer.length) {
+        console.error('❌ Signature length mismatch');
+        return false;
+      }
+      
+      return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+    } catch (error) {
+      console.error('❌ Error verifying webhook signature:', error);
+      return false;
+    }
+  };
+
   // Process payment completion (webhook endpoint for Adumo)
   app.post("/api/payment-webhook", async (req, res) => {
     try {
       console.log("🔔 Adumo webhook received at", new Date().toISOString());
+      
+      // SECURITY: Verify webhook signature if configured
+      if (process.env.ADUMO_WEBHOOK_SECRET && !verifyWebhookSignature(req)) {
+        console.error("❌ Webhook signature verification failed");
+        return res.status(401).json({ message: "Invalid signature" });
+      }
       
       // Extract JWT token
       const jwtToken = extractJwtToken(req);
@@ -411,50 +464,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Find payment by merchant reference
           const payment = await storage.getPaymentByMerchantReference(mref);
           
-          if (payment) {
-            // Map Adumo result codes: 1 = success, -1 = failed, 0 = pending
-            const isSuccess = result === 1;
-            const paymentStatus = isSuccess ? "completed" : result === -1 ? "failed" : "pending";
-            
-            console.log("✅ Found payment, updating status...");
-            console.log(`💰 Payment status: ${payment.status} → ${paymentStatus}`);
-            
-            // Update payment status
-            const updatedPayment = await storage.updatePaymentStatus(
-              payment.id,
-              paymentStatus
-            );
-            
-            // Update investor payment status
-            console.log("👤 Updating investor status...");
-            const investor = await storage.updateInvestorPaymentStatus(
-              payment.investorId,
-              paymentStatus,
-              transactionIndex
-            );
-            console.log(`🎯 Investor payment status: ${investor.paymentStatus}`);
-
-            // If payment successful, initialize quest progress
-            if (isSuccess) {
-              console.log("🎮 Initializing quest progress...");
-              const questProgress = {
-                level: 1,
-                phase: "development", 
-                startDate: new Date().toISOString(),
-                milestones: {
-                  capitalReclaimed: false,
-                  dividendPhase: false
-                }
-              };
-              
-              await storage.updateInvestorProgress(investor.id, questProgress);
-              console.log("🎮 Quest progress initialized");
-            }
-          } else {
+          if (!payment) {
             console.log("❌ Payment not found for merchant reference");
+            return res.status(404).json({ message: "Payment not found" });
+          }
+
+          // SECURITY: Check for replay attacks - prevent duplicate processing
+          if (payment.status === "completed") {
+            console.warn(`⚠️ REPLAY ATTACK DETECTED: Payment ${payment.id} already completed, ignoring webhook`);
+            return res.json({ success: true, message: "Payment already processed" });
+          }
+
+          // Map Adumo result codes: 1 = success, -1 = failed, 0 = pending
+          const isSuccess = result === 1;
+          const paymentStatus = isSuccess ? "completed" : result === -1 ? "failed" : "pending";
+          
+          // SECURITY: Validate amount matches to prevent amount manipulation
+          const expectedAmountCents = payment.amount;
+          const receivedAmountCents = Math.round(parseFloat(amount) * 100); // Convert to cents
+          
+          if (expectedAmountCents !== receivedAmountCents) {
+            console.error(`❌ AMOUNT MISMATCH: Expected ${expectedAmountCents} cents, received ${receivedAmountCents} cents`);
+            return res.status(400).json({ message: "Amount validation failed" });
+          }
+          
+          console.log("✅ Security checks passed, updating payment status...");
+          console.log(`💰 Payment status: ${payment.status} → ${paymentStatus}`);
+          
+          // Create or update transaction record
+          let transaction = await storage.getTransactionByMerchantReference(mref);
+          if (!transaction) {
+            // Create new transaction record
+            transaction = await storage.createTransaction({
+              transactionId: transactionIndex || randomUUID(),
+              merchantReference: mref,
+              status: result === 1 ? "AUTHORIZED" : result === -1 ? "DECLINED" : "PENDING",
+              amount: expectedAmountCents,
+              currencyCode: "ZAR",
+              paymentMethod: decoded.paymentMethod || "CARD",
+              puid: puid || null,
+              token: jwtToken,
+              paymentId: payment.id,
+            });
+          } else if (transaction.status !== "AUTHORIZED" && isSuccess) {
+            // Update existing transaction
+            await storage.updateTransactionStatus(
+              transaction.transactionId,
+              "AUTHORIZED"
+            );
+          }
+          
+          // Update payment status
+          const updatedPayment = await storage.updatePaymentStatus(
+            payment.id,
+            paymentStatus
+          );
+          
+          // Update investor payment status
+          console.log("👤 Updating investor status...");
+          const investor = await storage.updateInvestorPaymentStatus(
+            payment.investorId,
+            paymentStatus,
+            transactionIndex
+          );
+          console.log(`🎯 Investor payment status: ${investor.paymentStatus}`);
+
+          // If payment successful, initialize quest progress (only once)
+          if (isSuccess && !investor.questProgress) {
+            console.log("🎮 Initializing quest progress...");
+            const questProgress = {
+              level: 1,
+              phase: "development", 
+              startDate: new Date().toISOString(),
+              milestones: {
+                capitalReclaimed: false,
+                dividendPhase: false
+              }
+            };
+            
+            await storage.updateInvestorProgress(investor.id, questProgress);
+            console.log("🎮 Quest progress initialized");
           }
         } else {
           console.log("❌ Invalid merchant reference format");
+          return res.status(400).json({ message: "Invalid merchant reference" });
         }
         
       } else {
@@ -469,16 +562,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (CustomField2 && CustomField3) {
           console.log("✅ Processing legacy webhook format...");
+          
+          // SECURITY: Check for replay attacks in legacy format too
+          const payment = await storage.getPaymentByMerchantReference(CustomField2);
+          if (payment && payment.status === "completed") {
+            console.warn(`⚠️ REPLAY ATTACK DETECTED (legacy): Payment already completed`);
+            return res.json({ success: true, message: "Payment already processed" });
+          }
+          
           const paymentStatus = ResultCode === "00" ? "completed" : "failed";
           
-          const payment = await storage.updatePaymentStatus(CustomField2, paymentStatus);
+          const updatedPayment = await storage.updatePaymentStatus(CustomField2, paymentStatus);
           const investor = await storage.updateInvestorPaymentStatus(
             CustomField3,
             paymentStatus,
             req.body.TransactionReference
           );
 
-          if (ResultCode === "00") {
+          if (ResultCode === "00" && !investor.questProgress) {
             const questProgress = {
               level: 1,
               phase: "development",
@@ -489,6 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           console.log("❌ Missing required fields");
+          return res.status(400).json({ message: "Missing required fields" });
         }
       }
 
