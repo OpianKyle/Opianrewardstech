@@ -87,7 +87,7 @@ export default function Landing() {
                 data-testid="logo-image"
               />
             </div>
-            <div className="hidden md:flex space-x-8">
+            <div className="hidden md:flex space-x-8 items-center">
               <a href="#hero" className="hover:text-primary transition-colors" data-testid="nav-mission">
                 Mission
               </a>
@@ -99,6 +99,9 @@ export default function Landing() {
               </a>
               <a href="#briefing" className="hover:text-primary transition-colors" data-testid="nav-protocol">
                 Protocol
+              </a>
+              <a href="/login" className="px-4 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold transition-colors" data-testid="nav-login">
+                Investor Login
               </a>
             </div>
             <button 
@@ -113,7 +116,7 @@ export default function Landing() {
         
         {/* Mobile Menu */}
         <div className={`md:hidden transition-all duration-300 ease-in-out ${
-          mobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+          mobileMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
         } overflow-hidden bg-background/95 backdrop-blur-sm border-t border-primary/20`}>
           <div className="px-4 py-6 space-y-4">
             <a 
@@ -147,6 +150,14 @@ export default function Landing() {
               data-testid="mobile-nav-protocol"
             >
               Protocol
+            </a>
+            <a 
+              href="/login" 
+              className="block px-4 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold transition-colors text-center"
+              onClick={closeMobileMenu}
+              data-testid="mobile-nav-login"
+            >
+              Investor Login
             </a>
           </div>
         </div>

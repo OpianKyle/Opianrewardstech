@@ -39,7 +39,125 @@ const createPaymentIntentSchema = z.object({
   phone: z.string().min(1),
 });
 
+const loginSchema = z.object({
+  email: z.string().email(),
+  phone: z.string().min(4), // Last 4 digits of phone
+});
+
+// JWT configuration for investor authentication
+const JWT_SECRET = process.env.JWT_SECRET || "opian-rewards-secret-key-change-in-production";
+const JWT_EXPIRES_IN = "7d"; // Token valid for 7 days
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Investor authentication endpoints
+  
+  // Login endpoint
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, phone } = loginSchema.parse(req.body);
+      
+      // Find investor by email
+      const investor = await storage.getInvestorByEmail(email);
+      
+      if (!investor) {
+        return res.status(401).json({ message: "Invalid email or phone number" });
+      }
+      
+      // Verify using last 4 digits of phone
+      const last4Digits = investor.phone.slice(-4);
+      if (phone !== last4Digits) {
+        return res.status(401).json({ message: "Invalid email or phone number" });
+      }
+      
+      // Generate JWT token
+      const token = jwt.sign(
+        { 
+          investorId: investor.id, 
+          email: investor.email,
+          tier: investor.tier
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+      
+      res.json({
+        token,
+        investor: {
+          id: investor.id,
+          email: investor.email,
+          firstName: investor.firstName,
+          lastName: investor.lastName,
+          tier: investor.tier,
+          paymentStatus: investor.paymentStatus
+        }
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Login error: " + error.message });
+      }
+    }
+  });
+  
+  // Verify token and get current investor
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+      
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      const investor = await storage.getInvestor(decoded.investorId);
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+      
+      res.json({
+        id: investor.id,
+        email: investor.email,
+        firstName: investor.firstName,
+        lastName: investor.lastName,
+        phone: investor.phone,
+        tier: investor.tier,
+        paymentStatus: investor.paymentStatus,
+        paymentMethod: investor.paymentMethod,
+        amount: investor.amount,
+        questProgress: investor.questProgress,
+        createdAt: investor.createdAt
+      });
+    } catch (error: any) {
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+      res.status(500).json({ message: "Authentication error: " + error.message });
+    }
+  });
+  
+  // Get investor transactions
+  app.get("/api/investor/transactions", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+      
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      const payments = await storage.getPaymentsByInvestor(decoded.investorId);
+      res.json(payments);
+    } catch (error: any) {
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+      res.status(500).json({ message: "Error fetching transactions: " + error.message });
+    }
+  });
   
   // Get tier pricing information
   app.get("/api/tiers", async (req, res) => {

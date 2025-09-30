@@ -39,6 +39,28 @@ Implemented critical security improvements to prevent payment fraud and ensure P
 - Payment status transitions are one-way (pending → completed)
 - Legacy format support maintains backwards compatibility
 
+## Investor Portal System
+Implemented comprehensive investor login portal for managing investments:
+
+### Authentication System
+- Email + last 4 digits of phone number authentication
+- JWT token-based session management (7-day validity)
+- Secure token storage in localStorage
+- Protected routes with automatic redirect to login
+
+### Dashboard Features
+- **Overview Tab**: Total investment amount, tier information, membership details
+- **Transactions Tab**: Complete payment history with status tracking
+- **Progress Tab**: Quest progression tracking with level, phase, and milestones
+- **Invoices Tab**: Outstanding and paid invoices with payment functionality
+
+### Technical Implementation
+- React context for global authentication state
+- Protected route pattern for authenticated pages
+- Authorization headers for API requests
+- Automatic session restoration on page reload
+- Responsive design matching the futuristic brand theme
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
