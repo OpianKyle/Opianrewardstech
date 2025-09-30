@@ -11,6 +11,48 @@ Opian Rewards is a gamified investor portal inspired by the Ascendancy Project, 
 - Configured workflow for port 5000 with webview output
 - Configured autoscale deployment for production
 
+## Enhanced Security Features (Latest Update)
+Implemented comprehensive authentication and security improvements:
+
+### 1. OTP-Based Authentication System
+- **Email OTP Login**: Replaced password-based login with secure one-time passwords
+- **Cryptographically Secure OTP**: Uses crypto.randomInt() for unpredictable 6-digit codes
+- **Email Delivery**: Integrated Nodemailer with SMTP for OTP delivery
+- **10-minute Expiration**: OTPs automatically expire after 10 minutes
+- **Single-Use Enforcement**: OTPs marked as used after successful verification
+- **Periodic Cleanup**: Hourly automated cleanup of expired OTPs
+
+### 2. Rate Limiting & Anti-Abuse Protection
+- **Email-Based Rate Limiting**: Limits tied to email addresses, not just IP addresses
+- **OTP Request Limits**: Maximum 5 OTP requests per email per 15 minutes
+- **Verification Limits**: Maximum 10 verification attempts per email per 15 minutes
+- **Login Protection**: Maximum 10 login attempts per 15 minutes
+- **Account Enumeration Prevention**: Generic responses prevent email discovery
+
+### 3. JWT Security Hardening
+- **Environment-Based Secrets**: JWT_SECRET required from environment variables
+- **Production Enforcement**: Application fails to start if JWT_SECRET missing in production
+- **No Default Secrets**: Removed insecure fallback secrets
+- **7-Day Token Validity**: Tokens expire after 7 days for security
+
+### 4. Enhanced API Endpoints
+- **Invoice API** (`/api/investor/invoices`): 
+  - Automated invoice generation based on payment method
+  - Support for lump sum and installment (12/24 months) schedules
+  - Payment tracking with overdue status detection
+  
+- **Progress Tracking API** (`/api/investor/progress`):
+  - Real-time payment progress calculation
+  - Quest progression with milestones
+  - Timeline visualization with phase tracking
+  - Estimated completion dates
+
+### 5. Email Integration
+- **Nodemailer Setup**: Configurable SMTP integration
+- **Branded Templates**: Professional HTML email templates
+- **Connection Verification**: Automatic SMTP testing on startup
+- **Error Handling**: Graceful degradation if email service unavailable
+
 ## Security Enhancements for Adumo Payment Integration
 Implemented critical security improvements to prevent payment fraud and ensure PCI compliance:
 

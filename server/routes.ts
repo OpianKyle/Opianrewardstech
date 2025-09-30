@@ -5,6 +5,8 @@ import { insertInvestorSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { sendOtpEmail, testEmailConnection } from "./email";
 
 // Adumo payment configuration using environment variables (required)
 const ADUMO_CONFIG = {
@@ -45,15 +47,184 @@ const loginSchema = z.object({
 });
 
 // JWT configuration for investor authentication
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET must be set in production environment");
+}
 const JWT_SECRET = process.env.JWT_SECRET || "opian-rewards-secret-key-change-in-production";
 const JWT_EXPIRES_IN = "7d"; // Token valid for 7 days
 
+// Rate limiters for security
+const otpRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window per email
+  message: "Too many OTP requests. Please try again in 15 minutes.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Rate limit by email when available, otherwise use IPv6-safe IP key
+    const email = req.body?.email?.toLowerCase().trim();
+    return email || ipKeyGenerator(req.ip);
+  },
+});
+
+const otpVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window per email
+  message: "Too many verification attempts. Please try again in 15 minutes.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Rate limit by email when available, otherwise use IPv6-safe IP key
+    const email = req.body?.email?.toLowerCase().trim();
+    return email || ipKeyGenerator(req.ip);
+  },
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 login attempts per window
+  message: "Too many login attempts. Please try again in 15 minutes.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Helper function to generate cryptographically secure 6-digit OTP
+function generateOtp(): string {
+  const crypto = require('crypto');
+  const code = crypto.randomInt(0, 1000000);
+  return code.toString().padStart(6, '0');
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Investor authentication endpoints
+  // Test email connection on startup
+  testEmailConnection().catch(err => console.error("Email test failed:", err));
+  
+  // Schedule periodic OTP cleanup (every hour)
+  setInterval(async () => {
+    try {
+      await storage.cleanupExpiredOtps();
+      console.log("🧹 Cleaned up expired OTPs");
+    } catch (error) {
+      console.error("Error cleaning up OTPs:", error);
+    }
+  }, 60 * 60 * 1000); // 1 hour
+  
+  // OTP-based authentication endpoints
+  
+  // Request OTP endpoint
+  app.post("/api/auth/request-otp", otpRequestLimiter, async (req, res) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      
+      // Check if investor exists
+      const investor = await storage.getInvestorByEmail(email);
+      
+      // SECURITY: Always return success to prevent email enumeration
+      // Only send email if investor actually exists
+      if (investor) {
+        try {
+          // Generate OTP
+          const code = generateOtp();
+          const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+          
+          // Save OTP
+          await storage.createOtp({
+            email,
+            code,
+            expiresAt,
+          });
+          
+          // Send email
+          await sendOtpEmail(email, code, investor.firstName);
+          console.log(`🔐 OTP sent to ${email}`);
+        } catch (otpError) {
+          // Log error but don't reveal to attacker
+          console.error("OTP generation/send error:", otpError);
+        }
+      } else {
+        // Log for monitoring but don't reveal to attacker
+        console.log(`⚠️ OTP requested for non-existent email: ${email.substring(0, 3)}***`);
+      }
+      
+      // SECURITY: Always return same response regardless of success or error
+      res.json({ message: "If an account exists with this email, a verification code has been sent" });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid email address" });
+      }
+      // For unexpected errors, still return generic message to prevent enumeration
+      console.error("OTP request unexpected error:", error);
+      res.json({ message: "If an account exists with this email, a verification code has been sent" });
+    }
+  });
+  
+  // Verify OTP and login endpoint
+  app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
+    try {
+      const { email, code } = z.object({
+        email: z.string().email(),
+        code: z.string().length(6),
+      }).parse(req.body);
+      
+      // Find and validate OTP
+      const otp = await storage.getValidOtp(email, code);
+      if (!otp) {
+        return res.status(401).json({ message: "Invalid or expired verification code" });
+      }
+      
+      // Mark OTP as used
+      await storage.markOtpAsUsed(otp.id);
+      
+      // Get investor
+      const investor = await storage.getInvestorByEmail(email);
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+      
+      // Generate JWT token
+      const token = jwt.sign(
+        { 
+          investorId: investor.id, 
+          email: investor.email,
+          tier: investor.tier
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+      
+      console.log(`✅ OTP verified for ${email}`);
+      
+      res.json({
+        token,
+        investor: {
+          id: investor.id,
+          email: investor.email,
+          firstName: investor.firstName,
+          lastName: investor.lastName,
+          tier: investor.tier,
+          paymentStatus: investor.paymentStatus
+        }
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid request data" });
+      } else {
+        console.error("OTP verification error:", error);
+        res.status(500).json({ message: "Verification failed" });
+      }
+    }
+  });
+  
+  // Legacy authentication endpoint (DEPRECATED - use OTP authentication instead)
+  // Disabled in production for security - weak authentication method
   
   // Login endpoint
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", loginLimiter, async (req, res) => {
+    // SECURITY: Disable legacy weak authentication in production
+    if (process.env.NODE_ENV === "production") {
+      return res.status(410).json({ message: "This authentication method is no longer supported. Please use email verification." });
+    }
     try {
       const { email, phone } = loginSchema.parse(req.body);
       
@@ -159,6 +330,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get investor invoices with payment schedule
+  app.get("/api/investor/invoices", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+      
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      const investor = await storage.getInvestor(decoded.investorId);
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+      
+      const payments = await storage.getPaymentsByInvestor(decoded.investorId);
+      
+      // Calculate invoices based on payment method
+      const invoices = [];
+      const totalAmount = investor.amount;
+      
+      if (investor.paymentMethod === 'lump_sum') {
+        // Single invoice for lump sum
+        const paid = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
+        invoices.push({
+          id: `${investor.id}-lump`,
+          dueDate: investor.createdAt,
+          amount: totalAmount,
+          paid: paid,
+          status: paid >= totalAmount ? 'paid' : 'outstanding',
+          description: `${investor.tier.charAt(0).toUpperCase() + investor.tier.slice(1)} Tier - Lump Sum Payment`
+        });
+      } else {
+        // Monthly installments
+        const months = investor.paymentMethod === '12_months' ? 12 : 24;
+        const monthlyAmount = Math.round(totalAmount / months);
+        
+        for (let i = 0; i < months; i++) {
+          const dueDate = new Date(investor.createdAt || new Date());
+          dueDate.setMonth(dueDate.getMonth() + i);
+          
+          // Check if this installment has been paid
+          const installmentPayments = payments.filter(p => 
+            p.status === 'completed' && 
+            p.paymentData && 
+            typeof p.paymentData === 'object' &&
+            'installmentNumber' in p.paymentData &&
+            p.paymentData.installmentNumber === i + 1
+          );
+          
+          const paidAmount = installmentPayments.reduce((sum, p) => sum + p.amount, 0);
+          const isPaid = paidAmount >= monthlyAmount;
+          
+          invoices.push({
+            id: `${investor.id}-${i + 1}`,
+            installmentNumber: i + 1,
+            dueDate,
+            amount: monthlyAmount,
+            paid: paidAmount,
+            status: isPaid ? 'paid' : dueDate < new Date() ? 'overdue' : 'outstanding',
+            description: `${investor.tier.charAt(0).toUpperCase() + investor.tier.slice(1)} Tier - Installment ${i + 1} of ${months}`
+          });
+        }
+      }
+      
+      res.json(invoices);
+    } catch (error: any) {
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+      res.status(500).json({ message: "Error fetching invoices: " + error.message });
+    }
+  });
+  
+  // Get detailed quest progress
+  app.get("/api/investor/progress", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+      
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      const investor = await storage.getInvestor(decoded.investorId);
+      if (!investor) {
+        return res.status(404).json({ message: "Investor not found" });
+      }
+      
+      const payments = await storage.getPaymentsByInvestor(decoded.investorId);
+      const totalPaid = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
+      const totalAmount = investor.amount;
+      
+      // Calculate progress percentage
+      const paymentProgress = Math.round((totalPaid / totalAmount) * 100);
+      
+      // Get quest progress or initialize default
+      const questProgress: any = investor.questProgress || {
+        level: 1,
+        phase: "development",
+        startDate: investor.createdAt,
+        milestones: {
+          capitalReclaimed: false,
+          dividendPhase: false
+        }
+      };
+      
+      // Determine current phase based on payment completion
+      let currentPhase = "development";
+      let estimatedCompletion = null;
+      
+      if (paymentProgress >= 100) {
+        currentPhase = "operational";
+        // Estimate 18-24 months for capital reclaim after full payment
+        estimatedCompletion = new Date(investor.createdAt || new Date());
+        estimatedCompletion.setMonth(estimatedCompletion.getMonth() + 21);
+      }
+      
+      res.json({
+        investorTier: investor.tier,
+        paymentProgress: {
+          percentage: paymentProgress,
+          amountPaid: totalPaid,
+          totalAmount: totalAmount,
+          remaining: totalAmount - totalPaid
+        },
+        questProgress: {
+          level: questProgress.level || 1,
+          phase: currentPhase,
+          startDate: questProgress.startDate || investor.createdAt,
+          milestones: {
+            paymentComplete: paymentProgress >= 100,
+            capitalReclaimed: questProgress.milestones?.capitalReclaimed || false,
+            dividendPhase: questProgress.milestones?.dividendPhase || false
+          },
+          estimatedCompletion
+        },
+        timeline: [
+          {
+            phase: "Payment",
+            status: paymentProgress >= 100 ? "completed" : "in_progress",
+            completedDate: paymentProgress >= 100 ? new Date() : null
+          },
+          {
+            phase: "Development",
+            status: currentPhase === "operational" ? "completed" : paymentProgress >= 100 ? "in_progress" : "pending",
+            completedDate: null
+          },
+          {
+            phase: "Capital Reclaim",
+            status: questProgress.milestones?.capitalReclaimed ? "completed" : "pending",
+            completedDate: questProgress.milestones?.capitalReclaimed ? estimatedCompletion : null
+          },
+          {
+            phase: "Dividend Distribution",
+            status: questProgress.milestones?.dividendPhase ? "in_progress" : "pending",
+            completedDate: null
+          }
+        ]
+      });
+    } catch (error: any) {
+      if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+      res.status(500).json({ message: "Error fetching progress: " + error.message });
+    }
+  });
+  
   // Get tier pricing information
   app.get("/api/tiers", async (req, res) => {
     try {
@@ -227,8 +568,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get investor by email
+  // Get investor by email (DEPRECATED - use /api/auth/me instead)
+  // SECURITY: Disabled in production to prevent PII exposure and account enumeration
   app.get("/api/investors/:email", async (req, res) => {
+    if (process.env.NODE_ENV === "production") {
+      return res.status(410).json({ message: "This endpoint is no longer available. Please use authenticated endpoints." });
+    }
+    
     try {
       const { email } = req.params;
       const investor = await storage.getInvestorByEmail(email);
@@ -243,8 +589,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Debug endpoint to check payments for an investor
+  // Debug endpoint to check payments for an investor (DEVELOPMENT ONLY)
+  // SECURITY: Disabled in production to prevent unauthorized data access
   app.get("/api/debug/payments/:investorId", async (req, res) => {
+    if (process.env.NODE_ENV === "production") {
+      return res.status(410).json({ message: "Debug endpoints are not available in production" });
+    }
+    
     try {
       const { investorId } = req.params;
       const payments = await storage.getPaymentsByInvestor(investorId);

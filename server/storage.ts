@@ -12,11 +12,14 @@ import {
   Transaction,
   InsertPaymentMethod,
   PaymentMethod,
+  InsertOtp,
+  Otp,
   users,
   investors,
   payments,
   transactions,
-  paymentMethods
+  paymentMethods,
+  otps
 } from "@shared/schema";
 
 export interface IStorage {
@@ -47,6 +50,12 @@ export interface IStorage {
   createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
   getPaymentMethodsByUser(userId: string): Promise<PaymentMethod[]>;
   deactivatePaymentMethod(id: string): Promise<PaymentMethod>;
+  
+  // OTP operations
+  createOtp(otp: InsertOtp): Promise<Otp>;
+  getValidOtp(email: string, code: string): Promise<Otp | undefined>;
+  markOtpAsUsed(id: string): Promise<void>;
+  cleanupExpiredOtps(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -266,6 +275,41 @@ export class DatabaseStorage implements IStorage {
     }
     return result[0];
   }
+
+  // OTP Operations
+  async createOtp(insertOtp: InsertOtp): Promise<Otp> {
+    const id = randomUUID();
+    const newOtp = {
+      id,
+      email: insertOtp.email,
+      code: insertOtp.code,
+      expiresAt: insertOtp.expiresAt,
+      used: 0,
+    };
+    
+    await db.insert(otps).values(newOtp);
+    return newOtp as Otp;
+  }
+
+  async getValidOtp(email: string, code: string): Promise<Otp | undefined> {
+    const result = await db
+      .select()
+      .from(otps)
+      .where(
+        sql`${otps.email} = ${email} AND ${otps.code} = ${code} AND ${otps.used} = 0 AND ${otps.expiresAt} > NOW()`
+      )
+      .limit(1);
+    
+    return result[0];
+  }
+
+  async markOtpAsUsed(id: string): Promise<void> {
+    await db.update(otps).set({ used: 1 }).where(eq(otps.id, id));
+  }
+
+  async cleanupExpiredOtps(): Promise<void> {
+    await db.delete(otps).where(sql`${otps.expiresAt} < NOW()`);
+  }
 }
 
 // Legacy compatibility - fallback to MemStorage if database is not available
@@ -453,6 +497,46 @@ export class MemStorage implements IStorage {
     const updated = { ...paymentMethod, isActive: 0, updatedAt: new Date() };
     this.paymentMethodsMap.set(id, updated);
     return updated;
+  }
+
+  // OTP Operations (in-memory implementation)
+  private otpsMap: Map<string, Otp> = new Map();
+
+  async createOtp(insertOtp: InsertOtp): Promise<Otp> {
+    const id = randomUUID();
+    const otp: Otp = {
+      id,
+      email: insertOtp.email,
+      code: insertOtp.code,
+      expiresAt: insertOtp.expiresAt,
+      used: 0,
+      createdAt: new Date(),
+    };
+    this.otpsMap.set(id, otp);
+    return otp;
+  }
+
+  async getValidOtp(email: string, code: string): Promise<Otp | undefined> {
+    const now = new Date();
+    return Array.from(this.otpsMap.values()).find(
+      otp => otp.email === email && otp.code === code && otp.used === 0 && otp.expiresAt > now
+    );
+  }
+
+  async markOtpAsUsed(id: string): Promise<void> {
+    const otp = this.otpsMap.get(id);
+    if (otp) {
+      this.otpsMap.set(id, { ...otp, used: 1 });
+    }
+  }
+
+  async cleanupExpiredOtps(): Promise<void> {
+    const now = new Date();
+    Array.from(this.otpsMap.entries()).forEach(([id, otp]) => {
+      if (otp.expiresAt < now) {
+        this.otpsMap.delete(id);
+      }
+    });
   }
 }
 

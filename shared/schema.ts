@@ -76,6 +76,16 @@ export const paymentMethods = mysqlTable("payment_methods", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// OTP table for email-based authentication
+export const otps = mysqlTable("otps", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  email: varchar("email", { length: 191 }).notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: int("used").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   firstName: true,
@@ -125,6 +135,12 @@ export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).pick
   puid: true,
 });
 
+export const insertOtpSchema = createInsertSchema(otps).pick({
+  email: true,
+  code: true,
+  expiresAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertInvestor = z.infer<typeof insertInvestorSchema>;
@@ -135,3 +151,5 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type InsertOtp = z.infer<typeof insertOtpSchema>;
+export type Otp = typeof otps.$inferSelect;
