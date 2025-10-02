@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Shield, TrendingUp, Users, Rocket, LineChart, Lock, CheckCircle } from "lucide-react";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
-import heroImage from "@assets/image_1758530174200.png";
+import heroImage from "@assets/stock_images/modern_financial_inn_6ed59ff3.jpg";
 import securityImage from "@assets/stock_images/modern_banking_secur_fe100f88.jpg";
 import growthImage from "@assets/stock_images/investment_growth_fi_cf572972.jpg";
 import platformImage from "@assets/stock_images/institutional_bankin_52a2b2e4.jpg";
@@ -124,11 +124,11 @@ export default function OpianBank() {
               </Button>
             </div>
             <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden">
+              <div className="relative rounded-2xl overflow-hidden border border-cyan-500/30">
                 <img 
                   src={heroImage} 
-                  alt="The Ascendancy Project" 
-                  className="w-full h-auto rounded-2xl border border-cyan-500/30"
+                  alt="Modern Financial Innovation" 
+                  className="w-full h-auto object-cover"
                   data-testid="hero-image"
                 />
               </div>
