@@ -73,22 +73,22 @@ export default function OpianBank() {
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 border-b border-white/5 backdrop-blur-xl bg-black/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
+          <div className="flex justify-between items-center py-3 sm:py-4">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <img 
                 src={opianLogo} 
                 alt="Opian Bank" 
-                className="h-12 w-auto object-contain"
+                className="h-8 sm:h-10 md:h-12 w-auto object-contain"
                 data-testid="bank-logo"
               />
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Opian Bank</h1>
-                <p className="text-xs text-slate-400">Financial Innovation Redefined</p>
+                <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Opian Bank</h1>
+                <p className="text-xs text-slate-400 hidden sm:block">Financial Innovation Redefined</p>
               </div>
             </div>
             <Button
               onClick={scrollToForm}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold border-0 shadow-lg shadow-cyan-500/20"
+              className="hidden md:inline-flex bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold border-0 shadow-lg shadow-cyan-500/20"
               data-testid="nav-request-access"
             >
               Get Started
@@ -99,17 +99,17 @@ export default function OpianBank() {
       </nav>
 
       {/* Hero Section - Full Screen */}
-      <section className="relative min-h-screen flex items-center pt-20">
+      <section className="relative min-h-screen flex items-center pt-16 sm:pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
             {/* Left Content */}
-            <div className="space-y-8 z-10">
-              <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
-                <Sparkles className="h-4 w-4 text-cyan-400" />
-                <span className="text-sm text-cyan-300">AI-Powered Banking Platform</span>
+            <div className="space-y-6 sm:space-y-8 z-10">
+              <div className="inline-flex items-center space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+                <Sparkles className="h-3 sm:h-4 w-3 sm:w-4 text-cyan-400" />
+                <span className="text-xs sm:text-sm text-cyan-300">AI-Powered Banking Platform</span>
               </div>
               
-              <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-white via-cyan-200 to-blue-400 bg-clip-text text-transparent">
                   The Future of
                 </span>
@@ -119,25 +119,25 @@ export default function OpianBank() {
                 </span>
               </h1>
               
-              <p className="text-xl text-slate-400 max-w-2xl leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-400 max-w-2xl leading-relaxed">
                 Join the exclusive network of forward-thinking investors and institutions 
                 shaping the future of AI-driven finance and technology.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button
                   onClick={scrollToForm}
                   size="lg"
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg px-8 py-6 shadow-2xl shadow-cyan-500/30 border-0"
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 shadow-2xl shadow-cyan-500/30 border-0"
                   data-testid="hero-cta"
                 >
                   Request Access
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                 </Button>
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-cyan-500/30 bg-cyan-500/5 hover:bg-cyan-500/10 text-cyan-300 font-semibold text-lg px-8 py-6"
+                  className="border-cyan-500/30 bg-cyan-500/5 hover:bg-cyan-500/10 text-cyan-300 font-semibold text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
                   onClick={scrollToForm}
                 >
                   Learn More
@@ -145,24 +145,24 @@ export default function OpianBank() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-8 pt-8 border-t border-white/10">
+              <div className="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 pt-6 sm:pt-8 border-t border-white/10">
                 <div>
-                  <p className="text-3xl font-bold text-cyan-400">R50M+</p>
-                  <p className="text-sm text-slate-500">Assets Managed</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-cyan-400">R50M+</p>
+                  <p className="text-xs sm:text-sm text-slate-500">Assets Managed</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-cyan-400">500+</p>
-                  <p className="text-sm text-slate-500">Active Investors</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-cyan-400">500+</p>
+                  <p className="text-xs sm:text-sm text-slate-500">Active Investors</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-cyan-400">FSP</p>
-                  <p className="text-sm text-slate-500">Licensed</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-cyan-400">FSP</p>
+                  <p className="text-xs sm:text-sm text-slate-500">Licensed</p>
                 </div>
               </div>
             </div>
 
             {/* Right Image */}
-            <div className="relative lg:h-[600px] flex items-center justify-center">
+            <div className="relative h-64 sm:h-80 lg:h-[600px] flex items-center justify-center">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 blur-3xl" />
               <img 
                 src={heroImage} 
@@ -176,22 +176,22 @@ export default function OpianBank() {
       </section>
 
       {/* Features Grid */}
-      <section className="relative py-32 px-4 sm:px-6 lg:px-8">
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+          <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               Enterprise-Grade Banking
             </h2>
-            <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg lg:text-xl text-slate-400 max-w-3xl mx-auto px-4">
               Built for the future with institutional-grade security and AI-powered insights
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Security Card */}
             <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-cyan-500/20 hover:border-cyan-500/40 transition-all duration-300 group" data-testid="security-card">
               <CardHeader>
-                <div className="w-full h-48 mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
+                <div className="w-full h-40 sm:h-48 mb-4 sm:mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
                   <img 
                     src={securityImage} 
                     alt="Bank-Grade Security" 
@@ -199,28 +199,28 @@ export default function OpianBank() {
                     data-testid="security-image"
                   />
                 </div>
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="p-3 rounded-lg bg-cyan-500/10">
-                    <Shield className="h-6 w-6 text-cyan-400" />
+                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-cyan-500/10">
+                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-cyan-400" />
                   </div>
-                  <CardTitle className="text-2xl text-white">Bank-Grade Security</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl text-white">Bank-Grade Security</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-slate-400 text-base mb-6">
+                <CardDescription className="text-slate-400 text-sm sm:text-base mb-4 sm:mb-6">
                   Military-grade encryption and multi-layered security infrastructure protecting your investments 24/7.
                 </CardDescription>
-                <ul className="space-y-3">
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                <ul className="space-y-2 sm:space-y-3">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 flex-shrink-0" />
                     <span>End-to-End Encryption</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 flex-shrink-0" />
                     <span>Multi-Factor Authentication</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 flex-shrink-0" />
                     <span>FSP Regulatory Compliance</span>
                   </li>
                 </ul>
@@ -230,7 +230,7 @@ export default function OpianBank() {
             {/* Growth Card */}
             <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 group" data-testid="growth-card">
               <CardHeader>
-                <div className="w-full h-48 mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
+                <div className="w-full h-40 sm:h-48 mb-4 sm:mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
                   <img 
                     src={growthImage} 
                     alt="Investment Growth" 
@@ -238,28 +238,28 @@ export default function OpianBank() {
                     data-testid="growth-image"
                   />
                 </div>
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="p-3 rounded-lg bg-blue-500/10">
-                    <TrendingUp className="h-6 w-6 text-blue-400" />
+                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-blue-500/10">
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
                   </div>
-                  <CardTitle className="text-2xl text-white">AI-Powered Growth</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl text-white">AI-Powered Growth</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-slate-400 text-base mb-6">
+                <CardDescription className="text-slate-400 text-sm sm:text-base mb-4 sm:mb-6">
                   Leverage artificial intelligence for superior investment insights and portfolio optimization.
                 </CardDescription>
-                <ul className="space-y-3">
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                <ul className="space-y-2 sm:space-y-3">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 flex-shrink-0" />
                     <span>Predictive Analytics</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 flex-shrink-0" />
                     <span>Real-Time Performance</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 flex-shrink-0" />
                     <span>Smart Portfolio Management</span>
                   </li>
                 </ul>
@@ -267,9 +267,9 @@ export default function OpianBank() {
             </Card>
 
             {/* Network Card */}
-            <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-cyan-500/20 hover:border-cyan-500/40 transition-all duration-300 group" data-testid="network-card">
+            <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-cyan-500/20 hover:border-cyan-500/40 transition-all duration-300 group sm:col-span-2 lg:col-span-1" data-testid="network-card">
               <CardHeader>
-                <div className="w-full h-48 mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
+                <div className="w-full h-40 sm:h-48 mb-4 sm:mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
                   <img 
                     src={networkImage} 
                     alt="Professional Network" 
@@ -277,28 +277,28 @@ export default function OpianBank() {
                     data-testid="network-image"
                   />
                 </div>
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="p-3 rounded-lg bg-cyan-500/10">
-                    <Users className="h-6 w-6 text-cyan-400" />
+                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                  <div className="p-2 sm:p-3 rounded-lg bg-cyan-500/10">
+                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-cyan-400" />
                   </div>
-                  <CardTitle className="text-2xl text-white">Elite Network</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl text-white">Elite Network</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-slate-400 text-base mb-6">
+                <CardDescription className="text-slate-400 text-sm sm:text-base mb-4 sm:mb-6">
                   Connect with industry leaders and innovative investors in our exclusive community.
                 </CardDescription>
-                <ul className="space-y-3">
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                <ul className="space-y-2 sm:space-y-3">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 flex-shrink-0" />
                     <span>Exclusive Events</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 flex-shrink-0" />
                     <span>Expert Fund Managers</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-slate-300">
-                    <CheckCircle2 className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-slate-300">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400 flex-shrink-0" />
                     <span>Collaborative Opportunities</span>
                   </li>
                 </ul>
@@ -309,26 +309,26 @@ export default function OpianBank() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-32 px-4 sm:px-6 lg:px-8">
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-500/20 p-12 md:p-16">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-500/20 p-8 sm:p-12 md:p-16">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0iIzIyZDNlZSIgc3Ryb2tlLW9wYWNpdHk9Ii4wNSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9nPjwvc3ZnPg==')] opacity-40" />
-            <div className="relative text-center space-y-8">
-              <h2 className="text-4xl md:text-5xl font-bold">
+            <div className="relative text-center space-y-6 sm:space-y-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold px-2">
                 <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent">
                   Ready to Transform Your Financial Future?
                 </span>
               </h2>
-              <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-300 max-w-3xl mx-auto px-2">
                 Join the Ascendancy Project and gain access to exclusive investment opportunities in AI and emerging technologies.
               </p>
               <Button
                 onClick={scrollToForm}
                 size="lg"
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xl px-12 py-7 shadow-2xl shadow-cyan-500/30 border-0"
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base sm:text-lg lg:text-xl px-8 sm:px-10 lg:px-12 py-6 sm:py-7 shadow-2xl shadow-cyan-500/30 border-0"
               >
                 Request Access Now
-                <ArrowRight className="ml-3 h-6 w-6" />
+                <ArrowRight className="ml-2 sm:ml-3 h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
             </div>
           </div>
@@ -336,58 +336,58 @@ export default function OpianBank() {
       </section>
 
       {/* Form Section */}
-      <section id="access-form" className="relative py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent to-slate-900/50">
+      <section id="access-form" className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent to-slate-900/50">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 mb-6">
-              <Lock className="h-8 w-8 text-cyan-400" />
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center justify-center p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 mb-4 sm:mb-6">
+              <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-cyan-400" />
             </div>
-            <h3 className="text-4xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               Secure Your Access
             </h3>
-            <p className="text-lg text-slate-400">
+            <p className="text-base sm:text-lg text-slate-400 px-4">
               Complete the form below to join the Ascendancy Project
             </p>
           </div>
 
           <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-cyan-500/20 backdrop-blur-xl" data-testid="access-form-card">
             <CardHeader>
-              <CardTitle className="text-2xl text-cyan-400">Request Access</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-xl sm:text-2xl text-cyan-400">Request Access</CardTitle>
+              <CardDescription className="text-sm sm:text-base text-slate-400">
                 Join the future of AI-driven financial innovation
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-slate-300">First Name *</Label>
+                    <Label htmlFor="firstName" className="text-sm sm:text-base text-slate-300">First Name *</Label>
                     <Input
                       id="firstName"
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
                       required
-                      className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20"
+                      className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
                       data-testid="input-firstName"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-slate-300">Last Name *</Label>
+                    <Label htmlFor="lastName" className="text-sm sm:text-base text-slate-300">Last Name *</Label>
                     <Input
                       id="lastName"
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
                       required
-                      className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20"
+                      className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
                       data-testid="input-lastName"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-300">Email Address *</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base text-slate-300">Email Address *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -395,13 +395,13 @@ export default function OpianBank() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20"
+                    className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
                     data-testid="input-email"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-slate-300">Phone Number *</Label>
+                  <Label htmlFor="phone" className="text-sm sm:text-base text-slate-300">Phone Number *</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -409,34 +409,34 @@ export default function OpianBank() {
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20"
+                    className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
                     data-testid="input-phone"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="company" className="text-slate-300">Company (Optional)</Label>
+                  <Label htmlFor="company" className="text-sm sm:text-base text-slate-300">Company (Optional)</Label>
                   <Input
                     id="company"
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20"
+                    className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
                     data-testid="input-company"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-6 text-lg shadow-lg shadow-cyan-500/20 border-0"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-5 sm:py-6 text-base sm:text-lg shadow-lg shadow-cyan-500/20 border-0"
                   data-testid="button-submit"
                 >
                   Request Access to Ascendancy Project
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                 </Button>
               </form>
 
-              <p className="text-xs text-slate-500 mt-6 text-center">
+              <p className="text-xs text-slate-500 mt-4 sm:mt-6 text-center px-2">
                 By submitting this form, you agree to our terms and conditions. Your data is secured with bank-grade encryption.
               </p>
             </CardContent>
@@ -445,20 +445,20 @@ export default function OpianBank() {
       </section>
 
       {/* Footer */}
-      <footer className="relative py-12 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+      <footer className="relative py-8 sm:py-12 px-4 sm:px-6 lg:px-8 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 text-center sm:text-left">
               <img 
                 src={opianLogo} 
                 alt="Opian Bank" 
-                className="h-8 w-auto object-contain opacity-70"
+                className="h-6 sm:h-8 w-auto object-contain opacity-70"
               />
-              <div className="text-sm text-slate-500">
+              <div className="text-xs sm:text-sm text-slate-500">
                 © 2024 Opian Bank. FSP Licensed & Regulatory Compliant.
               </div>
             </div>
-            <div className="flex items-center space-x-6 text-sm text-slate-500">
+            <div className="flex items-center space-x-4 sm:space-x-6 text-xs sm:text-sm text-slate-500">
               <span>Privacy Policy</span>
               <span>Terms of Service</span>
               <span>Contact</span>
