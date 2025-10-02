@@ -7,8 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Shield, TrendingUp, Users, Rocket, LineChart, Lock, CheckCircle } from "lucide-react";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
-import robotMascot from "@assets/generated_images/3D_robot_mascot_logo_24aada45.png";
 import heroImage from "@assets/image_1758530174200.png";
+import securityImage from "@assets/stock_images/modern_banking_secur_fe100f88.jpg";
+import growthImage from "@assets/stock_images/investment_growth_fi_cf572972.jpg";
+import platformImage from "@assets/stock_images/institutional_bankin_52a2b2e4.jpg";
+import communityImage from "@assets/stock_images/professional_investo_030958aa.jpg";
 
 export default function OpianBank() {
   const [, setLocation] = useLocation();
@@ -164,11 +167,11 @@ export default function OpianBank() {
               </ul>
             </div>
             <div className="relative">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 p-8 flex items-center justify-center">
+              <div className="aspect-square rounded-2xl overflow-hidden border border-cyan-500/30">
                 <img 
-                  src={robotMascot} 
-                  alt="AI Security" 
-                  className="w-full h-full object-contain"
+                  src={securityImage} 
+                  alt="Bank-Grade Security" 
+                  className="w-full h-full object-cover"
                   data-testid="security-image"
                 />
               </div>
@@ -182,11 +185,11 @@ export default function OpianBank() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 md:order-1">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 p-8 flex items-center justify-center">
+              <div className="aspect-square rounded-2xl overflow-hidden border border-blue-500/30">
                 <img 
-                  src={robotMascot} 
-                  alt="AI Investment Analytics" 
-                  className="w-full h-full object-contain"
+                  src={growthImage} 
+                  alt="Investment Growth Analytics" 
+                  className="w-full h-full object-cover"
                   data-testid="growth-image"
                 />
               </div>
@@ -250,11 +253,11 @@ export default function OpianBank() {
               </ul>
             </div>
             <div className="relative">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 p-8 flex items-center justify-center">
+              <div className="aspect-square rounded-2xl overflow-hidden border border-cyan-500/30">
                 <img 
-                  src={robotMascot} 
-                  alt="AI Platform Technology" 
-                  className="w-full h-full object-contain"
+                  src={platformImage} 
+                  alt="Institutional Banking Platform" 
+                  className="w-full h-full object-cover"
                   data-testid="platform-image"
                 />
               </div>
@@ -268,11 +271,11 @@ export default function OpianBank() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 md:order-1">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 p-8 flex items-center justify-center">
+              <div className="aspect-square rounded-2xl overflow-hidden border border-blue-500/30">
                 <img 
-                  src={robotMascot} 
-                  alt="AI Community Network" 
-                  className="w-full h-full object-contain"
+                  src={communityImage} 
+                  alt="Professional Investor Community" 
+                  className="w-full h-full object-cover"
                   data-testid="community-image"
                 />
               </div>
