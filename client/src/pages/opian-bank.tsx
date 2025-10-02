@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Shield, TrendingUp, Users } from "lucide-react";
+import { Building2, Shield, TrendingUp, Users, Rocket, LineChart, Lock, CheckCircle } from "lucide-react";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 
 export default function OpianBank() {
@@ -19,10 +19,16 @@ export default function OpianBank() {
     company: "",
   });
 
+  const scrollToForm = () => {
+    const formSection = document.getElementById('access-form');
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       toast({
         title: "Missing Information",
@@ -32,7 +38,6 @@ export default function OpianBank() {
       return;
     }
 
-    // Store access granted in sessionStorage
     sessionStorage.setItem("opian_bank_access", "granted");
     sessionStorage.setItem("opian_user_info", JSON.stringify(formData));
 
@@ -41,7 +46,6 @@ export default function OpianBank() {
       description: "Welcome to Opian Bank. Redirecting you to the Ascendancy Project...",
     });
 
-    // Redirect to Ascendancy Project
     setTimeout(() => {
       setLocation("/ascendancy");
     }, 1500);
@@ -55,100 +59,257 @@ export default function OpianBank() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(56,189,248,0.1),transparent_50%)]"></div>
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(56,189,248,0.1),transparent_50%)]"></div>
         <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-700"></div>
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-10 border-b border-cyan-500/20 backdrop-blur-sm">
+      <nav className="fixed top-0 w-full z-50 border-b border-cyan-500/20 backdrop-blur-md bg-slate-900/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
               <img 
                 src={opianLogo} 
                 alt="Opian Bank" 
-                className="h-12 w-auto object-contain"
+                className="h-10 w-auto object-contain"
                 data-testid="bank-logo"
               />
               <div>
-                <h1 className="text-2xl font-bold text-cyan-400">Opian Bank</h1>
+                <h1 className="text-xl font-bold text-cyan-400">Opian Bank</h1>
                 <p className="text-xs text-cyan-300/70">Financial Innovation Redefined</p>
               </div>
             </div>
+            <Button
+              onClick={scrollToForm}
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold"
+              data-testid="nav-request-access"
+            >
+              Request Access
+            </Button>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          {/* Left Side - Information */}
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                Welcome to Opian Bank
-              </h2>
-              <p className="text-xl text-slate-300">
-                Your Gateway to the Future of Financial Innovation
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent animate-gradient">
+            Welcome to Opian Bank
+          </h2>
+          <p className="text-2xl md:text-3xl text-slate-300 mb-8 max-w-4xl mx-auto">
+            Your Gateway to the Future of Financial Innovation
+          </p>
+          <p className="text-lg text-slate-400 mb-12 max-w-3xl mx-auto">
+            Join the exclusive network of forward-thinking investors and institutions 
+            shaping the future of AI-driven finance and technology.
+          </p>
+          <Button
+            onClick={scrollToForm}
+            size="lg"
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-6"
+            data-testid="hero-cta"
+          >
+            Get Started Today
+          </Button>
+        </div>
+      </section>
+
+      {/* Feature Section 1 - Left Aligned */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div className="inline-block">
+                <Shield className="h-12 w-12 text-cyan-400 mb-4" />
+              </div>
+              <h3 className="text-4xl font-bold text-cyan-400">Bank-Grade Security</h3>
+              <p className="text-lg text-slate-300">
+                Your investments are protected with institutional-grade security infrastructure. 
+                We employ multi-layered encryption, secure custody solutions, and comply with 
+                South African financial regulations.
               </p>
+              <ul className="space-y-3">
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-cyan-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">FSP Licensed and Regulatory Compliant</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-cyan-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Multi-Factor Authentication</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-cyan-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">End-to-End Encryption</span>
+                </li>
+              </ul>
             </div>
-
-            <p className="text-lg text-slate-400">
-              Join the exclusive network of forward-thinking investors and institutions 
-              shaping the future of AI-driven finance and technology.
-            </p>
-
-            {/* Features */}
-            <div className="grid grid-cols-2 gap-6 mt-8">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5 text-cyan-400" />
-                  <h3 className="font-semibold">Secure</h3>
-                </div>
-                <p className="text-sm text-slate-400">Bank-grade security for your investments</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5 text-cyan-400" />
-                  <h3 className="font-semibold">Growth</h3>
-                </div>
-                <p className="text-sm text-slate-400">Exclusive investment opportunities</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Building2 className="h-5 w-5 text-cyan-400" />
-                  <h3 className="font-semibold">Institutional</h3>
-                </div>
-                <p className="text-sm text-slate-400">Professional-grade platform</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-cyan-400" />
-                  <h3 className="font-semibold">Community</h3>
-                </div>
-                <p className="text-sm text-slate-400">Join elite investor network</p>
+            <div className="relative">
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center">
+                <Lock className="h-32 w-32 text-cyan-400/50" />
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Right Side - Form */}
-          <Card className="bg-slate-800/50 border-cyan-500/30 backdrop-blur-sm" data-testid="access-form">
+      {/* Feature Section 2 - Right Aligned */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-slate-800/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="relative order-2 md:order-1">
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 flex items-center justify-center">
+                <TrendingUp className="h-32 w-32 text-blue-400/50" />
+              </div>
+            </div>
+            <div className="space-y-6 order-1 md:order-2">
+              <div className="inline-block">
+                <LineChart className="h-12 w-12 text-blue-400 mb-4" />
+              </div>
+              <h3 className="text-4xl font-bold text-blue-400">Exclusive Growth Opportunities</h3>
+              <p className="text-lg text-slate-300">
+                Access curated investment opportunities in AI, fintech, and emerging technologies. 
+                Our portfolio is designed for sophisticated investors seeking high-growth potential 
+                in transformative sectors.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">AI-Powered Investment Analytics</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Diversified Portfolio Management</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Real-Time Performance Tracking</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Section 3 - Left Aligned */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div className="inline-block">
+                <Building2 className="h-12 w-12 text-cyan-400 mb-4" />
+              </div>
+              <h3 className="text-4xl font-bold text-cyan-400">Institutional Platform</h3>
+              <p className="text-lg text-slate-300">
+                Built for professionals, our platform delivers enterprise-grade tools and analytics. 
+                Whether you're an individual investor or managing institutional capital, we provide 
+                the infrastructure you need.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-cyan-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Professional-Grade Dashboard</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-cyan-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Advanced Reporting Tools</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-cyan-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">API Access for Integration</span>
+                </li>
+              </ul>
+            </div>
+            <div className="relative">
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center">
+                <Building2 className="h-32 w-32 text-cyan-400/50" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Section 4 - Right Aligned */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-slate-800/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="relative order-2 md:order-1">
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 flex items-center justify-center">
+                <Users className="h-32 w-32 text-blue-400/50" />
+              </div>
+            </div>
+            <div className="space-y-6 order-1 md:order-2">
+              <div className="inline-block">
+                <Users className="h-12 w-12 text-blue-400 mb-4" />
+              </div>
+              <h3 className="text-4xl font-bold text-blue-400">Elite Investor Community</h3>
+              <p className="text-lg text-slate-300">
+                Connect with like-minded investors, industry leaders, and innovators. Our community 
+                provides unparalleled networking opportunities and collaborative investment insights.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Exclusive Networking Events</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Direct Access to Fund Managers</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
+                  <span className="text-slate-300">Collaborative Investment Opportunities</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-12 text-center">
+            <div className="space-y-2">
+              <p className="text-5xl font-bold text-cyan-400">R50M+</p>
+              <p className="text-lg text-slate-400">Assets Under Management</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-5xl font-bold text-cyan-400">500+</p>
+              <p className="text-lg text-slate-400">Active Investors</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-5xl font-bold text-cyan-400">FSP Licensed</p>
+              <p className="text-lg text-slate-400">Regulatory Compliant</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Form Section */}
+      <section id="access-form" className="relative py-20 px-4 sm:px-6 lg:px-8 bg-slate-800/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <Rocket className="h-16 w-16 text-cyan-400 mx-auto mb-6" />
+            <h3 className="text-4xl font-bold text-cyan-400 mb-4">Ready to Get Started?</h3>
+            <p className="text-lg text-slate-300">
+              Complete this form to access exclusive investment opportunities in the Ascendancy Project
+            </p>
+          </div>
+
+          <Card className="bg-slate-800/80 border-cyan-500/30 backdrop-blur-sm" data-testid="access-form-card">
             <CardHeader>
               <CardTitle className="text-2xl text-cyan-400">Request Access</CardTitle>
               <CardDescription className="text-slate-400">
-                Complete this form to access exclusive investment opportunities
+                Join the future of AI-driven financial innovation
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-slate-300">First Name *</Label>
                     <Input
@@ -230,23 +391,14 @@ export default function OpianBank() {
             </CardContent>
           </Card>
         </div>
+      </section>
 
-        {/* Trust Indicators */}
-        <div className="mt-16 grid grid-cols-3 gap-8 text-center">
-          <div>
-            <p className="text-3xl font-bold text-cyan-400">R50M+</p>
-            <p className="text-sm text-slate-400">Assets Under Management</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold text-cyan-400">500+</p>
-            <p className="text-sm text-slate-400">Active Investors</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold text-cyan-400">FSP Licensed</p>
-            <p className="text-sm text-slate-400">Regulatory Compliant</p>
-          </div>
+      {/* Footer */}
+      <footer className="relative py-8 px-4 sm:px-6 lg:px-8 border-t border-cyan-500/20">
+        <div className="max-w-7xl mx-auto text-center text-slate-400 text-sm">
+          <p>© 2024 Opian Bank. All rights reserved. FSP Licensed and Regulatory Compliant.</p>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
