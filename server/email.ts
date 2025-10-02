@@ -1,18 +1,18 @@
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465',
+  host: process.env.EMAIL_HOST || process.env.SMTP_HOST,
+  port: parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587'),
+  secure: (process.env.EMAIL_PORT || process.env.SMTP_PORT) === '465',
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.EMAIL_USER || process.env.SMTP_USER,
+    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
   },
 });
 
 export async function sendOtpEmail(email: string, code: string, firstName?: string) {
   const mailOptions = {
-    from: process.env.SMTP_FROM,
+    from: process.env.EMAIL_FROM || process.env.SMTP_FROM,
     to: email,
     subject: 'Your Opian Rewards Login Code',
     html: `
