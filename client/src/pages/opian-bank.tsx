@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Shield, TrendingUp, Users, Rocket, LineChart, Lock, CheckCircle } from "lucide-react";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
+import robotMascot from "@assets/generated_images/3D_robot_mascot_logo_24aada45.png";
+import heroImage from "@assets/image_1758530174200.png";
 
 export default function OpianBank() {
   const [, setLocation] = useLocation();
@@ -96,25 +98,39 @@ export default function OpianBank() {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent animate-gradient">
-            Welcome to Opian Bank
-          </h2>
-          <p className="text-2xl md:text-3xl text-slate-300 mb-8 max-w-4xl mx-auto">
-            Your Gateway to the Future of Financial Innovation
-          </p>
-          <p className="text-lg text-slate-400 mb-12 max-w-3xl mx-auto">
-            Join the exclusive network of forward-thinking investors and institutions 
-            shaping the future of AI-driven finance and technology.
-          </p>
-          <Button
-            onClick={scrollToForm}
-            size="lg"
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-6"
-            data-testid="hero-cta"
-          >
-            Get Started Today
-          </Button>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="text-center md:text-left">
+              <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent animate-gradient">
+                Welcome to Opian Bank
+              </h2>
+              <p className="text-xl md:text-2xl text-slate-300 mb-6">
+                Your Gateway to the Future of Financial Innovation
+              </p>
+              <p className="text-base text-slate-400 mb-8">
+                Join the exclusive network of forward-thinking investors and institutions 
+                shaping the future of AI-driven finance and technology.
+              </p>
+              <Button
+                onClick={scrollToForm}
+                size="lg"
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-6"
+                data-testid="hero-cta"
+              >
+                Get Started Today
+              </Button>
+            </div>
+            <div className="relative">
+              <div className="relative rounded-2xl overflow-hidden">
+                <img 
+                  src={heroImage} 
+                  alt="The Ascendancy Project" 
+                  className="w-full h-auto rounded-2xl border border-cyan-500/30"
+                  data-testid="hero-image"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -148,8 +164,13 @@ export default function OpianBank() {
               </ul>
             </div>
             <div className="relative">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center">
-                <Lock className="h-32 w-32 text-cyan-400/50" />
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 p-8 flex items-center justify-center">
+                <img 
+                  src={robotMascot} 
+                  alt="AI Security" 
+                  className="w-full h-full object-contain"
+                  data-testid="security-image"
+                />
               </div>
             </div>
           </div>
@@ -161,8 +182,13 @@ export default function OpianBank() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 md:order-1">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 flex items-center justify-center">
-                <TrendingUp className="h-32 w-32 text-blue-400/50" />
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 p-8 flex items-center justify-center">
+                <img 
+                  src={robotMascot} 
+                  alt="AI Investment Analytics" 
+                  className="w-full h-full object-contain"
+                  data-testid="growth-image"
+                />
               </div>
             </div>
             <div className="space-y-6 order-1 md:order-2">
@@ -224,8 +250,13 @@ export default function OpianBank() {
               </ul>
             </div>
             <div className="relative">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center">
-                <Building2 className="h-32 w-32 text-cyan-400/50" />
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 p-8 flex items-center justify-center">
+                <img 
+                  src={robotMascot} 
+                  alt="AI Platform Technology" 
+                  className="w-full h-full object-contain"
+                  data-testid="platform-image"
+                />
               </div>
             </div>
           </div>
@@ -237,8 +268,13 @@ export default function OpianBank() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 md:order-1">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 flex items-center justify-center">
-                <Users className="h-32 w-32 text-blue-400/50" />
+              <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 border border-blue-500/30 p-8 flex items-center justify-center">
+                <img 
+                  src={robotMascot} 
+                  alt="AI Community Network" 
+                  className="w-full h-full object-contain"
+                  data-testid="community-image"
+                />
               </div>
             </div>
             <div className="space-y-6 order-1 md:order-2">
