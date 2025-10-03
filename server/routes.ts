@@ -1083,19 +1083,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
       } else {
-        // Fallback to legacy format for compatibility
-        console.log("🔄 No JWT token found, trying legacy format...");
+        // Fallback to direct JSON payload format (Adumo V2 webhook format)
+        console.log("🔄 No JWT token found, trying direct JSON payload format...");
         
         const { 
+          merchantReference,
+          transactionId,
+          status,
+          amount,
+          puid,
+          paymentMethod,
           ResultCode, 
-          CustomField2, // paymentId  
-          CustomField3  // investorId
+          CustomField2,
+          CustomField3
         } = req.body;
         
-        if (CustomField2 && CustomField3) {
+        // Try Adumo V2 webhook format first (from documentation)
+        if (merchantReference && status) {
+          console.log("✅ Processing Adumo V2 webhook format...");
+          console.log(`  Merchant Reference: ${merchantReference}`);
+          console.log(`  Status: ${status}`);
+          console.log(`  Transaction ID: ${transactionId}`);
+          
+          // Find payment by merchant reference
+          const payment = await storage.getPaymentByMerchantReference(merchantReference);
+          
+          if (!payment) {
+            console.log("❌ Payment not found for merchant reference");
+            return res.status(404).json({ message: "Payment not found" });
+          }
+          
+          // SECURITY: Check for replay attacks
+          if (payment.status === "completed") {
+            console.warn(`⚠️ REPLAY ATTACK DETECTED: Payment already completed`);
+            return res.json({ success: true, message: "Payment already processed" });
+          }
+          
+          // Map Adumo status to our payment status
+          // SETTLED, AUTHORIZED = completed, DECLINED/FAILED = failed
+          const isSuccess = status === "SETTLED" || status === "AUTHORIZED" || status === "APPROVED";
+          const paymentStatus = isSuccess ? "completed" : status === "DECLINED" || status === "FAILED" ? "failed" : "pending";
+          
+          console.log(`💰 Updating payment status to: ${paymentStatus}`);
+          
+          // Create transaction record
+          let transaction = await storage.getTransactionByMerchantReference(merchantReference);
+          if (!transaction && transactionId) {
+            transaction = await storage.createTransaction({
+              transactionId: transactionId,
+              merchantReference: merchantReference,
+              status: status,
+              amount: payment.amount,
+              currencyCode: "ZAR",
+              paymentMethod: paymentMethod || "CARD",
+              puid: puid || null,
+              token: null,
+              paymentId: payment.id,
+            });
+          }
+          
+          // Update payment status
+          const updatedPayment = await storage.updatePaymentStatus(payment.id, paymentStatus);
+          const investor = await storage.updateInvestorPaymentStatus(
+            payment.investorId,
+            paymentStatus,
+            transactionId || merchantReference
+          );
+          
+          // Initialize quest progress if successful
+          if (isSuccess && !investor.questProgress) {
+            const questProgress = {
+              level: 1,
+              phase: "development",
+              startDate: new Date().toISOString(),
+              milestones: { capitalReclaimed: false, dividendPhase: false }
+            };
+            await storage.updateInvestorProgress(investor.id, questProgress);
+          }
+        } 
+        // Try legacy format (older integration)
+        else if (CustomField2 && CustomField3) {
           console.log("✅ Processing legacy webhook format...");
           
-          // SECURITY: Check for replay attacks in legacy format too
           const payment = await storage.getPaymentByMerchantReference(CustomField2);
           if (payment && payment.status === "completed") {
             console.warn(`⚠️ REPLAY ATTACK DETECTED (legacy): Payment already completed`);
@@ -1103,7 +1172,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           const paymentStatus = ResultCode === "00" ? "completed" : "failed";
-          
           const updatedPayment = await storage.updatePaymentStatus(CustomField2, paymentStatus);
           const investor = await storage.updateInvestorPaymentStatus(
             CustomField3,
@@ -1121,7 +1189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.updateInvestorProgress(investor.id, questProgress);
           }
         } else {
-          console.log("❌ Missing required fields");
+          console.log("❌ Missing required fields in webhook payload");
+          console.log("Received payload keys:", Object.keys(req.body));
           return res.status(400).json({ message: "Missing required fields" });
         }
       }
