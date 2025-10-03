@@ -63,7 +63,7 @@ const otpRequestLimiter = rateLimit({
   keyGenerator: (req) => {
     // Rate limit by email when available, otherwise use IPv6-safe IP key
     const email = req.body?.email?.toLowerCase().trim();
-    return email || ipKeyGenerator(req.ip);
+    return email || ipKeyGenerator(req.ip || '127.0.0.1');
   },
 });
 
@@ -76,7 +76,7 @@ const otpVerifyLimiter = rateLimit({
   keyGenerator: (req) => {
     // Rate limit by email when available, otherwise use IPv6-safe IP key
     const email = req.body?.email?.toLowerCase().trim();
-    return email || ipKeyGenerator(req.ip);
+    return email || ipKeyGenerator(req.ip || '127.0.0.1');
   },
 });
 
