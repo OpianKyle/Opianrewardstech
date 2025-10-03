@@ -2,7 +2,24 @@
 
 Opian Rewards is a gamified investor portal inspired by the Ascendancy Project, built as a full-stack web application. The platform presents investment opportunities as an RPG-style experience where investors choose "player tiers" (Builder, Innovator, Visionary) with different investment amounts and payment structures. The application features a futuristic AI-driven theme with quest-based progression tracking, animated shader backgrounds, and integrated payment processing through Adumo for South African users.
 
-# Recent Changes (September 30, 2025)
+# Recent Changes (October 3, 2025)
+
+## Replit Import Setup
+- Successfully imported GitHub repository to Replit environment
+- Configured MySQL database connection with Xneelo credentials via Replit Secrets
+- Configured Adumo payment gateway credentials (MERCHANT_ID, CLIENT_SECRET, APPLICATION_ID, BASE_URL)
+- Set up development workflow on port 5000 with webview output type
+- Configured autoscale deployment for production with build and start commands
+- Verified Vite configuration allows all hosts for Replit proxy support
+
+## Transaction Creation Debugging
+- Added comprehensive error handling for transaction creation in payment return handler
+- Added detailed logging to track transaction creation flow and catch errors
+- Implemented try-catch blocks around transaction creation in both `/payment-return` and `/api/verify-payment` endpoints
+- Enhanced logging includes: transaction data preparation, database lookup results, creation success/failure, and full error stack traces
+- Fixed TypeScript strict null check issues in rate limiter IP handling
+
+# Previous Changes (September 30, 2025)
 
 ## Replit Environment Setup
 - Configured MySQL database connection using Xneelo hosting credentials
