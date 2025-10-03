@@ -765,23 +765,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const payment = await storage.getPaymentByMerchantReference(mref);
             
             if (payment) {
-              // Create transaction record
-              console.log("📝 Creating transaction record...");
-              let transaction = await storage.getTransactionByMerchantReference(mref);
-              if (!transaction) {
-                transaction = await storage.createTransaction({
-                  transactionId: transactionIndex || randomUUID(),
-                  merchantReference: mref,
-                  status: result === 1 ? "AUTHORIZED" : result === -1 ? "DECLINED" : "PENDING",
-                  amount: payment.amount,
-                  currencyCode: "ZAR",
-                  paymentMethod: decoded.paymentMethod || "CARD",
-                  puid: decoded.puid || null,
-                  tkn: decoded.tkn || null,
-                  token: jwtToken,
-                  paymentId: payment.id,
-                });
-                console.log(`✅ Transaction ${transaction.transactionId} created`);
+              // Create transaction record with comprehensive error handling
+              console.log("📝 Attempting to create transaction record...");
+              console.log(`📝 Payment ID: ${payment.id}, Merchant Ref: ${mref}`);
+              
+              try {
+                let transaction = await storage.getTransactionByMerchantReference(mref);
+                console.log(`📝 Existing transaction check: ${transaction ? 'FOUND' : 'NOT FOUND'}`);
+                
+                if (!transaction) {
+                  const transactionData = {
+                    transactionId: transactionIndex || randomUUID(),
+                    merchantReference: mref,
+                    status: result === 1 ? "AUTHORIZED" : result === -1 ? "DECLINED" : "PENDING",
+                    amount: payment.amount,
+                    currencyCode: "ZAR" as const,
+                    paymentMethod: decoded.paymentMethod || "CARD",
+                    puid: decoded.puid || null,
+                    tkn: decoded.tkn || null,
+                    token: jwtToken,
+                    paymentId: payment.id,
+                  };
+                  
+                  console.log(`📝 Transaction data prepared:`, JSON.stringify(transactionData, null, 2));
+                  
+                  transaction = await storage.createTransaction(transactionData);
+                  console.log(`✅ Transaction ${transaction.transactionId} created SUCCESSFULLY`);
+                  console.log(`✅ Transaction details:`, JSON.stringify(transaction, null, 2));
+                } else {
+                  console.log(`ℹ️ Transaction already exists: ${transaction.transactionId}`);
+                }
+              } catch (transactionError: any) {
+                console.error(`❌ TRANSACTION CREATION FAILED:`, transactionError);
+                console.error(`❌ Error message: ${transactionError.message}`);
+                console.error(`❌ Error stack:`, transactionError.stack);
               }
               
               // Update payment status
@@ -1316,25 +1333,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ Updating payment ${payment.id} from ${payment.status} to ${paymentStatus}`);
       
-      // Create transaction record if it doesn't exist
-      console.log("📝 Creating transaction record...");
-      let transaction = await storage.getTransactionByMerchantReference(merchantReference);
-      if (!transaction) {
-        transaction = await storage.createTransaction({
-          transactionId: transactionReference || randomUUID(),
-          merchantReference: merchantReference,
-          status: paymentStatus === "completed" ? "AUTHORIZED" : paymentStatus === "failed" ? "DECLINED" : "PENDING",
-          amount: payment.amount,
-          currencyCode: "ZAR",
-          paymentMethod: "CARD",
-          puid: null,
-          tkn: null,
-          token: null,
-          paymentId: payment.id,
-        });
-        console.log(`✅ Transaction ${transaction.transactionId} created`);
-      } else {
-        console.log(`ℹ️ Transaction already exists: ${transaction.transactionId}`);
+      // Create transaction record if it doesn't exist with comprehensive error handling
+      console.log("📝 Attempting to create transaction record via manual verification...");
+      console.log(`📝 Payment ID: ${payment.id}, Merchant Ref: ${merchantReference}`);
+      
+      try {
+        let transaction = await storage.getTransactionByMerchantReference(merchantReference);
+        console.log(`📝 Existing transaction check: ${transaction ? 'FOUND' : 'NOT FOUND'}`);
+        
+        if (!transaction) {
+          const transactionData = {
+            transactionId: transactionReference || randomUUID(),
+            merchantReference: merchantReference,
+            status: paymentStatus === "completed" ? "AUTHORIZED" : paymentStatus === "failed" ? "DECLINED" : "PENDING",
+            amount: payment.amount,
+            currencyCode: "ZAR" as const,
+            paymentMethod: "CARD",
+            puid: null,
+            tkn: null,
+            token: null,
+            paymentId: payment.id,
+          };
+          
+          console.log(`📝 Transaction data prepared:`, JSON.stringify(transactionData, null, 2));
+          
+          transaction = await storage.createTransaction(transactionData);
+          console.log(`✅ Transaction ${transaction.transactionId} created SUCCESSFULLY via manual verification`);
+          console.log(`✅ Transaction details:`, JSON.stringify(transaction, null, 2));
+        } else {
+          console.log(`ℹ️ Transaction already exists: ${transaction.transactionId}`);
+        }
+      } catch (transactionError: any) {
+        console.error(`❌ TRANSACTION CREATION FAILED (manual verification):`, transactionError);
+        console.error(`❌ Error message: ${transactionError.message}`);
+        console.error(`❌ Error stack:`, transactionError.stack);
       }
       
       // Update payment status
