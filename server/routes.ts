@@ -725,55 +725,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📝 Return method: ${req.method}`);
       console.log("📝 Return params:", req.method === 'GET' ? req.query : req.body);
       
-      const { paymentId, reference, ResultCode, ResultDescription, TransactionReference } = 
-        req.method === 'GET' ? req.query : req.body;
+      // Extract JWT token from request (Adumo sends _RESPONSE_TOKEN)
+      const jwtToken = extractJwtToken(req);
+      console.log("🔍 JWT token found:", jwtToken ? "YES" : "NO");
       
-      const paymentRef = reference || TransactionReference;
-      const resultCode = ResultCode;
+      let paymentStatus = "failed";
+      let paymentRef = "";
+      let transactionRef = "";
       
-      console.log("🔍 Payment return processing:");
-      console.log(`  PaymentId: ${paymentId}`);
-      console.log(`  Reference: ${paymentRef}`);
-      console.log(`  ResultCode: ${resultCode} (${resultCode === "00" ? "SUCCESS" : "FAILED"})`);
-      
-      if (paymentId && paymentRef) {
-        console.log("✅ Updating payment status via return...");
-        const payment = await storage.updatePaymentStatus(
-          paymentId as string, 
-          resultCode === "00" ? "completed" : "failed"
-        );
-        console.log(`💰 Payment ${payment.id} updated to: ${payment.status}`);
-        
-        // Update investor status
-        if (resultCode === "00") {
-          console.log("👤 Updating investor status via return...");
-          await storage.updateInvestorPaymentStatus(
-            payment.investorId, 
-            "completed", 
-            paymentRef as string
-          );
+      if (jwtToken) {
+        try {
+          // Verify JWT token with signature validation and claim checks
+          console.log("🔐 Verifying JWT token signature and claims...");
+          const decoded = verifyAdumoJWT(jwtToken);
           
-          // Initialize quest progress
-          console.log("🎮 Initializing quest progress via return...");
-          const questProgress = {
-            level: 1,
-            phase: "development",
-            startDate: new Date().toISOString(),
-            milestones: {
-              capitalReclaimed: false,
-              dividendPhase: false
+          // Extract validated fields from JWT
+          const {
+            result,           // Success/failure indicator (1 = success, -1 = failed, 0 = pending)
+            mref,            // Merchant reference
+            amount,          // Transaction amount
+            transactionIndex, // Transaction reference
+          } = decoded;
+          
+          paymentRef = mref;
+          transactionRef = transactionIndex;
+          
+          console.log("🔍 JWT payment return processing:");
+          console.log(`  Result: ${result} (${result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING"})`);
+          console.log(`  Merchant Ref: ${mref}`);
+          console.log(`  Amount: ${amount}`);
+          
+          // Map Adumo result codes: 1 = success, -1 = failed, 0 = pending
+          const isSuccess = result === 1;
+          paymentStatus = isSuccess ? "completed" : result === -1 ? "failed" : "pending";
+          
+          // Find payment by merchant reference
+          if (mref && mref.startsWith('OPIAN_')) {
+            console.log("✅ Updating payment status via JWT return...");
+            const payment = await storage.getPaymentByMerchantReference(mref);
+            
+            if (payment) {
+              // Update payment status
+              await storage.updatePaymentStatus(payment.id, paymentStatus);
+              console.log(`💰 Payment ${payment.id} updated to: ${paymentStatus}`);
+              
+              // Update investor status if successful
+              if (isSuccess) {
+                console.log("👤 Updating investor status via JWT return...");
+                const investor = await storage.updateInvestorPaymentStatus(
+                  payment.investorId, 
+                  "completed", 
+                  transactionRef
+                );
+                
+                // Initialize quest progress if not already initialized
+                if (!investor.questProgress) {
+                  console.log("🎮 Initializing quest progress via JWT return...");
+                  const questProgress = {
+                    level: 1,
+                    phase: "development",
+                    startDate: new Date().toISOString(),
+                    milestones: {
+                      capitalReclaimed: false,
+                      dividendPhase: false
+                    }
+                  };
+                  
+                  await storage.updateInvestorProgress(payment.investorId, questProgress);
+                  console.log("🎮 Quest progress initialized successfully via JWT return");
+                }
+              }
+            } else {
+              console.log("❌ Payment not found for merchant reference:", mref);
             }
-          };
-          
-          await storage.updateInvestorProgress(payment.investorId, questProgress);
-          console.log("🎮 Quest progress initialized successfully via return");
+          }
+        } catch (jwtError: any) {
+          console.error("❌ JWT validation error:", jwtError.message);
+          paymentStatus = "error";
         }
       } else {
-        console.log("❌ Missing required fields in return: paymentId or reference");
+        console.log("⚠️ No JWT token found in return, checking for fallback parameters...");
+        
+        // Fallback to old-style parameters if no JWT token
+        const { paymentId, reference, ResultCode, TransactionReference } = 
+          req.method === 'GET' ? req.query : req.body;
+        
+        paymentRef = reference || TransactionReference || "";
+        const resultCode = ResultCode;
+        
+        if (paymentId && paymentRef) {
+          console.log("✅ Using fallback parameters to update payment status...");
+          paymentStatus = resultCode === "00" ? "completed" : "failed";
+          
+          const payment = await storage.updatePaymentStatus(
+            paymentId as string, 
+            paymentStatus
+          );
+          console.log(`💰 Payment ${payment.id} updated to: ${payment.status}`);
+          
+          if (resultCode === "00") {
+            await storage.updateInvestorPaymentStatus(
+              payment.investorId, 
+              "completed", 
+              paymentRef as string
+            );
+          }
+        }
       }
 
       // Redirect to frontend with payment result
-      const status = resultCode === "00" ? "success" : "failed";
+      const status = paymentStatus === "completed" ? "success" : paymentStatus;
       console.log(`🔄 Redirecting to frontend with status: ${status}`);
       res.redirect(`/?payment=${status}&reference=${paymentRef}`);
     } catch (error: any) {
@@ -794,20 +855,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (bearerMatch) return bearerMatch[1];
     }
 
-    // Check body fields (case-insensitive)
+    // Check body fields (case-insensitive) - including _RESPONSE_TOKEN from Adumo
     const body = req.body || {};
     const bodyKeys = Object.keys(body);
     
     for (const key of bodyKeys) {
       const lowerKey = key.toLowerCase();
-      if (lowerKey === 'token' || lowerKey === 'jwt') {
+      if (lowerKey === 'token' || lowerKey === 'jwt' || lowerKey === '_response_token' || lowerKey === 'responsetoken') {
         return body[key];
       }
     }
 
-    // Check query parameters
+    // Check query parameters - including _RESPONSE_TOKEN from Adumo
     const query = req.query || {};
-    return query.token || query.jwt || query.Token || query.JWT || null;
+    return query.token || query.jwt || query.Token || query.JWT || 
+           query._RESPONSE_TOKEN || query._response_token || 
+           query.RESPONSE_TOKEN || query.responseToken || null;
   };
 
   // Verify and validate Adumo JWT token
