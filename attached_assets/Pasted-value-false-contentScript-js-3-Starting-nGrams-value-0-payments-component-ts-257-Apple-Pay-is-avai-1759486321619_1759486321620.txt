@@ -1,0 +1,59 @@
+value:  false
+contentScript.js:3 Starting nGrams value 0
+payments.component.ts:257 Apple Pay is available
+card.component.ts:31 CardV2Component - Constructor called
+card-add.component.ts:259 CardAddV2Component - Constructor called https://staging-gateway.adumoonline.com/virtual-v2/card/add
+card.component.ts:84 CardV2Component - Current URL: /virtual-v2/card/add
+card.component.ts:85 CardV2Component - Is base card route: false
+card.component.ts:91 CardV2Component - Not redirecting, allowing current route
+payments.component.ts:172 Google Pay is ready
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+24The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.Understand this warning
+card-add.component.ts:532 formValidation
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+card-add.component.ts:739 Charge currency code: t ZAR
+analytics.service.ts:67 Tracking event: Object
+card-add.component.ts:776  if === is false in activeCard
+card-add.component.ts:780 === is false in activeCard
+card-add.component.ts:781 ? is false activeCard
+analytics.service.ts:67 Tracking event: Object
+virtual-v2/card/add:1 Form submission canceled because the form is not connectedUnderstand this warning
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+card-add.component.ts:825 Sending 3DS Flow Analytics Event:  Object
+analytics.service.ts:67 Tracking event: Object
+ Cardinal configured, logging on! eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJPcmdVbml0SWQiOiI1ZDFjZDE2ZTAzMWU3MzI2ZGM5MmU2MzYiLCJPYmplY3RpZnlQYXlsb2FkIjpmYWxzZSwiUmVmZXJlbmNlSWQiOiJhMDRjNGE2NS02ODRjLTRmMjYtYWJhZC1mOGI1N2UwMjVlMGMiLCJpc3MiOiI1ZDFjZTZiNjJlZTU4ZjBlZDgyZmJjM2MiLCJQYXlsb2FkIjoie1wiT3JkZXJEZXRhaWxzXCI6e1wiQ3VycmVuY3lDb2RlXCI6XCI3MTBcIixcIk9yZGVyTnVtYmVyXCI6XCJhMDRjNGE2NS02ODRjLTRmMjYtYWJhZC1mOGI1N2UwMjVlMGNcIixcIlRyYW5zYWN0aW9uSWRcIjpcIjIyNjk3M1wiLFwiQW1vdW50XCI6MTIwMDAwMH0sXCJPcHRpb25zXCI6e1wiRW5hYmxlQ0NBXCI6dHJ1ZX19IiwiZXhwIjoxNzU5NDg1NDUzLCJpYXQiOjE3NTk0ODQ4NTMsImp0aSI6Ijg1YWJmZDFjLTg3ZWUtNDYxNy04NzY2LTNmOTQ4NmM3Zjc4YSJ9.4fSM13v1mgXNnzkCFcacEWR_iMtwyQSc3LY_gbPNRew
+ Retrieving the term url... https://staging-gateway.adumoonline.com/callback/bankserv/redirect/a04c4a65-684c-4f26-abad-f8b57e025e0c
+ Retrieving the MD url... a04c4a65-684c-4f26-abad-f8b57e025e0c
+analytics.service.ts:67 Tracking event: Object
+ BIN PROCESS | [object Object]
+ Payments setup complete! [object Object]
+ Setup complete data | [object Object]
+ Return obj from lookup |  [object Response]
+ Json response from lookup [object Object]
+ Return obj from jwt update |  [object Response]
+ Json response from change token eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJPcmdVbml0SWQiOiI1ZDFjZDE2ZTAzMWU3MzI2ZGM5MmU2MzYiLCJPYmplY3RpZnlQYXlsb2FkIjpmYWxzZSwiUmVmZXJlbmNlSWQiOiJhMDRjNGE2NS02ODRjLTRmMjYtYWJhZC1mOGI1N2UwMjVlMGMiLCJpc3MiOiI1ZDFjZTZiNjJlZTU4ZjBlZDgyZmJjM2MiLCJQYXlsb2FkIjoie1wiT3JkZXJEZXRhaWxzXCI6e1wiQ3VycmVuY3lDb2RlXCI6XCI3MTBcIixcIk9yZGVyTnVtYmVyXCI6XCJhMDRjNGE2NS02ODRjLTRmMjYtYWJhZC1mOGI1N2UwMjVlMGNcIixcIlRyYW5zYWN0aW9uSWRcIjpcIjQ1M2ZyeXpGMFhoWHE4RmRVRlcxXCIsXCJBbW91bnRcIjoxMjAwMDAwfSxcIk9wdGlvbnNcIjp7XCJFbmFibGVDQ0FcIjp0cnVlfX0iLCJleHAiOjE3NTk0ODU0NTMsImlhdCI6MTc1OTQ4NDg1MywianRpIjoiODVhYmZkMWMtODdlZS00NjE3LTg3NjYtM2Y5NDg2YzdmNzhhIn0.Rp4zfpje1lKyLhMS-gEvUOEBr4fHwT1X3rF0tZJADuE
+ Acs and payload defined https://1merchantacsstag.cardinalcommerce.com/MerchantACSWeb/creq.jsp eyJtZXNzYWdlVHlwZSI6IkNSZXEiLCJtZXNzYWdlVmVyc2lvbiI6IjIuMS4wIiwidGhyZWVEU1NlcnZlclRyYW5zSUQiOiI0NmNkNjk0Zi0yZTZlLTRhNWUtODJkYS1lMjcwYTExMjcwM2UiLCJhY3NUcmFuc0lEIjoiMmZhMTRlMDQtYjU0ZC00NTFlLWE0ZjEtNTBlN2UwNDZhZjY0IiwiY2hhbGxlbmdlV2luZG93U2l6ZSI6IjA1In0
+ Payments validated? [object Object] eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI1ZDFjZTZiNjJlZTU4ZjBlZDgyZmJjM2MiLCJpYXQiOjE3NTk0ODQ4NzIsImV4cCI6MTc1OTQ5MjA3MiwianRpIjoiZTE1NjQ1ZGUtYzY1ZC00MjZiLWEyMTktN2I0ODBjNDczZWEyIiwiQ29uc3VtZXJTZXNzaW9uSWQiOiIxXzc4NGU3MmEyLWRiODgtNGJhNy1iNmNlLTA5YmVjNTY1NWYwYyIsIlJlZmVyZW5jZUlkIjoiYTA0YzRhNjUtNjg0Yy00ZjI2LWFiYWQtZjhiNTdlMDI1ZTBjIiwiT3JnVW5pdElkIjoiNWQxY2QxNmUwMzFlNzMyNmRjOTJlNjM2IiwiYXVkIjoiODVhYmZkMWMtODdlZS00NjE3LTg3NjYtM2Y5NDg2YzdmNzhhIiwiUGF5bG9hZCI6IntcIlZhbGlkYXRlZFwiOnRydWUsXCJQYXltZW50XCI6e1wiVHlwZVwiOlwiQ0NBXCIsXCJQcm9jZXNzb3JUcmFuc2FjdGlvbklkXCI6XCI0NTNmcnl6RjBYaFhxOEZkVUZXMVwiLFwiRXh0ZW5kZWREYXRhXCI6e1wiQW1vdW50XCI6XCIxMjAwMDAwXCIsXCJDQVZWXCI6XCJBQUlCQllOb0V3QUFBQ2NLaEFKa2RRQUFBQUFcXHUwMDNkXCIsXCJDdXJyZW5jeUNvZGVcIjpcIjcxMFwiLFwiRUNJRmxhZ1wiOlwiMDVcIixcIlRocmVlRFNWZXJzaW9uXCI6XCIyLjEuMFwiLFwiUEFSZXNTdGF0dXNcIjpcIllcIixcIlNpZ25hdHVyZVZlcmlmaWNhdGlvblwiOlwiWVwifX0sXCJBY3Rpb25Db2RlXCI6XCJTVUNDRVNTXCIsXCJFcnJvck51bWJlclwiOjAsXCJFcnJvckRlc2NyaXB0aW9uXCI6XCJTdWNjZXNzXCJ9In0.KPJV02SSPuFDSBBz9m_gWu77tdyJ7OUJTUBFhlUqb_k
+ Redir data [object Response]
+staging-apiv3.adumoonline.com/mediation/authentication/api/v1/status-callback?response=tds-completed%20-%20Form%20submitted%20successfully%20-%20TX%20%5Ba04c4a65-684c-4f26-abad-f8b57e025e0c%5D:1  Failed to load resource: the server responded with a status of 503 ()Understand this error
+ Status callback sent successfully
+ 3DS callback - sending completion message: [object Object]
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+transaction.api.class.ts:51  getTransactionStatusCard /channel-virtual/api/v1/transaction/status/a04c4a65-684c-4f26-abad-f8b57e025e0c
+analytics.service.ts:67 Tracking event: Object
+api/analytics/track:1  Failed to load resource: the server responded with a status of 405 ()Understand this error
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+analytics.service.ts:67 Tracking event: Object
+transation-status.component.ts:121 Fetching postback data
+6transaction-status:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
