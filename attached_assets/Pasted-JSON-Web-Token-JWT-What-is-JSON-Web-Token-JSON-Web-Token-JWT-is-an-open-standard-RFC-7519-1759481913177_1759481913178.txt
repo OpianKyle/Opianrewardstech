@@ -1,0 +1,93 @@
+JSON Web Token (JWT)
+What is JSON Web Token?
+
+"JSON Web Token (JWT) is an open standard (RFC 7519) that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. This information can be verified and trusted because it is digitally signed."
+
+
+You can read more here (https://jwt.io/introduction)
+
+
+You must implement the JSON Web Token (JWT) in the request to us and validate the response token (_RESPONSE_TOKEN)
+
+
+We strongly recommend the following validation on the response token:
+
+Confirm the signature of the JWT token is valid
+
+Confirm that the values in the JWT token match with the values for the order.
+
+These values must be present and will be validated:
+
+mref (Merchant Reference)
+
+amount
+
+auid (Application UID)
+
+cuid (Merchant UID)
+
+notificationURL - In addition to the above variables, the notificationURL can be used to sent a webhook per transaction in addition to the ones that is configured in the merchant portal. Refer to webhooks: Webhooks
+
+Use the result field in the JWT token as your success and failed indicator
+
+
+Warning: Failure to put the recommended JTW token validations in place could lead to financial losses.
+
+
+Example JWT
+
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtdWlkIjoiMzQ4OEJGNzItMDFFNi00REU1LUI2NjAtMUZFQTdGOUE0Q0NBIiwiY3VpZCI6IjM0ODhCRjcyLTAxRTYtNERFNS1CNjYwLTFGRUE3RjlBNENDQSIsImp0aSI6IjUyMjViZmQ1NDExMWFzZGNhM2EiLCJpYXQiOjE1NTI5MTMzOTgsImV4cCI6MTU1Mzk5OTc5OH0.d8uEgDew3SiUxpe-Kyp3NqZJgJo75FlRN5G3AXohk5Y
+Request Example
+
+{
+"iss": "Dev Center",
+"cuid": "9BA5008C-08EE-4286-A349-54AF91A621B0",
+"auid": "4196B0B8-DB88-42E5-A06D-294A5E4DED87",
+"amount": "12.00",
+"mref": "DEV_xUQ58CeG",
+"jti": "QXiY24ZQvuPkwvU6KlDokWIgeX387MlX+M3qF8OrhRY=",
+"iat": 1621936758,
+"exp": 1621937358,
+"notificationURL":"https://webhooks.yourdomain.com/webhooks/response.php"
+}
+Decoded Response Example
+
+{
+"jti": "[B@51c83aae",
+"iat": 1612528158,
+"cuid": "BAAB2819-7286-49D3-8AD3-1212B3B40C2A",
+"auid": "A50376D2-0CDF-46DF-BDDD-30F0B514D853",
+"result": -1,
+"transactionIndex": "5bb926df-68ed-4154-bf01-cd1e7f2278a5",
+"mref": "DV_LNMnOi8bUn",
+"amount": "0.02",
+"mode": "1",
+"tkn": "",
+"puid": "e36bdd6e-c9c1-4aa6-a10d-8f0ce9b6d361",
+"exp": 1612528758
+}
+JWT(Token field) can be programatically constructed as follows:
+
+php Example using a standalone php library
+
+require_once('jwt.php');
+
+  $SecretKey = 'NFeCMY17FoaDkLe3azMchsNbLOpgkO2Wh58'; //Supplied by Adumo Online
+
+  $payloadArray = array();
+  $payloadArray['iss'] = $iss; //The identity of the party that issued the JWT. The claim holds a simple string, of which the value is at the discretion of the issuer
+  $payloadArray['cuid'] = $MerchantID;
+  $payloadArray['auid'] = $ApplicationID;
+  $payloadArray['amount'] = $amount;
+  $payloadArray['mref'] = $merchantReference;
+  $payloadArray['jti'] = base64_encode(random_bytes (32));
+  $payloadArray['iat'] = time() - 60;
+  $payloadArray['exp'] = time() + 600;
+  $payloadArray['notificationURL'] = 'https://developers.adumoonline.com/webhooks/response.php';
+
+
+  //$Token will be used to populate the Token form field in the POST to our payment page
+  $Token = JWT::encode($payloadArray, $SecretKey);
+
+  //The response token can be decoded as follows
+  $decodedData = JWT::decode($jwtToken, $SecretKey, array('HS256'));

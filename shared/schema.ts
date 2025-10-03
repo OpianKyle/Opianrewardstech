@@ -53,6 +53,7 @@ export const transactions = mysqlTable("transactions", {
   paymentMethod: varchar("payment_method", { length: 255 }).notNull(),
   timestamp: timestamp("timestamp").defaultNow(),
   puid: varchar("puid", { length: 36 }), // Profile UID for tokenized cards
+  tkn: varchar("tkn", { length: 255 }), // Tokenization token from Adumo
   token: text("token"), // JWT token containing transaction details
   errorCode: int("error_code"),
   errorMessage: varchar("error_message", { length: 255 }),
@@ -118,6 +119,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   currencyCode: true,
   paymentMethod: true,
   puid: true,
+  tkn: true,
   token: true,
   errorCode: true,
   errorMessage: true,

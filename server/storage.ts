@@ -439,6 +439,7 @@ export class MemStorage implements IStorage {
       paymentMethod: insertTransaction.paymentMethod!,
       timestamp: new Date(),
       puid: insertTransaction.puid || null,
+      tkn: insertTransaction.tkn || null,
       token: insertTransaction.token || null,
       errorCode: insertTransaction.errorCode || null,
       errorMessage: insertTransaction.errorMessage || null,

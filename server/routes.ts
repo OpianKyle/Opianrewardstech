@@ -765,6 +765,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const payment = await storage.getPaymentByMerchantReference(mref);
             
             if (payment) {
+              // Create transaction record
+              console.log("📝 Creating transaction record...");
+              let transaction = await storage.getTransactionByMerchantReference(mref);
+              if (!transaction) {
+                transaction = await storage.createTransaction({
+                  transactionId: transactionIndex || randomUUID(),
+                  merchantReference: mref,
+                  status: result === 1 ? "AUTHORIZED" : result === -1 ? "DECLINED" : "PENDING",
+                  amount: payment.amount,
+                  currencyCode: "ZAR",
+                  paymentMethod: decoded.paymentMethod || "CARD",
+                  puid: decoded.puid || null,
+                  tkn: decoded.tkn || null,
+                  token: jwtToken,
+                  paymentId: payment.id,
+                });
+                console.log(`✅ Transaction ${transaction.transactionId} created`);
+              }
+              
               // Update payment status
               await storage.updatePaymentStatus(payment.id, paymentStatus);
               console.log(`💰 Payment ${payment.id} updated to: ${paymentStatus}`);
@@ -979,6 +998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount,          // Transaction amount
           transactionIndex, // Transaction reference
           puid,            // Payment UID
+          tkn,             // Tokenization token for card-on-file
         } = decoded;
         
         // Only log minimal, non-sensitive information in production
@@ -1035,6 +1055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               currencyCode: "ZAR",
               paymentMethod: decoded.paymentMethod || "CARD",
               puid: puid || null,
+              tkn: tkn || null,
               token: jwtToken,
               paymentId: payment.id,
             });
@@ -1092,6 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status,
           amount,
           puid,
+          tkn,
           paymentMethod,
           ResultCode, 
           CustomField2,
@@ -1137,6 +1159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               currencyCode: "ZAR",
               paymentMethod: paymentMethod || "CARD",
               puid: puid || null,
+              tkn: tkn || null,
               token: null,
               paymentId: payment.id,
             });
@@ -1292,6 +1315,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : status === "failed" ? "failed" : "pending";
       
       console.log(`✅ Updating payment ${payment.id} from ${payment.status} to ${paymentStatus}`);
+      
+      // Create transaction record if it doesn't exist
+      console.log("📝 Creating transaction record...");
+      let transaction = await storage.getTransactionByMerchantReference(merchantReference);
+      if (!transaction) {
+        transaction = await storage.createTransaction({
+          transactionId: transactionReference || randomUUID(),
+          merchantReference: merchantReference,
+          status: paymentStatus === "completed" ? "AUTHORIZED" : paymentStatus === "failed" ? "DECLINED" : "PENDING",
+          amount: payment.amount,
+          currencyCode: "ZAR",
+          paymentMethod: "CARD",
+          puid: null,
+          tkn: null,
+          token: null,
+          paymentId: payment.id,
+        });
+        console.log(`✅ Transaction ${transaction.transactionId} created`);
+      } else {
+        console.log(`ℹ️ Transaction already exists: ${transaction.transactionId}`);
+      }
       
       // Update payment status
       const updatedPayment = await storage.updatePaymentStatus(payment.id, paymentStatus);

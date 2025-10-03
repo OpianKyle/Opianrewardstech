@@ -156,6 +156,7 @@ async function createTablesIfNotExist(connection: mysql.Connection) {
       payment_method VARCHAR(255) NOT NULL,
       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       puid VARCHAR(36),
+      tkn VARCHAR(255),
       token TEXT,
       error_code INT,
       error_message VARCHAR(255),
