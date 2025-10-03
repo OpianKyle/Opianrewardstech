@@ -124,7 +124,6 @@ async function createTablesIfNotExist(connection: mysql.Connection) {
       payment_method VARCHAR(50) NOT NULL,
       amount INT NOT NULL,
       payment_status VARCHAR(50) NOT NULL DEFAULT 'pending',
-      stripe_payment_intent_id VARCHAR(255),
       adumo_payment_id VARCHAR(255),
       adumo_customer_id VARCHAR(255),
       subscription_id VARCHAR(255),
