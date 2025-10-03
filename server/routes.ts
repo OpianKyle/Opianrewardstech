@@ -1182,6 +1182,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual payment verification endpoint (for when Adumo webhooks fail)
+  app.post("/api/verify-payment", async (req, res) => {
+    try {
+      const { merchantReference, transactionReference, status } = req.body;
+      
+      console.log("🔍 Manual payment verification requested:");
+      console.log(`  Merchant Reference: ${merchantReference}`);
+      console.log(`  Transaction Reference: ${transactionReference}`);
+      console.log(`  Status: ${status}`);
+      
+      if (!merchantReference) {
+        return res.status(400).json({ message: "Merchant reference is required" });
+      }
+      
+      // Find payment by merchant reference
+      const payment = await storage.getPaymentByMerchantReference(merchantReference);
+      
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found with that reference" });
+      }
+      
+      // Prevent re-processing completed payments
+      if (payment.status === "completed") {
+        console.log("⚠️ Payment already completed, skipping update");
+        return res.json({ 
+          success: true, 
+          message: "Payment already completed",
+          payment: {
+            id: payment.id,
+            status: payment.status,
+            amount: payment.amount
+          }
+        });
+      }
+      
+      // Determine payment status (default to completed if status is "authorised" or "completed")
+      const paymentStatus = (status && (status.toLowerCase() === "authorised" || status.toLowerCase() === "completed")) 
+        ? "completed" 
+        : status === "failed" ? "failed" : "pending";
+      
+      console.log(`✅ Updating payment ${payment.id} from ${payment.status} to ${paymentStatus}`);
+      
+      // Update payment status
+      const updatedPayment = await storage.updatePaymentStatus(payment.id, paymentStatus);
+      
+      // If payment successful, update investor status and initialize quest
+      if (paymentStatus === "completed") {
+        console.log("👤 Updating investor status to completed...");
+        const investor = await storage.updateInvestorPaymentStatus(
+          payment.investorId,
+          "completed",
+          transactionReference || merchantReference
+        );
+        
+        // Initialize quest progress if not already done
+        if (!investor.questProgress) {
+          console.log("🎮 Initializing quest progress...");
+          const questProgress = {
+            level: 1,
+            phase: "development",
+            startDate: new Date().toISOString(),
+            milestones: {
+              capitalReclaimed: false,
+              dividendPhase: false
+            }
+          };
+          
+          await storage.updateInvestorProgress(investor.id, questProgress);
+          console.log("🎮 Quest progress initialized successfully");
+        }
+        
+        console.log("✅ Payment verification completed successfully");
+        
+        return res.json({
+          success: true,
+          message: "Payment verified and status updated to completed",
+          payment: {
+            id: updatedPayment.id,
+            status: updatedPayment.status,
+            amount: updatedPayment.amount,
+            investorId: updatedPayment.investorId
+          },
+          investor: {
+            id: investor.id,
+            email: investor.email,
+            paymentStatus: investor.paymentStatus
+          }
+        });
+      } else {
+        return res.json({
+          success: true,
+          message: `Payment status updated to ${paymentStatus}`,
+          payment: {
+            id: updatedPayment.id,
+            status: updatedPayment.status,
+            amount: updatedPayment.amount
+          }
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Payment verification error:", error);
+      res.status(500).json({ message: "Error verifying payment: " + error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
