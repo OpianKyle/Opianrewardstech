@@ -23,7 +23,6 @@ export const investors = mysqlTable("investors", {
   paymentMethod: varchar("payment_method", { length: 50 }).notNull(), // "lump_sum", "12_months", "24_months"
   amount: int("amount").notNull(), // Amount in cents
   paymentStatus: varchar("payment_status", { length: 50 }).notNull().default("pending"), // "pending", "processing", "completed", "failed"
-  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   adumoPaymentId: varchar("adumo_payment_id", { length: 255 }),
   adumoCustomerId: varchar("adumo_customer_id", { length: 255 }), // Adumo customer ID
   subscriptionId: varchar("subscription_id", { length: 255 }), // Subscription ID
@@ -37,7 +36,7 @@ export const payments = mysqlTable("payments", {
   id: varchar("id", { length: 36 }).primaryKey(),
   investorId: varchar("investor_id", { length: 36 }).notNull().references(() => investors.id),
   amount: int("amount").notNull(),
-  method: varchar("method", { length: 50 }).notNull(), // "stripe", "adumo", "bank_transfer"
+  method: varchar("method", { length: 50 }).notNull(), // "adumo", "bank_transfer"
   status: varchar("status", { length: 50 }).notNull().default("pending"),
   paymentData: json("payment_data"),
   createdAt: timestamp("created_at").defaultNow(),
