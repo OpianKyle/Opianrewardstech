@@ -32,7 +32,7 @@ export interface IStorage {
   getInvestor(id: string): Promise<Investor | undefined>;
   getInvestorByEmail(email: string): Promise<Investor | undefined>;
   createInvestor(investor: InsertInvestor): Promise<Investor>;
-  updateInvestorPaymentStatus(id: string, status: string, paymentIntentId?: string): Promise<Investor>;
+  updateInvestorPaymentStatus(id: string, status: string, adumoPaymentId?: string): Promise<Investor>;
   updateInvestorProgress(id: string, progress: any): Promise<Investor>;
   
   // Payment operations
@@ -99,8 +99,9 @@ export class DatabaseStorage implements IStorage {
       ...insertInvestor,
       id,
       paymentStatus: "pending",
-      stripePaymentIntentId: null,
       adumoPaymentId: null,
+      adumoCustomerId: null,
+      subscriptionId: null,
       questProgress: {},
       certificateGenerated: null,
     };
@@ -112,15 +113,15 @@ export class DatabaseStorage implements IStorage {
   async updateInvestorPaymentStatus(
     id: string,
     status: string,
-    paymentIntentId?: string,
+    adumoPaymentId?: string,
   ): Promise<Investor> {
     const updateData: any = {
       paymentStatus: status,
       updatedAt: new Date(),
     };
     
-    if (paymentIntentId) {
-      updateData.stripePaymentIntentId = paymentIntentId;
+    if (adumoPaymentId) {
+      updateData.adumoPaymentId = adumoPaymentId;
     }
     
     await db.update(investors).set(updateData).where(eq(investors.id, id));
@@ -365,7 +366,6 @@ export class MemStorage implements IStorage {
       ...insertInvestor,
       id,
       paymentStatus: "pending",
-      stripePaymentIntentId: null,
       adumoPaymentId: null,
       adumoCustomerId: null,
       subscriptionId: null,
@@ -378,10 +378,10 @@ export class MemStorage implements IStorage {
     return investor;
   }
 
-  async updateInvestorPaymentStatus(id: string, status: string, paymentIntentId?: string): Promise<Investor> {
+  async updateInvestorPaymentStatus(id: string, status: string, adumoPaymentId?: string): Promise<Investor> {
     const investor = this.investors.get(id);
     if (!investor) throw new Error("Investor not found");
-    const updatedInvestor = { ...investor, paymentStatus: status, stripePaymentIntentId: paymentIntentId || investor.stripePaymentIntentId, updatedAt: new Date() };
+    const updatedInvestor = { ...investor, paymentStatus: status, adumoPaymentId: adumoPaymentId || investor.adumoPaymentId, updatedAt: new Date() };
     this.investors.set(id, updatedInvestor);
     return updatedInvestor;
   }
