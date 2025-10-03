@@ -658,35 +658,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currencyAmount = (validatedData.amount / 100).toFixed(2);
 
       // Generate JWT token for Adumo API authentication
+      // Using Adumo's exact JWT payload structure
       const jwtPayload = {
-        MerchantUID: ADUMO_CONFIG.merchantId,
-        ApplicationUID: ADUMO_CONFIG.applicationId,
+        iss: "Opian Rewards",
+        cuid: ADUMO_CONFIG.merchantId,
+        auid: ADUMO_CONFIG.applicationId,
+        amount: currencyAmount,
+        mref: reference,
+        jti: randomUUID(),
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (60 * 15) // 15 minutes expiry
+        exp: Math.floor(Date.now() / 1000) + (60 * 10) // 10 minutes expiry
       };
       
       const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret!);
 
       // Return form data for client-side form POST to Adumo Virtual
-      // Using exact field names as per Adumo documentation
+      // Using EXACT field names as per Adumo Virtual API documentation
       const formData = {
         MerchantID: ADUMO_CONFIG.merchantId,
         ApplicationID: ADUMO_CONFIG.applicationId,
-        TransactionReference: reference,
-        MerchantReference: reference, // Using same reference for both
+        MerchantReference: reference,
         Amount: currencyAmount,
-        CurrencyCode: "ZAR",
-        Description: `Opian Rewards - ${validatedData.tier} Tier`,
-        CustomerFirstName: validatedData.firstName,
-        CustomerLastName: validatedData.lastName,
-        CustomerEmail: validatedData.email,
-        ReturnURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`,
-        CancelURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}&status=cancelled`,
-        NotifyURL: ADUMO_CONFIG.notifyUrl,
-        CustomField1: reference,
-        CustomField2: payment.id,
-        CustomField3: investor.id,
-        JWT: jwtToken
+        Token: jwtToken, // Adumo uses "Token" not "JWT"
+        txtCurrencyCode: "ZAR", // Adumo uses "txtCurrencyCode" not "CurrencyCode"
+        RedirectSuccessfulURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`,
+        RedirectFailedURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}&status=failed`,
+        // Optional customer details
+        Variable1: validatedData.tier,
+        Variable2: payment.id
       };
 
       // Log payment creation without sensitive data
