@@ -12,19 +12,19 @@ export const PAYMENT_METHODS = {
 
 export const TIER_PRICING = {
   builder: {
-    lump_sum: 12000,
-    monthly_12: 1000,
-    monthly_24: 500
+    lump_sum: 1200000,
+    monthly_12: 100000,
+    monthly_24: 50000
   },
   innovator: {
-    lump_sum: 24000, 
-    monthly_12: 2000,
-    monthly_24: 1000
+    lump_sum: 2400000, 
+    monthly_12: 200000,
+    monthly_24: 100000
   },
   visionary: {
-    lump_sum: 36000,
-    monthly_12: 3000, 
-    monthly_24: 1500
+    lump_sum: 3600000,
+    monthly_12: 300000, 
+    monthly_24: 150000
   }
 } as const;
 
