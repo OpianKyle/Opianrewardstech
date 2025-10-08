@@ -1431,6 +1431,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Adumo Webhook Endpoint - receives payment status updates
+  app.post("/api/adumo/webhook", async (req: Request, res: Response) => {
+    try {
+      console.log("🔔 Adumo webhook notification received:", new Date().toISOString());
+      console.log("📦 Webhook payload:", JSON.stringify(req.body, null, 2));
+
+      const webhookData = req.body;
+      
+      // Extract key fields from Adumo notification
+      // Based on the user's example, Adumo sends these fields
+      const merchantReference = webhookData.merchantReference || webhookData._MERCHANTREFERENCE;
+      const transactionId = webhookData.transactionIndex || webhookData._TRANSACTIONINDEX;
+      const status = webhookData.status || webhookData._STATUS;
+      const amount = webhookData.amount || webhookData._AMOUNT || webhookData.TXTPRICE;
+      const paymentMethod = webhookData.paymentMethod || webhookData._PAYMETHOD;
+
+      if (!merchantReference) {
+        console.error("❌ Missing merchant reference in webhook");
+        return res.status(400).json({ error: "Missing merchant reference" });
+      }
+
+      console.log(`🔍 Processing payment: ${merchantReference}`);
+      console.log(`   Transaction ID: ${transactionId}`);
+      console.log(`   Status: ${status}`);
+      console.log(`   Amount: ${amount}`);
+
+      // Find the transaction by merchant reference
+      let transaction = await storage.getTransactionByMerchantReference(merchantReference);
+
+      if (!transaction) {
+        console.error(`❌ Transaction not found for reference: ${merchantReference}`);
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+
+      // Map Adumo status to our status enum
+      let adumoStatus: "PENDING" | "SUCCESS" | "FAILED" | "CANCELED" | "REFUNDED" = "PENDING";
+      
+      if (status === "AUTHORISED" || status === "AUTHORIZED" || status === "SUCCESS") {
+        adumoStatus = "SUCCESS";
+      } else if (status === "DECLINED" || status === "FAILED" || status === "ERROR") {
+        adumoStatus = "FAILED";
+      } else if (status === "CANCELED" || status === "CANCELLED") {
+        adumoStatus = "CANCELED";
+      } else if (status === "REFUNDED") {
+        adumoStatus = "REFUNDED";
+      }
+
+      console.log(`🔄 Updating transaction status from ${transaction.adumoStatus} to ${adumoStatus}`);
+
+      // Update transaction with notify URL response
+      const updatedTransaction = await storage.updateTransaction(transaction.id, {
+        adumoTransactionId: transactionId || transaction.adumoTransactionId,
+        adumoStatus,
+        paymentMethod: paymentMethod || transaction.paymentMethod,
+        notifyUrlResponse: JSON.stringify(webhookData),
+      });
+
+      console.log(`✅ Transaction updated successfully: ${updatedTransaction.id}`);
+
+      // Update invoice status if payment succeeded
+      if (adumoStatus === "SUCCESS") {
+        await storage.updateInvoiceStatus(transaction.invoiceId, "paid");
+        console.log(`💰 Invoice ${transaction.invoiceId} marked as paid`);
+      } else if (adumoStatus === "FAILED") {
+        await storage.updateInvoiceStatus(transaction.invoiceId, "failed");
+        console.log(`❌ Invoice ${transaction.invoiceId} marked as failed`);
+      }
+
+      // Return success response to Adumo
+      res.json({ 
+        success: true, 
+        message: "Webhook processed successfully",
+        transactionId: transaction.id,
+        status: adumoStatus
+      });
+
+    } catch (error: any) {
+      console.error("❌ Error processing Adumo webhook:", error);
+      res.status(500).json({ 
+        error: "Webhook processing failed", 
+        message: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

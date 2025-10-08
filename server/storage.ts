@@ -5,7 +5,9 @@ import {
   InsertUser, 
   User, 
   InsertInvestor, 
-  Investor, 
+  Investor,
+  InsertInvoice,
+  Invoice, 
   InsertPayment, 
   Payment,
   InsertTransaction,
@@ -16,6 +18,7 @@ import {
   Otp,
   users,
   investors,
+  invoices,
   payments,
   transactions,
   paymentMethods,
@@ -35,6 +38,11 @@ export interface IStorage {
   updateInvestorPaymentStatus(id: string, status: string, adumoPaymentId?: string): Promise<Investor>;
   updateInvestorProgress(id: string, progress: any): Promise<Investor>;
   
+  // Invoice operations
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  getInvoice(id: string): Promise<Invoice | undefined>;
+  updateInvoiceStatus(id: string, status: string): Promise<Invoice>;
+  
   // Payment operations
   createPayment(payment: InsertPayment): Promise<Payment>;
   getPaymentsByInvestor(investorId: string): Promise<Payment[]>;
@@ -44,7 +52,8 @@ export interface IStorage {
   // Transaction operations (Adumo integration)
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getTransactionByMerchantReference(reference: string): Promise<Transaction | undefined>;
-  updateTransactionStatus(transactionId: string, status: string, errorCode?: number, errorMessage?: string): Promise<Transaction>;
+  getTransactionById(id: string): Promise<Transaction | undefined>;
+  updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction>;
   
   // Payment method operations
   createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
@@ -191,15 +200,48 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // Adumo Integration Methods
-  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    await db.insert(transactions).values(insertTransaction);
+  // Invoice Methods
+  async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
+    const id = randomUUID();
+    const newInvoice = {
+      ...insertInvoice,
+      id,
+    };
     
-    const result = await db.select().from(transactions).where(eq(transactions.transactionId, insertTransaction.transactionId)).limit(1);
+    await db.insert(invoices).values(newInvoice);
+    return newInvoice as Invoice;
+  }
+
+  async getInvoice(id: string): Promise<Invoice | undefined> {
+    const result = await db.select().from(invoices).where(eq(invoices.id, id)).limit(1);
+    return result[0];
+  }
+
+  async updateInvoiceStatus(id: string, status: string): Promise<Invoice> {
+    await db.update(invoices)
+      .set({ 
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(invoices.id, id));
+    
+    const result = await db.select().from(invoices).where(eq(invoices.id, id)).limit(1);
     if (!result[0]) {
-      throw new Error("Failed to create transaction");
+      throw new Error("Invoice not found");
     }
     return result[0];
+  }
+
+  // Adumo Integration Methods
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const id = randomUUID();
+    const newTransaction = {
+      ...insertTransaction,
+      id,
+    };
+    
+    await db.insert(transactions).values(newTransaction);
+    return newTransaction as Transaction;
   }
 
   async getTransactionByMerchantReference(reference: string): Promise<Transaction | undefined> {
@@ -207,33 +249,20 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async updateTransactionStatus(
-    transactionId: string, 
-    status: string, 
-    errorCode?: number, 
-    errorMessage?: string
-  ): Promise<Transaction> {
-    const updateData: any = {
-      status,
-      updatedAt: new Date(),
-    };
-    
-    if (errorCode !== undefined) {
-      updateData.errorCode = errorCode;
-    } else {
-      updateData.errorCode = null;
-    }
-    if (errorMessage) {
-      updateData.errorMessage = errorMessage;
-    } else {
-      updateData.errorMessage = null;
-    }
-    
+  async getTransactionById(id: string): Promise<Transaction | undefined> {
+    const result = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
+    return result[0];
+  }
+
+  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction> {
     await db.update(transactions)
-      .set(updateData)
-      .where(eq(transactions.transactionId, transactionId));
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(transactions.id, id));
     
-    const result = await db.select().from(transactions).where(eq(transactions.transactionId, transactionId)).limit(1);
+    const result = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
     if (!result[0]) {
       throw new Error("Transaction not found");
     }
@@ -317,16 +346,20 @@ export class DatabaseStorage implements IStorage {
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private investors: Map<string, Investor>;
+  private invoices: Map<string, Invoice>;
   private payments: Map<string, Payment>;
   private transactions: Map<string, Transaction>;
   private paymentMethodsMap: Map<string, PaymentMethod>;
+  private otpsMap: Map<string, Otp>;
 
   constructor() {
     this.users = new Map();
     this.investors = new Map();
+    this.invoices = new Map();
     this.payments = new Map();
     this.transactions = new Map();
     this.paymentMethodsMap = new Map();
+    this.otpsMap = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -428,27 +461,51 @@ export class MemStorage implements IStorage {
     return updatedPayment;
   }
 
+  // Invoice Methods
+  async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
+    const id = randomUUID();
+    const invoice: Invoice = {
+      ...insertInvoice,
+      id,
+      status: insertInvoice.status || "pending",
+      description: insertInvoice.description || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.invoices.set(id, invoice);
+    return invoice;
+  }
+
+  async getInvoice(id: string): Promise<Invoice | undefined> {
+    return this.invoices.get(id);
+  }
+
+  async updateInvoiceStatus(id: string, status: string): Promise<Invoice> {
+    const invoice = this.invoices.get(id);
+    if (!invoice) throw new Error("Invoice not found");
+    const updatedInvoice = { ...invoice, status, updatedAt: new Date() };
+    this.invoices.set(id, updatedInvoice);
+    return updatedInvoice;
+  }
+
   // Adumo Integration stub methods
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const id = randomUUID();
     const transaction: Transaction = { 
-      transactionId: insertTransaction.transactionId!,
-      merchantReference: insertTransaction.merchantReference!,
-      status: insertTransaction.status!,
-      amount: insertTransaction.amount!,
-      currencyCode: insertTransaction.currencyCode || "ZAR",
-      paymentMethod: insertTransaction.paymentMethod!,
-      timestamp: new Date(),
-      puid: insertTransaction.puid || null,
-      tkn: insertTransaction.tkn || null,
-      token: insertTransaction.token || null,
-      errorCode: insertTransaction.errorCode || null,
-      errorMessage: insertTransaction.errorMessage || null,
-      errorDetail: insertTransaction.errorDetail || null,
-      paymentId: insertTransaction.paymentId || null,
+      ...insertTransaction,
+      id,
+      adumoStatus: insertTransaction.adumoStatus || "PENDING",
+      gateway: insertTransaction.gateway || "ADUMO",
+      currency: insertTransaction.currency || "ZAR",
+      adumoTransactionId: insertTransaction.adumoTransactionId || null,
+      paymentMethod: insertTransaction.paymentMethod || null,
+      requestPayload: insertTransaction.requestPayload || null,
+      responsePayload: insertTransaction.responsePayload || null,
+      notifyUrlResponse: insertTransaction.notifyUrlResponse || null,
       createdAt: new Date(), 
       updatedAt: new Date() 
     };
-    this.transactions.set(transaction.transactionId, transaction);
+    this.transactions.set(id, transaction);
     return transaction;
   }
 
@@ -456,17 +513,19 @@ export class MemStorage implements IStorage {
     return Array.from(this.transactions.values()).find(t => t.merchantReference === reference);
   }
 
-  async updateTransactionStatus(transactionId: string, status: string, errorCode?: number, errorMessage?: string): Promise<Transaction> {
-    const transaction = this.transactions.get(transactionId);
+  async getTransactionById(id: string): Promise<Transaction | undefined> {
+    return this.transactions.get(id);
+  }
+
+  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction> {
+    const transaction = this.transactions.get(id);
     if (!transaction) throw new Error("Transaction not found");
     const updated = { 
       ...transaction, 
-      status, 
-      errorCode: errorCode || null, 
-      errorMessage: errorMessage || null, 
+      ...updates,
       updatedAt: new Date() 
     };
-    this.transactions.set(transactionId, updated);
+    this.transactions.set(id, updated);
     return updated;
   }
 
@@ -501,8 +560,6 @@ export class MemStorage implements IStorage {
   }
 
   // OTP Operations (in-memory implementation)
-  private otpsMap: Map<string, Otp> = new Map();
-
   async createOtp(insertOtp: InsertOtp): Promise<Otp> {
     const id = randomUUID();
     const otp: Otp = {
