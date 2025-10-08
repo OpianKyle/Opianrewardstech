@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { pool } from "./db";
 import { insertInvestorSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -1428,6 +1429,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("❌ Payment verification error:", error);
       res.status(500).json({ message: "Error verifying payment: " + error.message });
+    }
+  });
+
+  // Debug endpoint to check database tables
+  app.get("/api/debug/tables", async (req: Request, res: Response) => {
+    try {
+      const connection = await (pool as any).getConnection();
+      const [tables] = await connection.execute('SHOW TABLES');
+      const [txnStructure] = await connection.execute('DESCRIBE transactions');
+      connection.release();
+      
+      res.json({ 
+        tables, 
+        transactionStructure: txnStructure 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Migration endpoint to update transactions table to new schema
+  app.post("/api/debug/migrate-transactions", async (req: Request, res: Response) => {
+    try {
+      const connection = await (pool as any).getConnection();
+      
+      // Drop old transactions table
+      await connection.execute('DROP TABLE IF EXISTS transactions');
+      
+      // Create new transactions table with updated schema
+      await connection.execute(`
+        CREATE TABLE transactions (
+          id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+          invoice_id VARCHAR(36) NOT NULL,
+          user_id VARCHAR(36) NOT NULL,
+          merchant_reference VARCHAR(255) NOT NULL UNIQUE,
+          adumo_transaction_id VARCHAR(255) UNIQUE,
+          adumo_status ENUM('PENDING', 'SUCCESS', 'FAILED', 'CANCELED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
+          payment_method VARCHAR(50),
+          gateway ENUM('ADUMO', 'STRIPE', 'OTHER') NOT NULL DEFAULT 'ADUMO',
+          amount DECIMAL(10,2) NOT NULL,
+          currency VARCHAR(3) NOT NULL DEFAULT 'ZAR',
+          request_payload TEXT,
+          response_payload TEXT,
+          notify_url_response TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      
+      connection.release();
+      
+      res.json({ 
+        success: true,
+        message: "Transactions table migrated to new schema successfully"
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

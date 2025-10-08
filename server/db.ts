@@ -72,7 +72,7 @@ export function isDatabaseConnected(): boolean {
 async function createTablesIfNotExist(connection: mysql.PoolConnection) {
   const tables = [
     `CREATE TABLE IF NOT EXISTS users (
-      id VARCHAR(36) PRIMARY KEY,
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
       email VARCHAR(191) NOT NULL UNIQUE,
       first_name VARCHAR(255),
       last_name VARCHAR(255),
@@ -82,7 +82,7 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     
     `CREATE TABLE IF NOT EXISTS investors (
-      id VARCHAR(36) PRIMARY KEY,
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
       email VARCHAR(191) NOT NULL UNIQUE,
       first_name VARCHAR(255) NOT NULL,
       last_name VARCHAR(255) NOT NULL,
@@ -100,8 +100,19 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     
+    `CREATE TABLE IF NOT EXISTS invoices (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      user_id VARCHAR(36) NOT NULL,
+      amount DECIMAL(10,2) NOT NULL,
+      status VARCHAR(50) NOT NULL DEFAULT 'pending',
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
     `CREATE TABLE IF NOT EXISTS payments (
-      id VARCHAR(36) PRIMARY KEY,
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
       investor_id VARCHAR(36) NOT NULL,
       amount INT NOT NULL,
       method VARCHAR(50) NOT NULL,
@@ -113,27 +124,27 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     
     `CREATE TABLE IF NOT EXISTS transactions (
-      transaction_id VARCHAR(36) PRIMARY KEY,
-      merchant_reference VARCHAR(255) NOT NULL,
-      status VARCHAR(255) NOT NULL,
-      amount INT NOT NULL,
-      currency_code CHAR(3) NOT NULL DEFAULT 'ZAR',
-      payment_method VARCHAR(255) NOT NULL,
-      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      puid VARCHAR(36),
-      tkn VARCHAR(255),
-      token TEXT,
-      error_code INT,
-      error_message VARCHAR(255),
-      error_detail TEXT,
-      payment_id VARCHAR(36),
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      invoice_id VARCHAR(36) NOT NULL,
+      user_id VARCHAR(36) NOT NULL,
+      merchant_reference VARCHAR(255) NOT NULL UNIQUE,
+      adumo_transaction_id VARCHAR(255) UNIQUE,
+      adumo_status ENUM('PENDING', 'SUCCESS', 'FAILED', 'CANCELED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
+      payment_method VARCHAR(50),
+      gateway ENUM('ADUMO', 'STRIPE', 'OTHER') NOT NULL DEFAULT 'ADUMO',
+      amount DECIMAL(10,2) NOT NULL,
+      currency VARCHAR(3) NOT NULL DEFAULT 'ZAR',
+      request_payload TEXT,
+      response_payload TEXT,
+      notify_url_response TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE SET NULL
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     
     `CREATE TABLE IF NOT EXISTS payment_methods (
-      id VARCHAR(36) PRIMARY KEY,
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
       user_id VARCHAR(36) NOT NULL,
       card_type VARCHAR(50),
       last_four_digits CHAR(4),
@@ -147,7 +158,7 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     
     `CREATE TABLE IF NOT EXISTS otps (
-      id VARCHAR(36) PRIMARY KEY,
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
       email VARCHAR(191) NOT NULL,
       code VARCHAR(6) NOT NULL,
       expires_at TIMESTAMP NOT NULL,
