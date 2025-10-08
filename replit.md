@@ -2,7 +2,48 @@
 
 Opian Rewards is a gamified investor portal inspired by the Ascendancy Project, built as a full-stack web application. The platform presents investment opportunities as an RPG-style experience where investors choose "player tiers" (Builder, Innovator, Visionary) with different investment amounts and payment structures. The application features a futuristic AI-driven theme with quest-based progression tracking, animated shader backgrounds, and integrated payment processing through Adumo for South African users.
 
-# Recent Changes (October 3, 2025)
+# Recent Changes (October 8, 2025)
+
+## Payment Flow Fixes
+Fixed critical issues with transaction and invoice population after successful payments:
+
+### 1. Pricing Correction
+- **Fixed TIER_PRICING constants**: Multiplied all values by 100 to store prices in cents
+- Builder tier: R12,000 (was displaying as R120), R1,000/month (was R10), R500/month (was R5)
+- Innovator tier: R24,000 (was R240), R2,000/month (was R20), R1,000/month (was R10)
+- Visionary tier: R36,000 (was R360), R3,000/month (was R30), R1,500/month (was R15)
+- Prices now display correctly in the database and UI as intended amounts
+
+### 2. User-Investor Linkage
+- **Created proper user records**: Modified payment intent creation to create/get a `users` record alongside `investors`
+- **Stored userId in paymentData**: Added userId to payment metadata for later reference in webhooks
+- **Satisfied foreign key requirements**: Ensures invoices and transactions can reference userId as required by schema
+
+### 3. Invoice Creation Before Transactions
+- **Invoice-first approach**: Both webhook and payment return handlers now create invoices before transactions
+- **Proper amount formatting**: Invoices store amounts in currency format (decimal with 2 places)
+- **Idempotency handling**: Checks for existing invoices to prevent duplicates on retries
+- **Status tracking**: Invoice status set to "paid" on success, "pending" otherwise
+
+### 4. Transaction Schema Alignment
+- **Fixed field mapping**: Corrected transaction creation to use proper schema fields:
+  - `invoiceId` (foreign key to invoices)
+  - `userId` (foreign key to users)
+  - `adumoTransactionId` (Adumo's transaction reference)
+  - `adumoStatus` (enum: SUCCESS, FAILED, PENDING, CANCELED, REFUNDED)
+  - `currency` (instead of currencyCode)
+  - `gateway` (ADUMO, STRIPE, or OTHER)
+  - `amount` (as string decimal)
+- **Response payload tracking**: Stores JWT decoded data for audit trail
+- **Proper type casting**: Fixed TypeScript enum type errors for adumoStatus
+
+### Impact
+- Transactions and invoices now populate correctly in the database after successful payments
+- Prices display as intended (e.g., R2,000 instead of R20.00)
+- All foreign key relationships properly satisfied
+- Payment flow fully functional with Adumo Online integration
+
+# Previous Changes (October 3, 2025)
 
 ## Replit Import Setup
 - Successfully imported GitHub repository to Replit environment
