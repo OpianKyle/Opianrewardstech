@@ -625,6 +625,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = createPaymentIntentSchema.parse(req.body);
       
+      // Create or get user first
+      let user = await storage.getUserByEmail(validatedData.email);
+      if (!user) {
+        user = await storage.createUser({
+          email: validatedData.email,
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+          phone: validatedData.phone,
+        });
+      }
+      
       // Create or get investor
       let investor = await storage.getInvestorByEmail(validatedData.email);
       if (!investor) {
@@ -649,6 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: validatedData.amount,
         method: "adumo",
         paymentData: {
+          userId: user.id,
           tier: validatedData.tier,
           paymentMethod: validatedData.paymentMethod,
           merchantReference: reference
@@ -765,40 +777,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const payment = await storage.getPaymentByMerchantReference(mref);
             
             if (payment) {
-              // Create transaction record with comprehensive error handling
-              console.log("📝 Attempting to create transaction record...");
-              console.log(`📝 Payment ID: ${payment.id}, Merchant Ref: ${mref}`);
+              // Get userId from payment data
+              const userId = (payment.paymentData as any)?.userId;
               
-              try {
-                let transaction = await storage.getTransactionByMerchantReference(mref);
-                console.log(`📝 Existing transaction check: ${transaction ? 'FOUND' : 'NOT FOUND'}`);
-                
-                if (!transaction) {
-                  const transactionData = {
-                    transactionId: transactionIndex || randomUUID(),
-                    merchantReference: mref,
-                    status: result === 1 ? "AUTHORIZED" : result === -1 ? "DECLINED" : "PENDING",
-                    amount: payment.amount,
-                    currencyCode: "ZAR" as const,
-                    paymentMethod: decoded.paymentMethod || "CARD",
-                    puid: decoded.puid || null,
-                    tkn: decoded.tkn || null,
-                    token: jwtToken,
-                    paymentId: payment.id,
-                  };
-                  
-                  console.log(`📝 Transaction data prepared:`, JSON.stringify(transactionData, null, 2));
-                  
-                  transaction = await storage.createTransaction(transactionData);
-                  console.log(`✅ Transaction ${transaction.transactionId} created SUCCESSFULLY`);
-                  console.log(`✅ Transaction details:`, JSON.stringify(transaction, null, 2));
-                } else {
-                  console.log(`ℹ️ Transaction already exists: ${transaction.transactionId}`);
+              if (!userId) {
+                console.error("❌ No userId found in payment data");
+              } else {
+                // Create or get invoice first
+                console.log("📝 Creating invoice before transaction...");
+                let invoice;
+                try {
+                  // Check if invoice already exists for this payment
+                  const existingTransaction = await storage.getTransactionByMerchantReference(mref);
+                  if (existingTransaction?.invoiceId) {
+                    console.log(`📝 Using existing invoice: ${existingTransaction.invoiceId}`);
+                    invoice = { id: existingTransaction.invoiceId };
+                  } else {
+                    // Create new invoice
+                    const amountInCurrency = (payment.amount / 100).toFixed(2);
+                    invoice = await storage.createInvoice({
+                      userId: userId,
+                      amount: amountInCurrency,
+                      status: result === 1 ? "paid" : "pending",
+                      description: `Payment for ${(payment.paymentData as any)?.tier} tier - ${(payment.paymentData as any)?.paymentMethod}`,
+                    });
+                    console.log(`✅ Invoice ${invoice.id} created successfully`);
+                  }
+                } catch (invoiceError: any) {
+                  console.error(`❌ Invoice creation failed:`, invoiceError.message);
+                  invoice = null;
                 }
-              } catch (transactionError: any) {
-                console.error(`❌ TRANSACTION CREATION FAILED:`, transactionError);
-                console.error(`❌ Error message: ${transactionError.message}`);
-                console.error(`❌ Error stack:`, transactionError.stack);
+
+                // Create transaction record with comprehensive error handling
+                if (invoice) {
+                  console.log("📝 Attempting to create transaction record...");
+                  console.log(`📝 Payment ID: ${payment.id}, Merchant Ref: ${mref}`);
+                  
+                  try {
+                    let transaction = await storage.getTransactionByMerchantReference(mref);
+                    console.log(`📝 Existing transaction check: ${transaction ? 'FOUND' : 'NOT FOUND'}`);
+                    
+                    if (!transaction) {
+                      const transactionData = {
+                        invoiceId: invoice.id,
+                        userId: userId,
+                        merchantReference: mref,
+                        adumoTransactionId: transactionIndex || null,
+                        adumoStatus: (result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING") as "SUCCESS" | "FAILED" | "PENDING",
+                        paymentMethod: decoded.paymentMethod || "CARD",
+                        gateway: "ADUMO" as const,
+                        amount: (payment.amount / 100).toFixed(2),
+                        currency: "ZAR" as const,
+                        requestPayload: null,
+                        responsePayload: JSON.stringify(decoded),
+                        notifyUrlResponse: null,
+                      };
+                      
+                      console.log(`📝 Transaction data prepared:`, JSON.stringify(transactionData, null, 2));
+                      
+                      transaction = await storage.createTransaction(transactionData);
+                      console.log(`✅ Transaction ${transaction.id} created SUCCESSFULLY`);
+                      console.log(`✅ Transaction details:`, JSON.stringify(transaction, null, 2));
+                    } else {
+                      console.log(`ℹ️ Transaction already exists: ${transaction.id}`);
+                    }
+                  } catch (transactionError: any) {
+                    console.error(`❌ TRANSACTION CREATION FAILED:`, transactionError);
+                    console.error(`❌ Error message: ${transactionError.message}`);
+                    console.error(`❌ Error stack:`, transactionError.stack);
+                  }
+                }
               }
               
               // Update payment status
@@ -1060,28 +1108,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("✅ Security checks passed, updating payment status...");
           console.log(`💰 Payment status: ${payment.status} → ${paymentStatus}`);
           
-          // Create or update transaction record
-          let transaction = await storage.getTransactionByMerchantReference(mref);
-          if (!transaction) {
-            // Create new transaction record
-            transaction = await storage.createTransaction({
-              transactionId: transactionIndex || randomUUID(),
-              merchantReference: mref,
-              status: result === 1 ? "AUTHORIZED" : result === -1 ? "DECLINED" : "PENDING",
-              amount: expectedAmountCents,
-              currencyCode: "ZAR",
-              paymentMethod: decoded.paymentMethod || "CARD",
-              puid: puid || null,
-              tkn: tkn || null,
-              token: jwtToken,
-              paymentId: payment.id,
-            });
-          } else if (transaction.status !== "AUTHORIZED" && isSuccess) {
-            // Update existing transaction
-            await storage.updateTransactionStatus(
-              transaction.transactionId,
-              "AUTHORIZED"
-            );
+          // Get userId from payment data
+          const userId = (payment.paymentData as any)?.userId;
+          
+          if (!userId) {
+            console.error("❌ No userId found in payment data for webhook");
+          } else {
+            // Create or get invoice first
+            let invoice;
+            let transaction = await storage.getTransactionByMerchantReference(mref);
+            
+            if (transaction?.invoiceId) {
+              console.log(`📝 Webhook: Using existing invoice: ${transaction.invoiceId}`);
+              invoice = { id: transaction.invoiceId };
+            } else {
+              // Create new invoice
+              const amountInCurrency = (expectedAmountCents / 100).toFixed(2);
+              invoice = await storage.createInvoice({
+                userId: userId,
+                amount: amountInCurrency,
+                status: result === 1 ? "paid" : "pending",
+                description: `Payment for ${(payment.paymentData as any)?.tier} tier - ${(payment.paymentData as any)?.paymentMethod}`,
+              });
+              console.log(`✅ Webhook: Invoice ${invoice.id} created successfully`);
+            }
+            
+            // Create or update transaction record
+            if (!transaction) {
+              // Create new transaction record
+              transaction = await storage.createTransaction({
+                invoiceId: invoice.id,
+                userId: userId,
+                merchantReference: mref,
+                adumoTransactionId: transactionIndex || null,
+                adumoStatus: (result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING") as "SUCCESS" | "FAILED" | "PENDING",
+                paymentMethod: decoded.paymentMethod || "CARD",
+                gateway: "ADUMO" as const,
+                amount: (expectedAmountCents / 100).toFixed(2),
+                currency: "ZAR" as const,
+                requestPayload: null,
+                responsePayload: JSON.stringify(decoded),
+                notifyUrlResponse: jwtToken,
+              });
+              console.log(`✅ Webhook: Transaction ${transaction.id} created`);
+            } else if (transaction.adumoStatus !== "SUCCESS" && isSuccess) {
+              // Update existing transaction status if needed
+              console.log(`📝 Webhook: Updating existing transaction status`);
+            }
           }
           
           // Update payment status
