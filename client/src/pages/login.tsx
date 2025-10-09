@@ -51,10 +51,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await apiRequest('/api/auth/request-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      });
+      await apiRequest('POST', '/api/auth/request-otp', { email });
       
       setStep('otp');
       toast({
@@ -77,10 +74,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await apiRequest('/api/auth/verify-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email, code: otp }),
-      });
+      const response = await apiRequest('POST', '/api/auth/verify-otp', { email, code: otp });
 
       const data = await response.json();
       
