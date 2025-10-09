@@ -965,10 +965,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Redirect to frontend with payment result
       const status = paymentStatus === "completed" ? "success" : paymentStatus;
       console.log(`🔄 Redirecting to frontend with status: ${status}`);
-      res.redirect(`/?payment=${status}&reference=${paymentRef}`);
+      
+      // On successful payment, redirect to login page for OTP authentication
+      if (status === "success") {
+        res.redirect(`/login?payment=${status}&reference=${paymentRef}`);
+      } else {
+        res.redirect(`/?payment=${status}&reference=${paymentRef}`);
+      }
     } catch (error: any) {
       console.error("❌ Payment return error:", error);
-      res.redirect("/?payment=error");
+      res.redirect("/login?payment=error");
     }
   };
   
