@@ -337,16 +337,20 @@ export class DatabaseStorage implements IStorage {
   async getValidOtp(email: string, code: string): Promise<Otp | undefined> {
     // Normalize email to lowercase for case-insensitive comparison
     const normalizedEmail = email.toLowerCase();
+    const now = new Date();
     
     const result = await db
       .select()
       .from(otps)
       .where(
-        sql`LOWER(${otps.email}) = ${normalizedEmail} AND ${otps.code} = ${code} AND ${otps.used} = 0 AND ${otps.expiresAt} > NOW()`
+        sql`LOWER(${otps.email}) = ${normalizedEmail} AND ${otps.code} = ${code} AND ${otps.used} = 0 AND ${otps.expiresAt} > ${now}`
       )
       .limit(1);
     
-    console.log(`🔍 OTP lookup: email=${normalizedEmail}, code=${code}, found=${!!result[0]}`);
+    console.log(`🔍 OTP lookup: email=${normalizedEmail}, code=${code}, now=${now.toISOString()}, found=${!!result[0]}`);
+    if (result[0]) {
+      console.log(`✅ Found OTP: expires=${result[0].expiresAt}`);
+    }
     return result[0];
   }
 
