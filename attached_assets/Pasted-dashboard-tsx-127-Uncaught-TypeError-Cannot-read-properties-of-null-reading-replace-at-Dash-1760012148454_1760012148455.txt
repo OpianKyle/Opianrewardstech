@@ -1,0 +1,38 @@
+dashboard.tsx:127 Uncaught TypeError: Cannot read properties of null (reading 'replace')
+    at Dashboard (dashboard.tsx:127:61)
+    at renderWithHooks (chunk-WERSD76P.js?v=67014c42:11548:26)
+    at updateFunctionComponent (chunk-WERSD76P.js?v=67014c42:14582:28)
+    at beginWork (chunk-WERSD76P.js?v=67014c42:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-WERSD76P.js?v=67014c42:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-WERSD76P.js?v=67014c42:3699:24)
+    at invokeGuardedCallback (chunk-WERSD76P.js?v=67014c42:3733:39)
+    at beginWork$1 (chunk-WERSD76P.js?v=67014c42:19765:15)
+    at performUnitOfWork (chunk-WERSD76P.js?v=67014c42:19198:20)
+    at workLoopSync (chunk-WERSD76P.js?v=67014c42:19137:13)Understand this error
+chunk-WERSD76P.js?v=67014c42:14032 The above error occurred in the <Dashboard> component:
+
+    at Dashboard (https://ec23d913-58af-4829-a178-5d116f9837c7-00-1z0bwr5n6yzx2.picard.replit.dev/src/pages/dashboard.tsx:30:50)
+    at Route (https://ec23d913-58af-4829-a178-5d116f9837c7-00-1z0bwr5n6yzx2.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=466cfd97:323:16)
+    at Switch (https://ec23d913-58af-4829-a178-5d116f9837c7-00-1z0bwr5n6yzx2.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=466cfd97:379:17)
+    at Router
+    at Provider (https://ec23d913-58af-4829-a178-5d116f9837c7-00-1z0bwr5n6yzx2.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MAE4WKEQ.js?v=67014c42:38:15)
+    at TooltipProvider (https://ec23d913-58af-4829-a178-5d116f9837c7-00-1z0bwr5n6yzx2.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=da0179d7:59:5)
+    at AuthProvider (https://ec23d913-58af-4829-a178-5d116f9837c7-00-1z0bwr5n6yzx2.picard.replit.dev/src/hooks/use-auth.tsx:21:32)
+    at QueryClientProvider (https://ec23d913-58af-4829-a178-5d116f9837c7-00-1z0bwr5n6yzx2.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=d06c21bb:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-WERSD76P.js?v=67014c42:14032Understand this error
+chunk-WERSD76P.js?v=67014c42:19413 Uncaught TypeError: Cannot read properties of null (reading 'replace')
+    at Dashboard (dashboard.tsx:127:61)
+    at renderWithHooks (chunk-WERSD76P.js?v=67014c42:11548:26)
+    at updateFunctionComponent (chunk-WERSD76P.js?v=67014c42:14582:28)
+    at beginWork (chunk-WERSD76P.js?v=67014c42:15924:22)
+    at beginWork$1 (chunk-WERSD76P.js?v=67014c42:19753:22)
+    at performUnitOfWork (chunk-WERSD76P.js?v=67014c42:19198:20)
+    at workLoopSync (chunk-WERSD76P.js?v=67014c42:19137:13)
+    at renderRootSync (chunk-WERSD76P.js?v=67014c42:19116:15)
+    at recoverFromConcurrentError (chunk-WERSD76P.js?v=67014c42:18736:28)
+    at performConcurrentWorkOnRoot (chunk-WERSD76P.js?v=67014c42:18684:30)Understand this error
+5dashboard:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received

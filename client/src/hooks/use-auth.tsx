@@ -19,6 +19,7 @@ interface AuthContextType {
   investor: Investor | null;
   token: string | null;
   login: (email: string, phone: string) => Promise<void>;
+  setAuthToken: (token: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -75,6 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('investor_token', data.token);
   };
 
+  const setAuthToken = async (authToken: string) => {
+    setToken(authToken);
+    localStorage.setItem('investor_token', authToken);
+    await fetchInvestor(authToken);
+  };
+
   const logout = () => {
     setInvestor(null);
     setToken(null);
@@ -82,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ investor, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ investor, token, login, setAuthToken, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

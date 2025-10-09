@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -15,6 +16,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { setAuthToken } = useAuth();
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
@@ -81,8 +83,9 @@ export default function Login() {
       console.log('OTP verification data:', data);
       
       if (data.token) {
-        localStorage.setItem('investor_token', data.token);
-        console.log('Token saved, navigating to dashboard');
+        console.log('Token received, updating auth context');
+        await setAuthToken(data.token);
+        console.log('Auth context updated, navigating to dashboard');
         toast({
           title: "Login Successful",
           description: "Welcome back to Opian Rewards",

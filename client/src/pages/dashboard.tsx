@@ -124,7 +124,7 @@ export default function Dashboard() {
                     R {(investor.amount / 100).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-gray-400 mt-2">
-                    Payment Method: {investor.paymentMethod.replace('_', ' ').toUpperCase()}
+                    Payment Method: {investor.paymentMethod ? investor.paymentMethod.replace('_', ' ').toUpperCase() : 'Not specified'}
                   </p>
                 </CardContent>
               </Card>
