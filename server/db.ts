@@ -77,20 +77,10 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
       first_name VARCHAR(255),
       last_name VARCHAR(255),
       phone VARCHAR(15),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-    
-    `CREATE TABLE IF NOT EXISTS investors (
-      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-      email VARCHAR(191) NOT NULL UNIQUE,
-      first_name VARCHAR(255) NOT NULL,
-      last_name VARCHAR(255) NOT NULL,
-      phone VARCHAR(15) NOT NULL,
-      tier VARCHAR(50) NOT NULL,
-      payment_method VARCHAR(50) NOT NULL,
-      amount INT NOT NULL,
-      payment_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+      tier VARCHAR(50),
+      payment_method VARCHAR(50),
+      amount INT,
+      payment_status VARCHAR(50) DEFAULT 'pending',
       adumo_payment_id VARCHAR(255),
       adumo_customer_id VARCHAR(255),
       subscription_id VARCHAR(255),
@@ -113,14 +103,14 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
     
     `CREATE TABLE IF NOT EXISTS payments (
       id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-      investor_id VARCHAR(36) NOT NULL,
+      user_id VARCHAR(36) NOT NULL,
       amount INT NOT NULL,
       method VARCHAR(50) NOT NULL,
       status VARCHAR(50) NOT NULL DEFAULT 'pending',
       payment_data JSON,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (investor_id) REFERENCES investors(id) ON DELETE CASCADE
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     
     `CREATE TABLE IF NOT EXISTS transactions (
