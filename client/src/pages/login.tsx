@@ -75,18 +75,29 @@ export default function Login() {
 
     try {
       const response = await apiRequest('POST', '/api/auth/verify-otp', { email, code: otp });
+      console.log('OTP verification response:', response);
 
       const data = await response.json();
+      console.log('OTP verification data:', data);
       
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
+        console.log('Token saved, navigating to dashboard');
         toast({
           title: "Login Successful",
           description: "Welcome back to Opian Rewards",
         });
         setLocation('/dashboard');
+      } else {
+        console.error('No token in response:', data);
+        toast({
+          title: "Verification Failed",
+          description: "Server did not return authentication token",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
+      console.error('OTP verification error:', error);
       toast({
         title: "Verification Failed",
         description: error.message || "Invalid or expired verification code",
