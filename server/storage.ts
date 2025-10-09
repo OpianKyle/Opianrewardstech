@@ -320,27 +320,33 @@ export class DatabaseStorage implements IStorage {
   // OTP Operations
   async createOtp(insertOtp: InsertOtp): Promise<Otp> {
     const id = randomUUID();
+    // Normalize email to lowercase for consistent storage
     const newOtp = {
       id,
-      email: insertOtp.email,
+      email: insertOtp.email.toLowerCase(),
       code: insertOtp.code,
       expiresAt: insertOtp.expiresAt,
       used: 0,
     };
     
     await db.insert(otps).values(newOtp);
+    console.log(`💾 OTP created: email=${newOtp.email}, code=${newOtp.code}, expires=${newOtp.expiresAt}`);
     return newOtp as Otp;
   }
 
   async getValidOtp(email: string, code: string): Promise<Otp | undefined> {
+    // Normalize email to lowercase for case-insensitive comparison
+    const normalizedEmail = email.toLowerCase();
+    
     const result = await db
       .select()
       .from(otps)
       .where(
-        sql`${otps.email} = ${email} AND ${otps.code} = ${code} AND ${otps.used} = 0 AND ${otps.expiresAt} > NOW()`
+        sql`LOWER(${otps.email}) = ${normalizedEmail} AND ${otps.code} = ${code} AND ${otps.used} = 0 AND ${otps.expiresAt} > NOW()`
       )
       .limit(1);
     
+    console.log(`🔍 OTP lookup: email=${normalizedEmail}, code=${code}, found=${!!result[0]}`);
     return result[0];
   }
 
