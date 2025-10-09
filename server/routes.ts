@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertInvestorSchema, insertPaymentSchema } from "@shared/schema";
+import { insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
@@ -47,7 +47,7 @@ const loginSchema = z.object({
   phone: z.string().min(4), // Last 4 digits of phone
 });
 
-// JWT configuration for investor authentication
+// JWT configuration for user authentication
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET must be set in production environment");
 }
@@ -119,11 +119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email } = z.object({ email: z.string().email() }).parse(req.body);
       
       // Check if investor exists
-      const investor = await storage.getInvestorByEmail(email);
+      const user = await storage.getUserByEmail(email);
       
       // SECURITY: Always return success to prevent email enumeration
       // Only send email if investor actually exists
-      if (investor) {
+      if (user) {
         try {
           // Generate OTP
           const code = generateOtp();
@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           // Send email
-          await sendOtpEmail(email, code, investor.firstName);
+          await sendOtpEmail(email, code, user.firstName);
           console.log(`🔐 OTP sent to ${email}`);
         } catch (otpError) {
           // Log error but don't reveal to attacker
@@ -178,17 +178,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.markOtpAsUsed(otp.id);
       
       // Get investor
-      const investor = await storage.getInvestorByEmail(email);
-      if (!investor) {
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
         return res.status(404).json({ message: "Investor not found" });
       }
       
       // Generate JWT token
       const token = jwt.sign(
         { 
-          investorId: investor.id, 
-          email: investor.email,
-          tier: investor.tier
+          userId: user.id, 
+          email: user.email,
+          tier: user.tier
         },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
@@ -199,12 +199,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         token,
         investor: {
-          id: investor.id,
-          email: investor.email,
-          firstName: investor.firstName,
-          lastName: investor.lastName,
-          tier: investor.tier,
-          paymentStatus: investor.paymentStatus
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          tier: user.tier,
+          paymentStatus: user.paymentStatus
         }
       });
     } catch (error: any) {
@@ -230,14 +230,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, phone } = loginSchema.parse(req.body);
       
       // Find investor by email
-      const investor = await storage.getInvestorByEmail(email);
+      const user = await storage.getUserByEmail(email);
       
-      if (!investor) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid email or phone number" });
       }
       
       // Verify using last 4 digits of phone
-      const last4Digits = investor.phone.slice(-4);
+      const last4Digits = user.phone.slice(-4);
       if (phone !== last4Digits) {
         return res.status(401).json({ message: "Invalid email or phone number" });
       }
@@ -245,9 +245,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate JWT token
       const token = jwt.sign(
         { 
-          investorId: investor.id, 
-          email: investor.email,
-          tier: investor.tier
+          userId: user.id, 
+          email: user.email,
+          tier: user.tier
         },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
@@ -256,12 +256,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         token,
         investor: {
-          id: investor.id,
-          email: investor.email,
-          firstName: investor.firstName,
-          lastName: investor.lastName,
-          tier: investor.tier,
-          paymentStatus: investor.paymentStatus
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          tier: user.tier,
+          paymentStatus: user.paymentStatus
         }
       });
     } catch (error: any) {
@@ -284,23 +284,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = authHeader.substring(7);
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       
-      const investor = await storage.getInvestor(decoded.investorId);
-      if (!investor) {
+      const user = await storage.getUser(decoded.userId);
+      if (!user) {
         return res.status(404).json({ message: "Investor not found" });
       }
       
       res.json({
-        id: investor.id,
-        email: investor.email,
-        firstName: investor.firstName,
-        lastName: investor.lastName,
-        phone: investor.phone,
-        tier: investor.tier,
-        paymentStatus: investor.paymentStatus,
-        paymentMethod: investor.paymentMethod,
-        amount: investor.amount,
-        questProgress: investor.questProgress,
-        createdAt: investor.createdAt
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        tier: user.tier,
+        paymentStatus: user.paymentStatus,
+        paymentMethod: user.paymentMethod,
+        amount: user.amount,
+        questProgress: user.questProgress,
+        createdAt: user.createdAt
       });
     } catch (error: any) {
       if (error.name === 'JsonWebTokenError') {
@@ -311,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get investor transactions
-  app.get("/api/investor/transactions", async (req, res) => {
+  app.get("/api/user/transactions", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -321,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = authHeader.substring(7);
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       
-      const payments = await storage.getPaymentsByInvestor(decoded.investorId);
+      const payments = await storage.getPaymentsByUser(decoded.userId);
       res.json(payments);
     } catch (error: any) {
       if (error.name === 'JsonWebTokenError') {
@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get investor invoices with payment schedule
-  app.get("/api/investor/invoices", async (req, res) => {
+  app.get("/api/user/invoices", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -342,35 +342,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = authHeader.substring(7);
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       
-      const investor = await storage.getInvestor(decoded.investorId);
-      if (!investor) {
+      const user = await storage.getUser(decoded.userId);
+      if (!user) {
         return res.status(404).json({ message: "Investor not found" });
       }
       
-      const payments = await storage.getPaymentsByInvestor(decoded.investorId);
+      const payments = await storage.getPaymentsByUser(decoded.userId);
       
       // Calculate invoices based on payment method
       const invoices = [];
-      const totalAmount = investor.amount;
+      const totalAmount = user.amount;
       
-      if (investor.paymentMethod === 'lump_sum') {
+      if (user.paymentMethod === 'lump_sum') {
         // Single invoice for lump sum
         const paid = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
         invoices.push({
-          id: `${investor.id}-lump`,
-          dueDate: investor.createdAt,
+          id: `${user.id}-lump`,
+          dueDate: user.createdAt,
           amount: totalAmount,
           paid: paid,
           status: paid >= totalAmount ? 'paid' : 'outstanding',
-          description: `${investor.tier.charAt(0).toUpperCase() + investor.tier.slice(1)} Tier - Lump Sum Payment`
+          description: `${user.tier.charAt(0).toUpperCase() + user.tier.slice(1)} Tier - Lump Sum Payment`
         });
       } else {
         // Monthly installments
-        const months = investor.paymentMethod === '12_months' ? 12 : 24;
+        const months = user.paymentMethod === '12_months' ? 12 : 24;
         const monthlyAmount = Math.round(totalAmount / months);
         
         for (let i = 0; i < months; i++) {
-          const dueDate = new Date(investor.createdAt || new Date());
+          const dueDate = new Date(user.createdAt || new Date());
           dueDate.setMonth(dueDate.getMonth() + i);
           
           // Check if this installment has been paid
@@ -386,13 +386,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const isPaid = paidAmount >= monthlyAmount;
           
           invoices.push({
-            id: `${investor.id}-${i + 1}`,
+            id: `${user.id}-${i + 1}`,
             installmentNumber: i + 1,
             dueDate,
             amount: monthlyAmount,
             paid: paidAmount,
             status: isPaid ? 'paid' : dueDate < new Date() ? 'overdue' : 'outstanding',
-            description: `${investor.tier.charAt(0).toUpperCase() + investor.tier.slice(1)} Tier - Installment ${i + 1} of ${months}`
+            description: `${user.tier.charAt(0).toUpperCase() + user.tier.slice(1)} Tier - Installment ${i + 1} of ${months}`
           });
         }
       }
@@ -407,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get detailed quest progress
-  app.get("/api/investor/progress", async (req, res) => {
+  app.get("/api/user/progress", async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -417,23 +417,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = authHeader.substring(7);
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       
-      const investor = await storage.getInvestor(decoded.investorId);
-      if (!investor) {
+      const user = await storage.getUser(decoded.userId);
+      if (!user) {
         return res.status(404).json({ message: "Investor not found" });
       }
       
-      const payments = await storage.getPaymentsByInvestor(decoded.investorId);
+      const payments = await storage.getPaymentsByUser(decoded.userId);
       const totalPaid = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
-      const totalAmount = investor.amount;
+      const totalAmount = user.amount;
       
       // Calculate progress percentage
       const paymentProgress = Math.round((totalPaid / totalAmount) * 100);
       
       // Get quest progress or initialize default
-      const questProgress: any = investor.questProgress || {
+      const questProgress: any = user.questProgress || {
         level: 1,
         phase: "development",
-        startDate: investor.createdAt,
+        startDate: user.createdAt,
         milestones: {
           capitalReclaimed: false,
           dividendPhase: false
@@ -447,12 +447,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (paymentProgress >= 100) {
         currentPhase = "operational";
         // Estimate 18-24 months for capital reclaim after full payment
-        estimatedCompletion = new Date(investor.createdAt || new Date());
+        estimatedCompletion = new Date(user.createdAt || new Date());
         estimatedCompletion.setMonth(estimatedCompletion.getMonth() + 21);
       }
       
       res.json({
-        investorTier: investor.tier,
+        investorTier: user.tier,
         paymentProgress: {
           percentage: paymentProgress,
           amountPaid: totalPaid,
@@ -462,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questProgress: {
           level: questProgress.level || 1,
           phase: currentPhase,
-          startDate: questProgress.startDate || investor.createdAt,
+          startDate: questProgress.startDate || user.createdAt,
           milestones: {
             paymentComplete: paymentProgress >= 100,
             capitalReclaimed: questProgress.milestones?.capitalReclaimed || false,
@@ -547,24 +547,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create investor registration
+  // Create user registration
   app.post("/api/investors", async (req, res) => {
     try {
-      const validatedData = insertInvestorSchema.parse(req.body);
+      const validatedData = z.object({
+        email: z.string().email(),
+        firstName: z.string(),
+        lastName: z.string(),
+        phone: z.string(),
+        tier: z.string(),
+        paymentMethod: z.string(),
+        amount: z.number()
+      }).parse(req.body);
       
-      // Check if investor already exists
-      const existingInvestor = await storage.getInvestorByEmail(validatedData.email);
-      if (existingInvestor) {
-        return res.status(400).json({ message: "Investor already registered with this email" });
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already registered with this email" });
       }
 
-      const investor = await storage.createInvestor(validatedData);
-      res.status(201).json(investor);
+      const user = await storage.createUser(validatedData);
+      res.status(201).json(user);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Validation error", errors: error.errors });
       } else {
-        res.status(500).json({ message: "Error creating investor: " + error.message });
+        res.status(500).json({ message: "Error creating user: " + error.message });
       }
     }
   });
@@ -578,36 +586,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const { email } = req.params;
-      const investor = await storage.getInvestorByEmail(email);
+      const user = await storage.getUserByEmail(email);
       
-      if (!investor) {
+      if (!user) {
         return res.status(404).json({ message: "Investor not found" });
       }
       
-      res.json(investor);
+      res.json(user);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching investor: " + error.message });
     }
   });
 
-  // Debug endpoint to check payments for an investor (DEVELOPMENT ONLY)
+  // Debug endpoint to check payments for a user (DEVELOPMENT ONLY)
   // SECURITY: Disabled in production to prevent unauthorized data access
-  app.get("/api/debug/payments/:investorId", async (req, res) => {
+  app.get("/api/debug/payments/:userId", async (req, res) => {
     if (process.env.NODE_ENV === "production") {
       return res.status(410).json({ message: "Debug endpoints are not available in production" });
     }
     
     try {
-      const { investorId } = req.params;
-      const payments = await storage.getPaymentsByInvestor(investorId);
+      const { userId } = req.params;
+      const payments = await storage.getPaymentsByUser(userId);
       
-      console.log(`🔍 Debug: Found ${payments.length} payments for investor ${investorId}`);
+      console.log(`🔍 Debug: Found ${payments.length} payments for user ${userId}`);
       payments.forEach(payment => {
         console.log(`  Payment ${payment.id}: status=${payment.status}, amount=${payment.amount}, method=${payment.method}`);
       });
       
       res.json({
-        investorId,
+        userId,
         paymentCount: payments.length,
         payments: payments
       });
@@ -637,9 +645,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create or get investor
-      let investor = await storage.getInvestorByEmail(validatedData.email);
-      if (!investor) {
-        investor = await storage.createInvestor({
+      let investor = await storage.getUserByEmail(validatedData.email);
+      if (!user) {
+        investor = await storage.createUser({
           email: validatedData.email,
           firstName: validatedData.firstName,
           lastName: validatedData.lastName,
@@ -663,14 +671,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       console.log("🔍 Creating payment with data:", JSON.stringify({
-        investorId: investor.id,
+        userId: user.id,
         amount: validatedData.amount,
         method: "adumo",
         paymentData: paymentDataToStore
       }, null, 2));
       
       const payment = await storage.createPayment({
-        investorId: investor.id,
+        userId: user.id,
         amount: validatedData.amount,
         method: "adumo",
         paymentData: paymentDataToStore
@@ -716,7 +724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (process.env.NODE_ENV === 'development') {
         console.log('🔍 Payment intent created:', {
           paymentId: payment.id,
-          investorId: investor.id,
+          userId: user.id,
           tier: validatedData.tier,
           amount: currencyAmount,
           reference: reference
@@ -728,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         formData: formData,
         url: ADUMO_CONFIG.apiUrl,
         paymentId: payment.id,
-        investorId: investor.id,
+        userId: user.id,
         reference: reference
       });
     } catch (error: any) {
@@ -893,14 +901,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Update investor status if successful
               if (isSuccess) {
                 console.log("👤 Updating investor status via JWT return...");
-                const investor = await storage.updateInvestorPaymentStatus(
-                  payment.investorId, 
+                const user = await storage.updateUserPaymentStatus(
+                  payment.userId, 
                   "completed", 
                   transactionRef
                 );
                 
                 // Initialize quest progress if not already initialized
-                if (!investor.questProgress) {
+                if (!user.questProgress) {
                   console.log("🎮 Initializing quest progress via JWT return...");
                   const questProgress = {
                     level: 1,
@@ -912,7 +920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     }
                   };
                   
-                  await storage.updateInvestorProgress(payment.investorId, questProgress);
+                  await storage.updateUserProgress(payment.userId, questProgress);
                   console.log("🎮 Quest progress initialized successfully via JWT return");
                 }
               }
@@ -945,8 +953,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`💰 Payment ${payment.id} updated to: ${payment.status}`);
           
           if (resultCode === "00") {
-            await storage.updateInvestorPaymentStatus(
-              payment.investorId, 
+            await storage.updateUserPaymentStatus(
+              payment.userId, 
               "completed", 
               paymentRef as string
             );
@@ -1222,15 +1230,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Update investor payment status
           console.log("👤 Updating investor status...");
-          const investor = await storage.updateInvestorPaymentStatus(
-            payment.investorId,
+          const user = await storage.updateUserPaymentStatus(
+            payment.userId,
             paymentStatus,
             transactionIndex
           );
-          console.log(`🎯 Investor payment status: ${investor.paymentStatus}`);
+          console.log(`🎯 Investor payment status: ${user.paymentStatus}`);
 
           // If payment successful, initialize quest progress (only once)
-          if (isSuccess && !investor.questProgress) {
+          if (isSuccess && !user.questProgress) {
             console.log("🎮 Initializing quest progress...");
             const questProgress = {
               level: 1,
@@ -1242,7 +1250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             };
             
-            await storage.updateInvestorProgress(investor.id, questProgress);
+            await storage.updateUserProgress(user.id, questProgress);
             console.log("🎮 Quest progress initialized");
           }
         } else {
@@ -1314,21 +1322,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Update payment status
           const updatedPayment = await storage.updatePaymentStatus(payment.id, paymentStatus);
-          const investor = await storage.updateInvestorPaymentStatus(
-            payment.investorId,
+          const user = await storage.updateUserPaymentStatus(
+            payment.userId,
             paymentStatus,
             transactionId || merchantReference
           );
           
           // Initialize quest progress if successful
-          if (isSuccess && !investor.questProgress) {
+          if (isSuccess && !user.questProgress) {
             const questProgress = {
               level: 1,
               phase: "development",
               startDate: new Date().toISOString(),
               milestones: { capitalReclaimed: false, dividendPhase: false }
             };
-            await storage.updateInvestorProgress(investor.id, questProgress);
+            await storage.updateUserProgress(user.id, questProgress);
           }
         } 
         // Try legacy format (older integration)
@@ -1343,20 +1351,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const paymentStatus = ResultCode === "00" ? "completed" : "failed";
           const updatedPayment = await storage.updatePaymentStatus(CustomField2, paymentStatus);
-          const investor = await storage.updateInvestorPaymentStatus(
+          const user = await storage.updateUserPaymentStatus(
             CustomField3,
             paymentStatus,
             req.body.TransactionReference
           );
 
-          if (ResultCode === "00" && !investor.questProgress) {
+          if (ResultCode === "00" && !user.questProgress) {
             const questProgress = {
               level: 1,
               phase: "development",
               startDate: new Date().toISOString(),
               milestones: { capitalReclaimed: false, dividendPhase: false }
             };
-            await storage.updateInvestorProgress(investor.id, questProgress);
+            await storage.updateUserProgress(user.id, questProgress);
           }
         } else {
           console.log("❌ Missing required fields in webhook payload");
@@ -1380,25 +1388,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quest progression for investor
-  app.get("/api/quest-progress/:investorId", async (req, res) => {
+  app.get("/api/quest-progress/:userId", async (req, res) => {
     try {
-      const { investorId } = req.params;
-      const investor = await storage.getInvestor(investorId);
+      const { userId } = req.params;
+      const user = await storage.getUser(investorId);
       
-      if (!investor) {
+      if (!user) {
         return res.status(404).json({ message: "Investor not found" });
       }
 
       // Calculate quest statistics based on tier and payment date
       const questStats = {
-        totalInvested: investor.amount,
-        totalCollected: investor.tier === "innovator" ? 132000 : 
-                       investor.tier === "builder" ? 66000 : 198000,
-        returnOnBelief: investor.tier === "innovator" ? 450 :
-                       investor.tier === "builder" ? 450 : 450,
-        progress: investor.questProgress || {},
-        tier: investor.tier,
-        paymentStatus: investor.paymentStatus
+        totalInvested: user.amount,
+        totalCollected: user.tier === "innovator" ? 132000 : 
+                       user.tier === "builder" ? 66000 : 198000,
+        returnOnBelief: user.tier === "innovator" ? 450 :
+                       user.tier === "builder" ? 450 : 450,
+        progress: user.questProgress || {},
+        tier: user.tier,
+        paymentStatus: user.paymentStatus
       };
 
       res.json(questStats);
@@ -1505,14 +1513,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If payment successful, update investor status and initialize quest
       if (paymentStatus === "completed") {
         console.log("👤 Updating investor status to completed...");
-        const investor = await storage.updateInvestorPaymentStatus(
-          payment.investorId,
+        const user = await storage.updateUserPaymentStatus(
+          payment.userId,
           "completed",
           transactionReference || merchantReference
         );
         
         // Initialize quest progress if not already done
-        if (!investor.questProgress) {
+        if (!user.questProgress) {
           console.log("🎮 Initializing quest progress...");
           const questProgress = {
             level: 1,
@@ -1524,7 +1532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           };
           
-          await storage.updateInvestorProgress(investor.id, questProgress);
+          await storage.updateUserProgress(user.id, questProgress);
           console.log("🎮 Quest progress initialized successfully");
         }
         
@@ -1537,12 +1545,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: updatedPayment.id,
             status: updatedPayment.status,
             amount: updatedPayment.amount,
-            investorId: updatedPayment.investorId
+            userId: updatedPayment.userId
           },
           investor: {
-            id: investor.id,
-            email: investor.email,
-            paymentStatus: investor.paymentStatus
+            id: user.id,
+            email: user.email,
+            paymentStatus: user.paymentStatus
           }
         });
       } else {
