@@ -765,6 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Extract validated fields from JWT
           const {
             result,           // Success/failure indicator (1 = success, -1 = failed, 0 = pending)
+            status,           // Actual status from Adumo: AUTHORISED, DECLINED, etc.
             mref,            // Merchant reference
             amount,          // Transaction amount
             transactionIndex, // Transaction reference
@@ -774,13 +775,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           transactionRef = transactionIndex;
           
           console.log("🔍 JWT payment return processing:");
-          console.log(`  Result: ${result} (${result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING"})`);
+          console.log(`  Result: ${result} (${result === 0 ? "SUCCESS" : result === -1 ? "FAILED" : result === 1 ? "SUCCESS WITH WARNING" : "UNKNOWN"})`);
+          console.log(`  Status: ${status}`);
           console.log(`  Merchant Ref: ${mref}`);
           console.log(`  Amount: ${amount}`);
           
-          // Map Adumo result codes: 1 = success, -1 = failed, 0 = pending
-          const isSuccess = result === 1;
-          paymentStatus = isSuccess ? "completed" : result === -1 ? "failed" : "pending";
+          // Use the status field for accurate payment status determination
+          // AUTHORISED/SETTLED means the payment was successful
+          // Result codes: 0 = Success, -1 = Failure, 1 = Success with warning
+          const isSuccess = status === "AUTHORISED" || status === "SETTLED" || result === 0 || result === 1;
+          paymentStatus = isSuccess ? "completed" : 
+                         (status === "DECLINED" || status === "FAILED" || result === -1) ? "failed" : "pending";
           
           // Find payment by merchant reference
           if (mref && mref.startsWith('OPIAN_')) {
@@ -815,7 +820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     invoice = await storage.createInvoice({
                       userId: userId,
                       amount: amountInCurrency,
-                      status: result === 1 ? "paid" : "pending",
+                      status: isSuccess ? "paid" : "pending",
                       description: `Payment for ${(payment.paymentData as any)?.tier} tier - ${(payment.paymentData as any)?.paymentMethod}`,
                     });
                     console.log(`✅ Invoice ${invoice.id} created successfully`);
@@ -835,19 +840,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     console.log(`📝 Existing transaction check: ${transaction ? 'FOUND' : 'NOT FOUND'}`);
                     
                     if (!transaction) {
+                      // Determine Adumo status based on the status field and result code
+                      // Result codes: 0 = Success, -1 = Failure, 1 = Success with warning
+                      let adumoStatus: "SUCCESS" | "FAILED" | "PENDING" | "CANCELED" | "REFUNDED";
+                      if (status === "AUTHORISED" || status === "SETTLED" || result === 0 || result === 1) {
+                        adumoStatus = "SUCCESS";
+                      } else if (status === "DECLINED" || status === "FAILED" || result === -1) {
+                        adumoStatus = "FAILED";
+                      } else if (status === "CANCELED") {
+                        adumoStatus = "CANCELED";
+                      } else if (status === "REFUNDED") {
+                        adumoStatus = "REFUNDED";
+                      } else {
+                        adumoStatus = "PENDING";
+                      }
+                      
                       const transactionData = {
                         invoiceId: invoice.id,
                         userId: userId,
                         merchantReference: mref,
                         adumoTransactionId: transactionIndex || null,
-                        adumoStatus: (result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING") as "SUCCESS" | "FAILED" | "PENDING",
+                        adumoStatus: adumoStatus,
                         paymentMethod: decoded.paymentMethod || "CARD",
                         gateway: "ADUMO" as const,
                         amount: (payment.amount / 100).toFixed(2),
                         currency: "ZAR" as const,
-                        requestPayload: null,
-                        responsePayload: JSON.stringify(decoded),
-                        notifyUrlResponse: null,
+                        requestPayload: JSON.stringify(payment.paymentData), // Store original payment data
+                        responsePayload: JSON.stringify(decoded), // Store decoded JWT
+                        notifyUrlResponse: JSON.stringify(req.method === 'GET' ? req.query : req.body), // Store raw Adumo response
                       };
                       
                       console.log(`📝 Transaction data prepared:`, JSON.stringify(transactionData, null, 2));
@@ -1076,6 +1096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Extract validated fields from JWT
         const {
           result,           // Success/failure indicator (1 = success, -1 = failed, 0 = pending)
+          status,           // Actual status from Adumo: AUTHORISED, DECLINED, etc.
           mref,            // Merchant reference
           amount,          // Transaction amount
           transactionIndex, // Transaction reference
@@ -1086,7 +1107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Only log minimal, non-sensitive information in production
         if (process.env.NODE_ENV === 'development') {
           console.log("🔍 JWT webhook processing:");
-          console.log(`  Result: ${result} (${result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING"})`);
+          console.log(`  Result: ${result} (${result === 0 ? "SUCCESS" : result === -1 ? "FAILED" : result === 1 ? "SUCCESS WITH WARNING" : "UNKNOWN"})`);
+          console.log(`  Status: ${status}`);
           console.log(`  Merchant Ref: ${mref}`);
           console.log(`  Amount: ${amount}`);
         }
@@ -1109,9 +1131,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.json({ success: true, message: "Payment already processed" });
           }
 
-          // Map Adumo result codes: 1 = success, -1 = failed, 0 = pending
-          const isSuccess = result === 1;
-          const paymentStatus = isSuccess ? "completed" : result === -1 ? "failed" : "pending";
+          // Use the status field for accurate payment status determination
+          // AUTHORISED/SETTLED means the payment was successful
+          // Result codes: 0 = Success, -1 = Failure, 1 = Success with warning
+          const isSuccess = status === "AUTHORISED" || status === "SETTLED" || result === 0 || result === 1;
+          const paymentStatus = isSuccess ? "completed" : 
+                               (status === "DECLINED" || status === "FAILED" || result === -1) ? "failed" : "pending";
           
           // SECURITY: Validate amount matches to prevent amount manipulation
           const expectedAmountCents = payment.amount;
@@ -1144,7 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               invoice = await storage.createInvoice({
                 userId: userId,
                 amount: amountInCurrency,
-                status: result === 1 ? "paid" : "pending",
+                status: isSuccess ? "paid" : "pending",
                 description: `Payment for ${(payment.paymentData as any)?.tier} tier - ${(payment.paymentData as any)?.paymentMethod}`,
               });
               console.log(`✅ Webhook: Invoice ${invoice.id} created successfully`);
@@ -1152,20 +1177,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Create or update transaction record
             if (!transaction) {
+              // Determine Adumo status based on the status field and result code
+              // Result codes: 0 = Success, -1 = Failure, 1 = Success with warning
+              let adumoStatus: "SUCCESS" | "FAILED" | "PENDING" | "CANCELED" | "REFUNDED";
+              if (status === "AUTHORISED" || status === "SETTLED" || result === 0 || result === 1) {
+                adumoStatus = "SUCCESS";
+              } else if (status === "DECLINED" || status === "FAILED" || result === -1) {
+                adumoStatus = "FAILED";
+              } else if (status === "CANCELED") {
+                adumoStatus = "CANCELED";
+              } else if (status === "REFUNDED") {
+                adumoStatus = "REFUNDED";
+              } else {
+                adumoStatus = "PENDING";
+              }
+              
               // Create new transaction record
               transaction = await storage.createTransaction({
                 invoiceId: invoice.id,
                 userId: userId,
                 merchantReference: mref,
                 adumoTransactionId: transactionIndex || null,
-                adumoStatus: (result === 1 ? "SUCCESS" : result === -1 ? "FAILED" : "PENDING") as "SUCCESS" | "FAILED" | "PENDING",
+                adumoStatus: adumoStatus,
                 paymentMethod: decoded.paymentMethod || "CARD",
                 gateway: "ADUMO" as const,
                 amount: (expectedAmountCents / 100).toFixed(2),
                 currency: "ZAR" as const,
-                requestPayload: null,
-                responsePayload: JSON.stringify(decoded),
-                notifyUrlResponse: jwtToken,
+                requestPayload: JSON.stringify(payment.paymentData), // Store original payment data
+                responsePayload: JSON.stringify(decoded), // Store decoded JWT
+                notifyUrlResponse: JSON.stringify(req.body), // Store raw webhook body
               });
               console.log(`✅ Webhook: Transaction ${transaction.id} created`);
             } else if (transaction.adumoStatus !== "SUCCESS" && isSuccess) {
