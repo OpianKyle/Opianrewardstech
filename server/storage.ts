@@ -4,8 +4,6 @@ import { db, isDatabaseConnected } from "./db";
 import { 
   InsertUser, 
   User, 
-  InsertInvestor, 
-  Investor,
   InsertInvoice,
   Invoice, 
   InsertPayment, 
@@ -17,7 +15,6 @@ import {
   InsertOtp,
   Otp,
   users,
-  investors,
   invoices,
   payments,
   transactions,
@@ -30,13 +27,9 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  // Investor operations
-  getInvestor(id: string): Promise<Investor | undefined>;
-  getInvestorByEmail(email: string): Promise<Investor | undefined>;
-  createInvestor(investor: InsertInvestor): Promise<Investor>;
-  updateInvestorPaymentStatus(id: string, status: string, adumoPaymentId?: string): Promise<Investor>;
-  updateInvestorProgress(id: string, progress: any): Promise<Investor>;
+  updateUserPaymentStatus(id: string, status: string, adumoPaymentId?: string): Promise<User>;
+  updateUserProgress(id: string, progress: any): Promise<User>;
+  updateUserInvestmentDetails(id: string, details: Partial<User>): Promise<User>;
   
   // Invoice operations
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
@@ -45,7 +38,7 @@ export interface IStorage {
   
   // Payment operations
   createPayment(payment: InsertPayment): Promise<Payment>;
-  getPaymentsByInvestor(investorId: string): Promise<Payment[]>;
+  getPaymentsByUser(userId: string): Promise<Payment[]>;
   getPaymentByMerchantReference(reference: string): Promise<Payment | undefined>;
   updatePaymentStatus(id: string, status: string): Promise<Payment>;
   
@@ -86,44 +79,26 @@ export class DatabaseStorage implements IStorage {
       firstName: insertUser.firstName || null,
       lastName: insertUser.lastName || null,
       phone: insertUser.phone || null,
+      tier: insertUser.tier || null,
+      paymentMethod: insertUser.paymentMethod || null,
+      amount: insertUser.amount || null,
+      paymentStatus: insertUser.paymentStatus || "pending",
+      adumoPaymentId: insertUser.adumoPaymentId || null,
+      adumoCustomerId: insertUser.adumoCustomerId || null,
+      subscriptionId: insertUser.subscriptionId || null,
+      questProgress: insertUser.questProgress || null,
+      certificateGenerated: insertUser.certificateGenerated || null,
     };
     
     await db.insert(users).values(newUser);
     return newUser as User;
   }
 
-  async getInvestor(id: string): Promise<Investor | undefined> {
-    const result = await db.select().from(investors).where(eq(investors.id, id)).limit(1);
-    return result[0];
-  }
-
-  async getInvestorByEmail(email: string): Promise<Investor | undefined> {
-    const result = await db.select().from(investors).where(eq(investors.email, email)).limit(1);
-    return result[0];
-  }
-
-  async createInvestor(insertInvestor: InsertInvestor): Promise<Investor> {
-    const id = randomUUID();
-    const newInvestor = {
-      ...insertInvestor,
-      id,
-      paymentStatus: "pending",
-      adumoPaymentId: null,
-      adumoCustomerId: null,
-      subscriptionId: null,
-      questProgress: {},
-      certificateGenerated: null,
-    };
-    
-    await db.insert(investors).values(newInvestor);
-    return newInvestor as Investor;
-  }
-
-  async updateInvestorPaymentStatus(
+  async updateUserPaymentStatus(
     id: string,
     status: string,
     adumoPaymentId?: string,
-  ): Promise<Investor> {
+  ): Promise<User> {
     const updateData: any = {
       paymentStatus: status,
       updatedAt: new Date(),
@@ -133,33 +108,48 @@ export class DatabaseStorage implements IStorage {
       updateData.adumoPaymentId = adumoPaymentId;
     }
     
-    await db.update(investors).set(updateData).where(eq(investors.id, id));
+    await db.update(users).set(updateData).where(eq(users.id, id));
     
-    const result = await db.select().from(investors).where(eq(investors.id, id)).limit(1);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
     if (!result[0]) {
-      throw new Error("Investor not found");
+      throw new Error("User not found");
     }
     return result[0];
   }
 
-  async updateInvestorProgress(id: string, progress: any): Promise<Investor> {
-    const investor = await this.getInvestor(id);
-    if (!investor) {
-      throw new Error("Investor not found");
+  async updateUserProgress(id: string, progress: any): Promise<User> {
+    const user = await this.getUser(id);
+    if (!user) {
+      throw new Error("User not found");
     }
     
-    const currentProgress = investor.questProgress || {};
+    const currentProgress = user.questProgress || {};
     const updatedProgress = { ...currentProgress, ...progress };
     
-    await db.update(investors)
+    await db.update(users)
       .set({ 
         questProgress: updatedProgress,
         updatedAt: new Date()
       })
-      .where(eq(investors.id, id));
+      .where(eq(users.id, id));
     
-    const result = await db.select().from(investors).where(eq(investors.id, id)).limit(1);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0]!;
+  }
+
+  async updateUserInvestmentDetails(id: string, details: Partial<User>): Promise<User> {
+    await db.update(users)
+      .set({ 
+        ...details,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, id));
+    
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    if (!result[0]) {
+      throw new Error("User not found");
+    }
+    return result[0];
   }
 
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
@@ -175,11 +165,11 @@ export class DatabaseStorage implements IStorage {
     return newPayment as Payment;
   }
 
-  async getPaymentsByInvestor(investorId: string): Promise<Payment[]> {
-    const result = await db.select().from(payments).where(eq(payments.investorId, investorId));
+  async getPaymentsByUser(userId: string): Promise<Payment[]> {
+    const result = await db.select().from(payments).where(eq(payments.userId, userId));
     
     // Parse paymentData if it's a string (MySQL sometimes returns JSON as string)
-    result.forEach(payment => {
+    result.forEach((payment: Payment) => {
       if (payment.paymentData && typeof payment.paymentData === 'string') {
         payment.paymentData = JSON.parse(payment.paymentData as string);
       }
@@ -366,7 +356,6 @@ export class DatabaseStorage implements IStorage {
 // Legacy compatibility - fallback to MemStorage if database is not available
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
-  private investors: Map<string, Investor>;
   private invoices: Map<string, Invoice>;
   private payments: Map<string, Payment>;
   private transactions: Map<string, Transaction>;
@@ -375,7 +364,6 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.users = new Map();
-    this.investors = new Map();
     this.invoices = new Map();
     this.payments = new Map();
     this.transactions = new Map();
@@ -399,6 +387,15 @@ export class MemStorage implements IStorage {
       firstName: insertUser.firstName || null,
       lastName: insertUser.lastName || null,
       phone: insertUser.phone || null,
+      tier: insertUser.tier || null,
+      paymentMethod: insertUser.paymentMethod || null,
+      amount: insertUser.amount || null,
+      paymentStatus: insertUser.paymentStatus || "pending",
+      adumoPaymentId: insertUser.adumoPaymentId || null,
+      adumoCustomerId: insertUser.adumoCustomerId || null,
+      subscriptionId: insertUser.subscriptionId || null,
+      questProgress: insertUser.questProgress || null,
+      certificateGenerated: insertUser.certificateGenerated || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -406,47 +403,29 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getInvestor(id: string): Promise<Investor | undefined> {
-    return this.investors.get(id);
+  async updateUserPaymentStatus(id: string, status: string, adumoPaymentId?: string): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) throw new Error("User not found");
+    const updatedUser = { ...user, paymentStatus: status, adumoPaymentId: adumoPaymentId || user.adumoPaymentId, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
-  async getInvestorByEmail(email: string): Promise<Investor | undefined> {
-    return Array.from(this.investors.values()).find((investor) => investor.email === email);
+  async updateUserProgress(id: string, progress: any): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) throw new Error("User not found");
+    const currentProgress = user.questProgress || {};
+    const updatedUser = { ...user, questProgress: { ...currentProgress, ...progress }, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
-  async createInvestor(insertInvestor: InsertInvestor): Promise<Investor> {
-    const id = randomUUID();
-    const investor: Investor = {
-      ...insertInvestor,
-      id,
-      paymentStatus: "pending",
-      adumoPaymentId: null,
-      adumoCustomerId: null,
-      subscriptionId: null,
-      questProgress: {},
-      certificateGenerated: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.investors.set(id, investor);
-    return investor;
-  }
-
-  async updateInvestorPaymentStatus(id: string, status: string, adumoPaymentId?: string): Promise<Investor> {
-    const investor = this.investors.get(id);
-    if (!investor) throw new Error("Investor not found");
-    const updatedInvestor = { ...investor, paymentStatus: status, adumoPaymentId: adumoPaymentId || investor.adumoPaymentId, updatedAt: new Date() };
-    this.investors.set(id, updatedInvestor);
-    return updatedInvestor;
-  }
-
-  async updateInvestorProgress(id: string, progress: any): Promise<Investor> {
-    const investor = this.investors.get(id);
-    if (!investor) throw new Error("Investor not found");
-    const currentProgress = investor.questProgress || {};
-    const updatedInvestor = { ...investor, questProgress: { ...currentProgress, ...progress }, updatedAt: new Date() };
-    this.investors.set(id, updatedInvestor);
-    return updatedInvestor;
+  async updateUserInvestmentDetails(id: string, details: Partial<User>): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) throw new Error("User not found");
+    const updatedUser = { ...user, ...details, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
@@ -463,8 +442,8 @@ export class MemStorage implements IStorage {
     return payment;
   }
 
-  async getPaymentsByInvestor(investorId: string): Promise<Payment[]> {
-    return Array.from(this.payments.values()).filter((payment) => payment.investorId === investorId);
+  async getPaymentsByUser(userId: string): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter((payment) => payment.userId === userId);
   }
 
   async getPaymentByMerchantReference(reference: string): Promise<Payment | undefined> {
