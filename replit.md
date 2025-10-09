@@ -31,3 +31,24 @@ The project adopts a monorepo structure with shared TypeScript types. It uses Vi
 - **Email Service**: Nodemailer (for SMTP integration).
 - **Build & Deployment**: Vite, esbuild, Replit platform integration.
 - **Utilities**: React Hook Form, Zod, clsx, tailwind-merge, Google Fonts (Orbitron, Exo 2), Font Awesome.
+
+# Configuration Notes
+
+## Email Service Configuration (Optional)
+
+The application uses Nodemailer for sending OTP (One-Time Password) emails for user authentication. Email is **optional** - the app will run without it, but users won't be able to receive login codes.
+
+To enable email functionality, configure these environment variables (Secrets):
+
+**Option 1: Generic SMTP (Gmail, Outlook, etc.)**
+- `EMAIL_HOST` - SMTP server hostname (e.g., smtp.gmail.com)
+- `EMAIL_PORT` - SMTP port (usually 587 for TLS or 465 for SSL)
+- `EMAIL_USER` - SMTP username/email
+- `EMAIL_PASS` - SMTP password or app-specific password
+- `EMAIL_FROM` - Sender email address
+
+**Option 2: Use SendGrid**
+- Setup via Replit's SendGrid integration (connector:ccfg_sendgrid_01K69QKAPBPJ4SWD8GQHGY03D5), OR
+- Manually configure using SendGrid SMTP settings
+
+If email is not configured, the app will log a warning on startup but continue to function normally.

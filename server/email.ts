@@ -1,16 +1,33 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || process.env.SMTP_HOST,
-  port: parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587'),
-  secure: (process.env.EMAIL_PORT || process.env.SMTP_PORT) === '465',
-  auth: {
-    user: process.env.EMAIL_USER || process.env.SMTP_USER,
-    pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
-  },
-});
+// Check if email is configured
+const isEmailConfigured = () => {
+  return !!(
+    (process.env.EMAIL_HOST || process.env.SMTP_HOST) &&
+    (process.env.EMAIL_USER || process.env.SMTP_USER) &&
+    (process.env.EMAIL_PASS || process.env.SMTP_PASS)
+  );
+};
+
+// Only create transporter if email is configured
+const transporter = isEmailConfigured() 
+  ? nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || process.env.SMTP_HOST,
+      port: parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587'),
+      secure: (process.env.EMAIL_PORT || process.env.SMTP_PORT) === '465',
+      auth: {
+        user: process.env.EMAIL_USER || process.env.SMTP_USER,
+        pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
+      },
+    })
+  : null;
 
 export async function sendOtpEmail(email: string, code: string, firstName?: string) {
+  if (!transporter) {
+    console.warn('⚠️  Email not configured - OTP code would be:', code);
+    throw new Error('Email service not configured. Please set EMAIL_HOST, EMAIL_USER, and EMAIL_PASS environment variables.');
+  }
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || process.env.SMTP_FROM,
     to: email,
@@ -133,6 +150,12 @@ The Opian Rewards Team
 }
 
 export async function testEmailConnection() {
+  if (!transporter) {
+    console.log('⚠️  Email not configured - skipping connection test');
+    console.log('💡 To enable email: Set EMAIL_HOST, EMAIL_USER, EMAIL_PASS, and EMAIL_FROM environment variables');
+    return false;
+  }
+
   try {
     await transporter.verify();
     console.log('✅ Email server connection verified');
