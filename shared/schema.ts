@@ -9,20 +9,11 @@ export const users = mysqlTable("users", {
   firstName: varchar("first_name", { length: 255 }),
   lastName: varchar("last_name", { length: 255 }),
   phone: varchar("phone", { length: 15 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-});
-
-export const investors = mysqlTable("investors", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
-  email: varchar("email", { length: 191 }).notNull().unique(),
-  firstName: varchar("first_name", { length: 255 }).notNull(),
-  lastName: varchar("last_name", { length: 255 }).notNull(),
-  phone: varchar("phone", { length: 15 }).notNull(),
-  tier: varchar("tier", { length: 50 }).notNull(),
-  paymentMethod: varchar("payment_method", { length: 50 }).notNull(),
-  amount: int("amount").notNull(),
-  paymentStatus: varchar("payment_status", { length: 50 }).notNull().default("pending"),
+  // Investment-related fields (previously in investors table)
+  tier: varchar("tier", { length: 50 }),
+  paymentMethod: varchar("payment_method", { length: 50 }),
+  amount: int("amount"),
+  paymentStatus: varchar("payment_status", { length: 50 }).default("pending"),
   adumoPaymentId: varchar("adumo_payment_id", { length: 255 }),
   adumoCustomerId: varchar("adumo_customer_id", { length: 255 }),
   subscriptionId: varchar("subscription_id", { length: 255 }),
@@ -44,7 +35,7 @@ export const invoices = mysqlTable("invoices", {
 
 export const payments = mysqlTable("payments", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
-  investorId: varchar("investor_id", { length: 36 }).notNull().references(() => investors.id),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
   amount: int("amount").notNull(),
   method: varchar("method", { length: 50 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("pending"),
@@ -101,12 +92,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
-export const insertInvestorSchema = createInsertSchema(investors).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   id: true,
   createdAt: true,
@@ -138,8 +123,6 @@ export const insertOtpSchema = createInsertSchema(otps).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-export type InsertInvestor = z.infer<typeof insertInvestorSchema>;
-export type Investor = typeof investors.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
