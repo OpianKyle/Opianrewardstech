@@ -5,7 +5,7 @@ import { pool } from "./db";
 import { insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
-import { randomUUID } from "crypto";
+import { randomUUID, randomInt } from "crypto";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { sendOtpEmail, testEmailConnection } from "./email";
 
@@ -91,8 +91,7 @@ const loginLimiter = rateLimit({
 
 // Helper function to generate cryptographically secure 6-digit OTP
 function generateOtp(): string {
-  const crypto = require('crypto');
-  const code = crypto.randomInt(0, 1000000);
+  const code = randomInt(0, 1000000);
   return code.toString().padStart(6, '0');
 }
 
