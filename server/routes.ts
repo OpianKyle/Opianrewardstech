@@ -655,17 +655,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reference = `OPIAN_${Date.now()}_${tempId}`;
       
       // Create payment record with reference stored in paymentData
+      const paymentDataToStore = {
+        userId: user.id,
+        tier: validatedData.tier,
+        paymentMethod: validatedData.paymentMethod,
+        merchantReference: reference
+      };
+      
+      console.log("🔍 Creating payment with data:", JSON.stringify({
+        investorId: investor.id,
+        amount: validatedData.amount,
+        method: "adumo",
+        paymentData: paymentDataToStore
+      }, null, 2));
+      
       const payment = await storage.createPayment({
         investorId: investor.id,
         amount: validatedData.amount,
         method: "adumo",
-        paymentData: {
-          userId: user.id,
-          tier: validatedData.tier,
-          paymentMethod: validatedData.paymentMethod,
-          merchantReference: reference
-        }
+        paymentData: paymentDataToStore
       });
+      
+      console.log("✅ Payment created:", JSON.stringify(payment, null, 2));
       
       // Convert amount from cents to currency with 2 decimal places
       const currencyAmount = (validatedData.amount / 100).toFixed(2);
@@ -777,11 +788,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const payment = await storage.getPaymentByMerchantReference(mref);
             
             if (payment) {
+              // Debug: Log the entire payment object
+              console.log("🔍 Payment object retrieved:", JSON.stringify(payment, null, 2));
+              console.log("🔍 Payment data field:", JSON.stringify(payment.paymentData, null, 2));
+              
               // Get userId from payment data
               const userId = (payment.paymentData as any)?.userId;
               
               if (!userId) {
                 console.error("❌ No userId found in payment data");
+                console.error("❌ paymentData type:", typeof payment.paymentData);
+                console.error("❌ paymentData value:", payment.paymentData);
               } else {
                 // Create or get invoice first
                 console.log("📝 Creating invoice before transaction...");

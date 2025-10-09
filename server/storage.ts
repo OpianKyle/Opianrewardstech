@@ -176,12 +176,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPaymentsByInvestor(investorId: string): Promise<Payment[]> {
-    return await db.select().from(payments).where(eq(payments.investorId, investorId));
+    const result = await db.select().from(payments).where(eq(payments.investorId, investorId));
+    
+    // Parse paymentData if it's a string (MySQL sometimes returns JSON as string)
+    result.forEach(payment => {
+      if (payment.paymentData && typeof payment.paymentData === 'string') {
+        payment.paymentData = JSON.parse(payment.paymentData as string);
+      }
+    });
+    
+    return result;
   }
 
   async getPaymentByMerchantReference(reference: string): Promise<Payment | undefined> {
     // Since merchant reference is stored in paymentData JSON field, we need to use JSON query
     const result = await db.select().from(payments).where(sql`JSON_EXTRACT(payment_data, '$.merchantReference') = ${reference}`).limit(1);
+    
+    // Parse paymentData if it's a string (MySQL sometimes returns JSON as string)
+    if (result[0] && typeof result[0].paymentData === 'string') {
+      result[0].paymentData = JSON.parse(result[0].paymentData);
+    }
+    
     return result[0];
   }
 
@@ -197,6 +212,12 @@ export class DatabaseStorage implements IStorage {
     if (!result[0]) {
       throw new Error("Payment not found");
     }
+    
+    // Parse paymentData if it's a string (MySQL sometimes returns JSON as string)
+    if (result[0].paymentData && typeof result[0].paymentData === 'string') {
+      result[0].paymentData = JSON.parse(result[0].paymentData as string);
+    }
+    
     return result[0];
   }
 
