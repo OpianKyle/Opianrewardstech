@@ -906,6 +906,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   transactionRef
                 );
                 
+                // Extract and update investment details from payment data
+                if (payment.paymentData && typeof payment.paymentData === 'object') {
+                  const paymentData = payment.paymentData as any;
+                  const investmentDetails: any = {};
+                  
+                  if (paymentData.tier) {
+                    investmentDetails.tier = paymentData.tier;
+                  }
+                  if (paymentData.paymentMethod) {
+                    investmentDetails.paymentMethod = paymentData.paymentMethod;
+                  }
+                  if (payment.amount) {
+                    investmentDetails.amount = payment.amount;
+                  }
+                  
+                  if (Object.keys(investmentDetails).length > 0) {
+                    console.log("💼 Updating investment details:", investmentDetails);
+                    await storage.updateUserInvestmentDetails(payment.userId, investmentDetails);
+                    console.log("✅ Investment details updated successfully");
+                  }
+                }
+                
                 // Initialize quest progress if not already initialized
                 if (!user.questProgress) {
                   console.log("🎮 Initializing quest progress via JWT return...");
@@ -957,6 +979,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
               "completed", 
               paymentRef as string
             );
+            
+            // Extract and update investment details from payment data
+            if (payment.paymentData && typeof payment.paymentData === 'object') {
+              const paymentData = payment.paymentData as any;
+              const investmentDetails: any = {};
+              
+              if (paymentData.tier) {
+                investmentDetails.tier = paymentData.tier;
+              }
+              if (paymentData.paymentMethod) {
+                investmentDetails.paymentMethod = paymentData.paymentMethod;
+              }
+              if (payment.amount) {
+                investmentDetails.amount = payment.amount;
+              }
+              
+              if (Object.keys(investmentDetails).length > 0) {
+                console.log("💼 Updating investment details (fallback):", investmentDetails);
+                await storage.updateUserInvestmentDetails(payment.userId, investmentDetails);
+                console.log("✅ Investment details updated successfully (fallback)");
+              }
+            }
           }
         }
       }
@@ -1242,21 +1286,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
           console.log(`🎯 Investor payment status: ${user.paymentStatus}`);
 
-          // If payment successful, initialize quest progress (only once)
-          if (isSuccess && !user.questProgress) {
-            console.log("🎮 Initializing quest progress...");
-            const questProgress = {
-              level: 1,
-              phase: "development", 
-              startDate: new Date().toISOString(),
-              milestones: {
-                capitalReclaimed: false,
-                dividendPhase: false
+          // If payment successful, update investment details and initialize quest progress
+          if (isSuccess) {
+            // Extract and update investment details from payment data
+            if (payment.paymentData && typeof payment.paymentData === 'object') {
+              const paymentData = payment.paymentData as any;
+              const investmentDetails: any = {};
+              
+              if (paymentData.tier) {
+                investmentDetails.tier = paymentData.tier;
               }
-            };
+              if (paymentData.paymentMethod) {
+                investmentDetails.paymentMethod = paymentData.paymentMethod;
+              }
+              if (payment.amount) {
+                investmentDetails.amount = payment.amount;
+              }
+              
+              if (Object.keys(investmentDetails).length > 0) {
+                console.log("💼 Updating investment details (webhook):", investmentDetails);
+                await storage.updateUserInvestmentDetails(payment.userId, investmentDetails);
+                console.log("✅ Investment details updated successfully (webhook)");
+              }
+            }
             
-            await storage.updateUserProgress(user.id, questProgress);
-            console.log("🎮 Quest progress initialized");
+            // Initialize quest progress (only once)
+            if (!user.questProgress) {
+              console.log("🎮 Initializing quest progress...");
+              const questProgress = {
+                level: 1,
+                phase: "development", 
+                startDate: new Date().toISOString(),
+                milestones: {
+                  capitalReclaimed: false,
+                  dividendPhase: false
+                }
+              };
+              
+              await storage.updateUserProgress(user.id, questProgress);
+              console.log("🎮 Quest progress initialized");
+            }
           }
         } else {
           console.log("❌ Invalid merchant reference format");
