@@ -81,7 +81,7 @@ export default function Login() {
       console.log('OTP verification data:', data);
       
       if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('investor_token', data.token);
         console.log('Token saved, navigating to dashboard');
         toast({
           title: "Login Successful",
