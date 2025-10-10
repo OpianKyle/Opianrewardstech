@@ -39,26 +39,37 @@ const validateAdumoConfig = () => {
 // Adumo Subscription API Helper Functions
 async function getAdumoOAuthToken(): Promise<string> {
   const oauthUrl = process.env.NODE_ENV === "production"
-    ? "https://apiv3.adumoonline.com/product/authentication/v1/oauth/token"
-    : "https://staging-apiv3.adumoonline.com/product/authentication/v1/oauth/token";
+    ? "https://apiv3.adumoonline.com/oauth/token"
+    : "https://staging-apiv3.adumoonline.com/oauth/token";
 
-  const response = await fetch(oauthUrl, {
+  const params = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: ADUMO_CONFIG.merchantId!,
+    client_secret: ADUMO_CONFIG.jwtSecret!,
+  });
+
+  const fullUrl = `${oauthUrl}?${params.toString()}`;
+
+  const response = await fetch(fullUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: ADUMO_CONFIG.merchantId!,
-      client_secret: ADUMO_CONFIG.jwtSecret!,
-    }),
   });
 
   if (!response.ok) {
-    throw new Error(`OAuth token request failed: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error("❌ OAuth token request failed:", {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText,
+      url: oauthUrl
+    });
+    throw new Error(`OAuth token request failed: ${response.statusText} - ${errorText}`);
   }
 
   const data = await response.json();
+  console.log("✅ OAuth token obtained successfully");
   return data.access_token;
 }
 
