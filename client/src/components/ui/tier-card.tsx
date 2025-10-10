@@ -11,8 +11,8 @@ interface TierCardProps {
     popular?: boolean;
     pricing: {
       lump_sum: number;
-      monthly_12: { amount: number; months: number };
-      monthly_24: { amount: number; months: number };
+      deposit: number | null;
+      monthly_12: { amount: number; months: number } | null;
     };
     description: string;
   };
@@ -90,19 +90,26 @@ export function TierCard({ tier, isSelected, onSelect, colorScheme }: TierCardPr
               colorScheme === "primary" ? "border-2 border-primary bg-primary/10" : "border border-border"
             )}>
               <p className="font-bold text-lg">
-                Lump Sum: <span className={cn(colorScheme === "primary" ? "text-primary" : "text-foreground")}>
+                One-off: <span className={cn(colorScheme === "primary" ? "text-primary" : "text-foreground")}>
                   R{tier.pricing.lump_sum.toLocaleString()}
                 </span>
               </p>
             </div>
             
-            <div className={cn("border rounded p-3", colorScheme === "primary" ? "border-primary" : "border-border")}>
-              <p>R{tier.pricing.monthly_12.amount.toLocaleString()}/mo × {tier.pricing.monthly_12.months} months</p>
-            </div>
+            {tier.pricing.deposit !== null && tier.pricing.monthly_12 !== null && (
+              <div className={cn("border rounded p-3", colorScheme === "primary" ? "border-primary" : "border-border")}>
+                <p className="font-semibold mb-1">OR</p>
+                <p>R{tier.pricing.deposit.toLocaleString()} deposit</p>
+                <p className="text-sm">+ R{tier.pricing.monthly_12.amount.toLocaleString()}/mo × {tier.pricing.monthly_12.months} months</p>
+              </div>
+            )}
             
-            <div className={cn("border rounded p-3", colorScheme === "primary" ? "border-primary" : "border-border")}>
-              <p>R{tier.pricing.monthly_24.amount.toLocaleString()}/mo × {tier.pricing.monthly_24.months} months</p>
-            </div>
+            {tier.pricing.deposit === null && tier.pricing.monthly_12 === null && (
+              <div className={cn("border rounded p-3", colorScheme === "primary" ? "border-primary" : "border-border")}>
+                <p className="text-sm font-semibold">Single lump sum payment</p>
+                <p className="text-xs mt-1">Any amount over R{tier.pricing.lump_sum.toLocaleString()}</p>
+              </div>
+            )}
           </div>
 
           <p className="text-sm text-muted-foreground mb-6">
