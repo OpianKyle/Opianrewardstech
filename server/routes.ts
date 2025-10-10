@@ -51,8 +51,6 @@ async function getAdumoOAuthToken(): Promise<string> {
     client_secret: ADUMO_CONFIG.oauthClientSecret!,
   });
 
-  const fullUrl = `${oauthUrl}?${params.toString()}`;
-
   // Debug logging (remove in production)
   console.log("🔐 OAuth Request Details:", {
     url: oauthUrl,
@@ -62,11 +60,13 @@ async function getAdumoOAuthToken(): Promise<string> {
     clientSecretLength: ADUMO_CONFIG.oauthClientSecret?.length
   });
 
-  const response = await fetch(fullUrl, {
+  // Try sending credentials in request body (common OAuth 2.0 format)
+  const response = await fetch(oauthUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
+    body: params.toString(),
   });
 
   if (!response.ok) {
