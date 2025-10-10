@@ -11,8 +11,8 @@ type TierData = {
   popular?: boolean;
   pricing: {
     lump_sum: number;
-    monthly_12: { amount: number; months: number };
-    monthly_24: { amount: number; months: number };
+    deposit: number | null;
+    monthly_12: { amount: number; months: number } | null;
   };
   description: string;
 };
@@ -21,6 +21,7 @@ type TiersResponse = {
   builder: TierData;
   innovator: TierData;
   visionary: TierData;
+  cornerstone: TierData;
 };
 
 interface TierSelectionProps {
@@ -62,15 +63,15 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="font-orbitron font-bold text-4xl md:text-5xl mb-4 neon-text text-primary">
-            SELECT YOUR PLAYER TIER
+          <h2 className="font-orbitron font-bold text-4xl md:text-5xl mb-4 text-foreground">
+            Partnership Model: How It Works
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Choose your path based on commitment level and investment capacity. Each tier unlocks unique rewards and progression paths.
+            Choose the level of support that aligns with your vision for our shared success:
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {tiers && (
             <>
               <TierCard
@@ -93,20 +94,27 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
                 onSelect={() => handleTierSelect("visionary")}
                 colorScheme="secondary"
               />
+              
+              <TierCard
+                tier={tiers.cornerstone}
+                isSelected={selectedTier === "cornerstone"}
+                onSelect={() => handleTierSelect("cornerstone")}
+                colorScheme="primary"
+              />
             </>
           )}
         </div>
 
         <motion.div 
-          className="text-center mt-12"
+          className="text-center mt-12 bg-blue-500/10 border border-blue-500/30 rounded-lg p-6 max-w-4xl mx-auto"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
         >
-          <p className="text-lg text-muted-foreground">
-            <i className="fas fa-clock mr-2"></i>
-            Your commitment ends after 24 months. The mission is then complete.
+          <p className="text-lg text-blue-400 flex items-center justify-center gap-2">
+            <i className="fas fa-info-circle"></i>
+            <span className="font-semibold">Important:</span> Your commitment ends after 12 months. You then receive a Certificate of Partnership representing your total contribution and future returns.
           </p>
         </motion.div>
       </div>
