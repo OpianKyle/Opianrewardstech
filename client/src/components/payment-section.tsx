@@ -36,6 +36,7 @@ export function PaymentSection({
   const selectedTier = externalSelectedTier ?? internalSelectedTier;
   const setSelectedTier = externalSetSelectedTier ?? internalSetSelectedTier;
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [customAmount, setCustomAmount] = useState("");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -150,10 +151,31 @@ export function PaymentSection({
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedTier || !selectedPaymentMethod || !formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+    // Check if all required fields are filled
+    if (!selectedTier || !formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields including phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For non-cornerstone tiers, require payment method selection
+    if (selectedTier !== 'cornerstone' && !selectedPaymentMethod) {
+      toast({
+        title: "Missing Payment Method",
+        description: "Please select a payment method.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For cornerstone, require custom amount
+    if (selectedTier === 'cornerstone' && !customAmount) {
+      toast({
+        title: "Missing Amount",
+        description: "Please enter a custom amount for Cornerstone tier.",
         variant: "destructive",
       });
       return;
@@ -170,17 +192,37 @@ export function PaymentSection({
 
     // Calculate amount based on tier and payment method
     const tierPricing: Record<string, Record<string, number>> = {
-      builder: { lump_sum: 12000, monthly_12: 1000, monthly_24: 500 },
-      innovator: { lump_sum: 24000, monthly_12: 2000, monthly_24: 1000 },
-      visionary: { lump_sum: 36000, monthly_12: 3000, monthly_24: 1500 }
+      builder: { lump_sum: 12000, deposit: 6000, monthly_12: 500 },
+      innovator: { lump_sum: 24000, deposit: 12000, monthly_12: 1000 },
+      visionary: { lump_sum: 36000, deposit: 18000, monthly_12: 1500 }
     };
 
-    const amount = tierPricing[selectedTier]?.[selectedPaymentMethod] || 0;
+    let amount = 0;
+    
+    if (selectedTier === 'cornerstone') {
+      // For cornerstone, use custom amount (must be over R36,000)
+      amount = parseInt(customAmount) || 36000;
+      if (amount < 36000) {
+        toast({
+          title: "Invalid Amount",
+          description: "Cornerstone tier requires a minimum of R36,000.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else if (selectedPaymentMethod === 'deposit_monthly') {
+      // For deposit + monthly payments, use the deposit amount
+      amount = tierPricing[selectedTier]?.['deposit'] || 0;
+    } else {
+      // For lump sum or other methods
+      amount = tierPricing[selectedTier]?.[selectedPaymentMethod] || 0;
+    }
 
     paymentMutation.mutate({
       tier: selectedTier,
-      paymentMethod: selectedPaymentMethod,
+      paymentMethod: selectedTier === 'cornerstone' ? 'lump_sum' : selectedPaymentMethod,
       amount: amount * 100, // Convert to cents
+      customAmount: selectedTier === 'cornerstone' ? amount : undefined,
       ...formData
     });
   };
@@ -356,26 +398,50 @@ export function PaymentSection({
                   <SelectValue placeholder="Choose your tier" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="builder">The Builder - R12,000</SelectItem>
-                  <SelectItem value="innovator">The Innovator - R24,000</SelectItem>
-                  <SelectItem value="visionary">The Visionary - R36,000</SelectItem>
+                  <SelectItem value="builder">The Builder - from R12,000</SelectItem>
+                  <SelectItem value="innovator">The Innovator - from R24,000</SelectItem>
+                  <SelectItem value="visionary">The Visionary - from R36,000</SelectItem>
+                  <SelectItem value="cornerstone">The Cornerstone - R36,000+</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select onValueChange={setSelectedPaymentMethod} required>
-                <SelectTrigger data-testid="select-payment-method">
-                  <SelectValue placeholder="Choose payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lump_sum">Lump Sum</SelectItem>
-                  <SelectItem value="monthly_12">12 Monthly Payments</SelectItem>
-                  <SelectItem value="monthly_24">24 Monthly Payments</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Custom Amount for Cornerstone Tier */}
+            {selectedTier === 'cornerstone' && (
+              <div>
+                <Label htmlFor="customAmount">Custom Amount (Minimum R36,000)</Label>
+                <Input
+                  id="customAmount"
+                  type="number"
+                  min="36000"
+                  step="1000"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  placeholder="Enter amount (e.g., 50000)"
+                  required
+                  data-testid="input-custom-amount"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cornerstone tier: Single lump sum payment over R36,000
+                </p>
+              </div>
+            )}
+
+            {/* Payment Method for non-Cornerstone tiers */}
+            {selectedTier && selectedTier !== 'cornerstone' && (
+              <div>
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Select onValueChange={setSelectedPaymentMethod} required>
+                  <SelectTrigger data-testid="select-payment-method">
+                    <SelectValue placeholder="Choose payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lump_sum">One-off Payment</SelectItem>
+                    <SelectItem value="deposit_monthly">Deposit + 12 Monthly Payments</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div className="border-2 border-primary rounded-lg p-4 hover:bg-primary/10 cursor-pointer transition-colors">
@@ -510,6 +576,7 @@ export function PaymentSection({
                   <SelectItem value="builder">The Builder</SelectItem>
                   <SelectItem value="innovator">The Innovator</SelectItem>
                   <SelectItem value="visionary">The Visionary</SelectItem>
+                  <SelectItem value="cornerstone">The Cornerstone</SelectItem>
                 </SelectContent>
               </Select>
             </div>
