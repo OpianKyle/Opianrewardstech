@@ -86,6 +86,25 @@ export const otps = mysqlTable("otps", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const subscriptions = mysqlTable("subscriptions", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
+  depositPaymentId: varchar("deposit_payment_id", { length: 36 }).references(() => payments.id),
+  adumoSubscriberId: varchar("adumo_subscriber_id", { length: 255 }),
+  adumoScheduleId: varchar("adumo_schedule_id", { length: 255 }),
+  tier: varchar("tier", { length: 50 }).notNull(),
+  monthlyAmount: decimal("monthly_amount", { precision: 10, scale: 2 }).notNull(),
+  totalMonths: int("total_months").notNull().default(12),
+  paidMonths: int("paid_months").notNull().default(0),
+  status: mysqlEnum("status", ["ACTIVE", "PAUSED", "COMPLETED", "CANCELLED", "FAILED"]).notNull().default("ACTIVE"),
+  nextPaymentDate: timestamp("next_payment_date"),
+  startDate: timestamp("start_date").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  subscriptionData: json("subscription_data"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -121,6 +140,12 @@ export const insertOtpSchema = createInsertSchema(otps).omit({
   createdAt: true,
 });
 
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
@@ -133,3 +158,5 @@ export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
 export type InsertOtp = z.infer<typeof insertOtpSchema>;
 export type Otp = typeof otps.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;

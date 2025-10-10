@@ -156,6 +156,27 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_email (email),
       INDEX idx_expires_at (expires_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    `CREATE TABLE IF NOT EXISTS subscriptions (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      user_id VARCHAR(36) NOT NULL,
+      deposit_payment_id VARCHAR(36),
+      adumo_subscriber_id VARCHAR(255),
+      adumo_schedule_id VARCHAR(255),
+      tier VARCHAR(50) NOT NULL,
+      monthly_amount DECIMAL(10, 2) NOT NULL,
+      total_months INT NOT NULL DEFAULT 12,
+      paid_months INT NOT NULL DEFAULT 0,
+      status ENUM('ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED', 'FAILED') NOT NULL DEFAULT 'ACTIVE',
+      next_payment_date TIMESTAMP NULL,
+      start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      completed_at TIMESTAMP NULL,
+      subscription_data JSON,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (deposit_payment_id) REFERENCES payments(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
   ];
 

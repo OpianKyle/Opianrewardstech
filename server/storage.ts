@@ -14,12 +14,15 @@ import {
   PaymentMethod,
   InsertOtp,
   Otp,
+  InsertSubscription,
+  Subscription,
   users,
   invoices,
   payments,
   transactions,
   paymentMethods,
-  otps
+  otps,
+  subscriptions
 } from "@shared/schema";
 
 export interface IStorage {
@@ -58,6 +61,14 @@ export interface IStorage {
   getValidOtp(email: string, code: string): Promise<Otp | undefined>;
   markOtpAsUsed(id: string): Promise<void>;
   cleanupExpiredOtps(): Promise<void>;
+  
+  // Subscription operations
+  createSubscription(subscription: InsertSubscription): Promise<Subscription>;
+  getSubscription(id: string): Promise<Subscription | undefined>;
+  getSubscriptionByUserId(userId: string): Promise<Subscription | undefined>;
+  getSubscriptionByAdumoSubscriberId(adumoSubscriberId: string): Promise<Subscription | undefined>;
+  updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription>;
+  incrementSubscriptionPaidMonths(id: string): Promise<Subscription>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -361,6 +372,79 @@ export class DatabaseStorage implements IStorage {
   async cleanupExpiredOtps(): Promise<void> {
     await db.delete(otps).where(sql`${otps.expiresAt} < NOW()`);
   }
+
+  // Subscription Operations
+  async createSubscription(insertSubscription: InsertSubscription): Promise<Subscription> {
+    const id = randomUUID();
+    const newSubscription = {
+      id,
+      userId: insertSubscription.userId,
+      depositPaymentId: insertSubscription.depositPaymentId || null,
+      adumoSubscriberId: insertSubscription.adumoSubscriberId || null,
+      adumoScheduleId: insertSubscription.adumoScheduleId || null,
+      tier: insertSubscription.tier,
+      monthlyAmount: insertSubscription.monthlyAmount,
+      totalMonths: insertSubscription.totalMonths || 12,
+      paidMonths: insertSubscription.paidMonths || 0,
+      status: insertSubscription.status || "ACTIVE",
+      nextPaymentDate: insertSubscription.nextPaymentDate || null,
+      startDate: insertSubscription.startDate || new Date(),
+      completedAt: insertSubscription.completedAt || null,
+      subscriptionData: insertSubscription.subscriptionData || null,
+    };
+    
+    await db.insert(subscriptions).values(newSubscription);
+    return newSubscription as Subscription;
+  }
+
+  async getSubscription(id: string): Promise<Subscription | undefined> {
+    const result = await db.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getSubscriptionByUserId(userId: string): Promise<Subscription | undefined> {
+    const result = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+    return result[0];
+  }
+
+  async getSubscriptionByAdumoSubscriberId(adumoSubscriberId: string): Promise<Subscription | undefined> {
+    const result = await db.select().from(subscriptions).where(eq(subscriptions.adumoSubscriberId, adumoSubscriberId)).limit(1);
+    return result[0];
+  }
+
+  async updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription> {
+    await db.update(subscriptions)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(subscriptions.id, id));
+    
+    const result = await db.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1);
+    if (!result[0]) {
+      throw new Error("Subscription not found");
+    }
+    return result[0];
+  }
+
+  async incrementSubscriptionPaidMonths(id: string): Promise<Subscription> {
+    const subscription = await this.getSubscription(id);
+    if (!subscription) {
+      throw new Error("Subscription not found");
+    }
+    
+    const newPaidMonths = (subscription.paidMonths || 0) + 1;
+    const updates: Partial<Subscription> = {
+      paidMonths: newPaidMonths,
+    };
+    
+    if (newPaidMonths >= subscription.totalMonths) {
+      updates.status = "COMPLETED";
+      updates.completedAt = new Date();
+    }
+    
+    return this.updateSubscription(id, updates);
+  }
 }
 
 // Legacy compatibility - fallback to MemStorage if database is not available
@@ -371,6 +455,7 @@ export class MemStorage implements IStorage {
   private transactions: Map<string, Transaction>;
   private paymentMethodsMap: Map<string, PaymentMethod>;
   private otpsMap: Map<string, Otp>;
+  private subscriptionsMap: Map<string, Subscription>;
 
   constructor() {
     this.users = new Map();
@@ -379,6 +464,7 @@ export class MemStorage implements IStorage {
     this.transactions = new Map();
     this.paymentMethodsMap = new Map();
     this.otpsMap = new Map();
+    this.subscriptionsMap = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -605,6 +691,72 @@ export class MemStorage implements IStorage {
         this.otpsMap.delete(id);
       }
     });
+  }
+
+  // Subscription Operations (in-memory implementation)
+  async createSubscription(insertSubscription: InsertSubscription): Promise<Subscription> {
+    const id = randomUUID();
+    const subscription: Subscription = {
+      id,
+      userId: insertSubscription.userId,
+      depositPaymentId: insertSubscription.depositPaymentId || null,
+      adumoSubscriberId: insertSubscription.adumoSubscriberId || null,
+      adumoScheduleId: insertSubscription.adumoScheduleId || null,
+      tier: insertSubscription.tier,
+      monthlyAmount: insertSubscription.monthlyAmount,
+      totalMonths: insertSubscription.totalMonths || 12,
+      paidMonths: insertSubscription.paidMonths || 0,
+      status: insertSubscription.status || "ACTIVE",
+      nextPaymentDate: insertSubscription.nextPaymentDate || null,
+      startDate: insertSubscription.startDate || new Date(),
+      completedAt: insertSubscription.completedAt || null,
+      subscriptionData: insertSubscription.subscriptionData || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.subscriptionsMap.set(id, subscription);
+    return subscription;
+  }
+
+  async getSubscription(id: string): Promise<Subscription | undefined> {
+    return this.subscriptionsMap.get(id);
+  }
+
+  async getSubscriptionByUserId(userId: string): Promise<Subscription | undefined> {
+    return Array.from(this.subscriptionsMap.values()).find(s => s.userId === userId);
+  }
+
+  async getSubscriptionByAdumoSubscriberId(adumoSubscriberId: string): Promise<Subscription | undefined> {
+    return Array.from(this.subscriptionsMap.values()).find(s => s.adumoSubscriberId === adumoSubscriberId);
+  }
+
+  async updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription> {
+    const subscription = this.subscriptionsMap.get(id);
+    if (!subscription) throw new Error("Subscription not found");
+    const updated = { 
+      ...subscription, 
+      ...updates,
+      updatedAt: new Date() 
+    };
+    this.subscriptionsMap.set(id, updated);
+    return updated;
+  }
+
+  async incrementSubscriptionPaidMonths(id: string): Promise<Subscription> {
+    const subscription = this.subscriptionsMap.get(id);
+    if (!subscription) throw new Error("Subscription not found");
+    
+    const newPaidMonths = (subscription.paidMonths || 0) + 1;
+    const updates: Partial<Subscription> = {
+      paidMonths: newPaidMonths,
+    };
+    
+    if (newPaidMonths >= subscription.totalMonths) {
+      updates.status = "COMPLETED";
+      updates.completedAt = new Date();
+    }
+    
+    return this.updateSubscription(id, updates);
   }
 }
 

@@ -18,8 +18,12 @@ const ADUMO_CONFIG = {
   apiUrl: process.env.ADUMO_BASE_URL || (process.env.NODE_ENV === "production" 
     ? "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual"
     : "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual"),
+  subscriptionApiUrl: process.env.NODE_ENV === "production"
+    ? "https://apiv3.adumoonline.com/product/subscription/v1/api"
+    : "https://staging-apiv3.adumoonline.com/product/subscription/v1/api",
   returnUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/payment-return`,
-  notifyUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/payment-webhook`
+  notifyUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/payment-webhook`,
+  subscriptionWebhookUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/subscription-webhook`
 };
 
 // Validate required Adumo configuration
@@ -31,6 +35,100 @@ const validateAdumoConfig = () => {
     throw new Error(`Missing required Adumo environment variables: ${missing.map(k => `ADUMO_${k.toUpperCase()}`).join(', ')}`);
   }
 };
+
+// Adumo Subscription API Helper Functions
+async function getAdumoOAuthToken(): Promise<string> {
+  const oauthUrl = process.env.NODE_ENV === "production"
+    ? "https://apiv3.adumoonline.com/product/authentication/v1/oauth/token"
+    : "https://staging-apiv3.adumoonline.com/product/authentication/v1/oauth/token";
+
+  const response = await fetch(oauthUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: ADUMO_CONFIG.merchantId!,
+      client_secret: ADUMO_CONFIG.jwtSecret!,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OAuth token request failed: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
+async function createAdumoSubscription(params: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  monthlyAmount: number; // in cents
+  totalMonths: number;
+  startDate: Date;
+}): Promise<{ subscriberId: string; scheduleId: string }> {
+  const token = await getAdumoOAuthToken();
+
+  // Create subscriber
+  const subscriberResponse = await fetch(`${ADUMO_CONFIG.subscriptionApiUrl}/subscriber/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      merchantUid: ADUMO_CONFIG.merchantId,
+      applicationUid: ADUMO_CONFIG.applicationId,
+      emailAddress: params.email,
+      firstName: params.firstName,
+      lastName: params.lastName,
+      phoneNumber: params.phone,
+      notifyUrl: ADUMO_CONFIG.subscriptionWebhookUrl,
+    }),
+  });
+
+  if (!subscriberResponse.ok) {
+    const error = await subscriberResponse.text();
+    throw new Error(`Failed to create subscription: ${error}`);
+  }
+
+  const subscriberData = await subscriberResponse.json();
+  const subscriberId = subscriberData.subscriberUid;
+
+  // Create schedule for the subscriber
+  const scheduleResponse = await fetch(`${ADUMO_CONFIG.subscriptionApiUrl}/schedule`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      subscriberUid: subscriberId,
+      amount: (params.monthlyAmount / 100).toFixed(2), // Convert cents to currency
+      currencyCode: "ZAR",
+      frequency: "MONTHLY",
+      startDate: params.startDate.toISOString().split('T')[0], // YYYY-MM-DD format
+      numberOfPayments: params.totalMonths,
+      description: "Opian Rewards Monthly Subscription",
+    }),
+  });
+
+  if (!scheduleResponse.ok) {
+    const error = await scheduleResponse.text();
+    throw new Error(`Failed to create payment schedule: ${error}`);
+  }
+
+  const scheduleData = await scheduleResponse.json();
+  
+  return {
+    subscriberId,
+    scheduleId: scheduleData.scheduleUid,
+  };
+}
 
 const createPaymentIntentSchema = z.object({
   amount: z.number().min(1),
@@ -654,42 +752,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create or get investor
-      let investor = await storage.getUserByEmail(validatedData.email);
-      if (!user) {
-        investor = await storage.createUser({
-          email: validatedData.email,
-          firstName: validatedData.firstName,
-          lastName: validatedData.lastName,
-          phone: validatedData.phone,
-          tier: validatedData.tier,
-          paymentMethod: validatedData.paymentMethod,
-          amount: validatedData.amount,
-        });
+      // Calculate deposit amount and monthly payment for deposit_monthly method
+      let finalAmount = validatedData.amount;
+      let monthlyAmount = 0;
+      
+      if (validatedData.paymentMethod === "deposit_monthly") {
+        // Deposit calculation based on tier
+        const depositAmounts: Record<string, number> = {
+          builder: 600000,    // R6,000 deposit
+          innovator: 1200000, // R12,000 deposit
+          visionary: 1800000, // R18,000 deposit
+        };
+        
+        // Monthly payment calculation based on tier
+        const monthlyAmounts: Record<string, number> = {
+          builder: 50000,    // R500/month
+          innovator: 100000, // R1,000/month
+          visionary: 150000, // R1,500/month
+        };
+        
+        finalAmount = depositAmounts[validatedData.tier] || validatedData.amount;
+        monthlyAmount = monthlyAmounts[validatedData.tier] || 0;
       }
 
       // Generate unique reference first
       const tempId = randomUUID().substring(0, 8);
       const reference = `OPIAN_${Date.now()}_${tempId}`;
       
-      // Create payment record with reference stored in paymentData
-      const paymentDataToStore = {
+      // Create payment record with reference and subscription info stored in paymentData
+      const paymentDataToStore: any = {
         userId: user.id,
         tier: validatedData.tier,
         paymentMethod: validatedData.paymentMethod,
         merchantReference: reference
       };
       
+      // Add subscription details if using deposit_monthly method
+      if (validatedData.paymentMethod === "deposit_monthly" && monthlyAmount > 0) {
+        paymentDataToStore.isDeposit = true;
+        paymentDataToStore.monthlyAmount = monthlyAmount;
+        paymentDataToStore.totalMonths = 12;
+        paymentDataToStore.userDetails = {
+          email: validatedData.email,
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+          phone: validatedData.phone,
+        };
+      }
+      
       console.log("🔍 Creating payment with data:", JSON.stringify({
         userId: user.id,
-        amount: validatedData.amount,
+        amount: finalAmount,
         method: "adumo",
         paymentData: paymentDataToStore
       }, null, 2));
       
       const payment = await storage.createPayment({
         userId: user.id,
-        amount: validatedData.amount,
+        amount: finalAmount,
         method: "adumo",
         paymentData: paymentDataToStore
       });
@@ -697,7 +817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("✅ Payment created:", JSON.stringify(payment, null, 2));
       
       // Convert amount from cents to currency with 2 decimal places
-      const currencyAmount = (validatedData.amount / 100).toFixed(2);
+      const currencyAmount = (finalAmount / 100).toFixed(2);
 
       // Generate JWT token for Adumo API authentication
       // Using Adumo's exact JWT payload structure
@@ -927,6 +1047,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                   if (paymentData.paymentMethod) {
                     investmentDetails.paymentMethod = paymentData.paymentMethod;
+                  }
+                  
+                  // Create subscription if this is a deposit payment
+                  if (paymentData.isDeposit && paymentData.monthlyAmount) {
+                    console.log("💳 Creating subscription for deposit payment...");
+                    try {
+                      // Calculate subscription start date (30 days from deposit)
+                      const startDate = new Date();
+                      startDate.setDate(startDate.getDate() + 30);
+                      
+                      // Create subscription with Adumo
+                      const adumoSubscription = await createAdumoSubscription({
+                        email: paymentData.userDetails.email,
+                        firstName: paymentData.userDetails.firstName,
+                        lastName: paymentData.userDetails.lastName,
+                        phone: paymentData.userDetails.phone,
+                        monthlyAmount: paymentData.monthlyAmount,
+                        totalMonths: paymentData.totalMonths || 12,
+                        startDate,
+                      });
+                      
+                      // Create subscription record in database
+                      const subscription = await storage.createSubscription({
+                        userId: payment.userId,
+                        depositPaymentId: payment.id,
+                        adumoSubscriberId: adumoSubscription.subscriberId,
+                        adumoScheduleId: adumoSubscription.scheduleId,
+                        tier: paymentData.tier,
+                        monthlyAmount: (paymentData.monthlyAmount / 100).toFixed(2),
+                        totalMonths: paymentData.totalMonths || 12,
+                        paidMonths: 0,
+                        status: "ACTIVE",
+                        nextPaymentDate: startDate,
+                        subscriptionData: {
+                          adumoSubscriberId: adumoSubscription.subscriberId,
+                          adumoScheduleId: adumoSubscription.scheduleId,
+                        },
+                      });
+                      
+                      console.log(`✅ Subscription created successfully: ${subscription.id}`);
+                      console.log(`📅 Next payment date: ${startDate.toISOString()}`);
+                      
+                      // Update user with subscription ID
+                      await storage.updateUserInvestmentDetails(payment.userId, {
+                        subscriptionId: subscription.id,
+                      });
+                    } catch (subscriptionError: any) {
+                      console.error("❌ Failed to create subscription:", subscriptionError);
+                      console.error("❌ Subscription error details:", subscriptionError.message);
+                      // Continue processing even if subscription creation fails
+                      // Admin can manually create subscription later
+                    }
                   }
                   if (payment.amount) {
                     investmentDetails.amount = payment.amount;
@@ -1794,6 +1966,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("❌ Error processing Adumo webhook:", error);
       res.status(500).json({ 
         error: "Webhook processing failed", 
+        message: error.message 
+      });
+    }
+  });
+
+  // Subscription Webhook Endpoint - receives subscription payment notifications from Adumo
+  app.post("/api/subscription-webhook", async (req: Request, res: Response) => {
+    try {
+      console.log("🔔 Subscription webhook notification received:", new Date().toISOString());
+      console.log("📦 Subscription webhook payload:", JSON.stringify(req.body, null, 2));
+
+      const webhookData = req.body;
+      
+      // Extract key fields from Adumo subscription notification
+      const subscriberId = webhookData.subscriberUid || webhookData.subscriber_uid;
+      const scheduleId = webhookData.scheduleUid || webhookData.schedule_uid;
+      const status = webhookData.status || webhookData.paymentStatus;
+      const amount = webhookData.amount;
+      const transactionId = webhookData.transactionId || webhookData.transaction_id;
+
+      if (!subscriberId) {
+        console.error("❌ Missing subscriber ID in subscription webhook");
+        return res.status(400).json({ error: "Missing subscriber ID" });
+      }
+
+      console.log(`🔍 Processing subscription payment: ${subscriberId}`);
+      console.log(`   Schedule ID: ${scheduleId}`);
+      console.log(`   Status: ${status}`);
+      console.log(`   Amount: ${amount}`);
+      console.log(`   Transaction ID: ${transactionId}`);
+
+      // Find subscription by Adumo subscriber ID
+      const subscription = await storage.getSubscriptionByAdumoSubscriberId(subscriberId);
+
+      if (!subscription) {
+        console.error(`❌ Subscription not found for subscriber ID: ${subscriberId}`);
+        return res.status(404).json({ error: "Subscription not found" });
+      }
+
+      // Process successful subscription payment
+      if (status === "SUCCESS" || status === "COMPLETED" || status === "PAID") {
+        console.log(`✅ Subscription payment successful for subscription: ${subscription.id}`);
+        
+        // Increment paid months
+        const updatedSubscription = await storage.incrementSubscriptionPaidMonths(subscription.id);
+        
+        console.log(`📊 Subscription progress: ${updatedSubscription.paidMonths}/${updatedSubscription.totalMonths} months paid`);
+        
+        // Update next payment date (add 30 days)
+        if (updatedSubscription.status === "ACTIVE") {
+          const nextPaymentDate = new Date();
+          nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
+          
+          await storage.updateSubscription(subscription.id, {
+            nextPaymentDate,
+          });
+          
+          console.log(`📅 Next payment date updated to: ${nextPaymentDate.toISOString()}`);
+        }
+        
+        // If all payments completed, update user's payment status
+        if (updatedSubscription.status === "COMPLETED") {
+          console.log(`🎉 Subscription completed! All ${updatedSubscription.totalMonths} payments received.`);
+          
+          // Update user status to reflect fully paid
+          await storage.updateUserPaymentStatus(
+            subscription.userId,
+            "completed",
+            `subscription_${subscription.id}`
+          );
+        }
+      } else if (status === "FAILED" || status === "DECLINED") {
+        console.error(`❌ Subscription payment failed for subscription: ${subscription.id}`);
+        
+        // Optionally update subscription status or send notification
+        await storage.updateSubscription(subscription.id, {
+          status: "FAILED",
+          subscriptionData: {
+            ...subscription.subscriptionData as any,
+            lastFailedPayment: new Date().toISOString(),
+            failureReason: webhookData.failureReason || "Payment failed",
+          },
+        });
+      }
+
+      // Return success response to Adumo
+      res.json({ 
+        success: true, 
+        message: "Subscription webhook processed successfully",
+        subscriptionId: subscription.id,
+        paidMonths: subscription.paidMonths,
+      });
+
+    } catch (error: any) {
+      console.error("❌ Error processing subscription webhook:", error);
+      res.status(500).json({ 
+        error: "Subscription webhook processing failed", 
         message: error.message 
       });
     }
