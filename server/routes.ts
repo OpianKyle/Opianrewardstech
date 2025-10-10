@@ -506,37 +506,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tiers = {
         builder: {
           name: "The Builder",
-          subtitle: "The Strategic Grind",
+          subtitle: "Early Believer",
           icon: "hammer",
           pricing: {
             lump_sum: 12000,
-            monthly_12: { amount: 1000, months: 12 },
-            monthly_24: { amount: 500, months: 24 }
+            deposit: 6000,
+            monthly_12: { amount: 500, months: 12 }
           },
-          description: "Steady, consistent support for foundational growth. Perfect for the strategic grinder."
+          description: "Perfect for early believers who want to participate in our growth journey with a manageable monthly commitment."
         },
         innovator: {
           name: "The Innovator", 
-          subtitle: "The Balanced Champion",
+          subtitle: "Meaningful Stake",
           icon: "lightbulb",
           popular: true,
           pricing: {
             lump_sum: 24000,
-            monthly_12: { amount: 2000, months: 12 },
-            monthly_24: { amount: 1000, months: 24 }
+            deposit: 12000,
+            monthly_12: { amount: 1000, months: 12 }
           },
-          description: "Optimal risk/reward ratio with maximum flexibility. The champion's choice."
+          description: "Ideal for partners who see the significant potential and want a meaningful stake in our success story."
         },
         visionary: {
           name: "The Visionary",
-          subtitle: "Maximum Impact", 
+          subtitle: "Maximum Returns", 
           icon: "eye",
           pricing: {
             lump_sum: 36000,
-            monthly_12: { amount: 3000, months: 12 },
-            monthly_24: { amount: 1500, months: 24 }
+            deposit: 18000,
+            monthly_12: { amount: 1500, months: 12 }
           },
-          description: "For those who go all-in on revolutionary change. Maximum impact, maximum rewards."
+          description: "For those who fully embrace our vision and want to maximize their partnership returns."
+        },
+        cornerstone: {
+          name: "The Cornerstone",
+          subtitle: "Special Deal",
+          icon: "crown",
+          pricing: {
+            lump_sum: 36000,
+            deposit: null,
+            monthly_12: null
+          },
+          description: "Equivalent to any amount over R36000, paid upfront for partners who prefer immediate full commitment and a special deal."
         }
       };
       
