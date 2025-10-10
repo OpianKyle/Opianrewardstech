@@ -53,6 +53,15 @@ async function getAdumoOAuthToken(): Promise<string> {
 
   const fullUrl = `${oauthUrl}?${params.toString()}`;
 
+  // Debug logging (remove in production)
+  console.log("🔐 OAuth Request Details:", {
+    url: oauthUrl,
+    clientIdProvided: !!ADUMO_CONFIG.oauthClientId,
+    clientIdLength: ADUMO_CONFIG.oauthClientId?.length,
+    clientSecretProvided: !!ADUMO_CONFIG.oauthClientSecret,
+    clientSecretLength: ADUMO_CONFIG.oauthClientSecret?.length
+  });
+
   const response = await fetch(fullUrl, {
     method: "POST",
     headers: {
@@ -66,7 +75,8 @@ async function getAdumoOAuthToken(): Promise<string> {
       status: response.status,
       statusText: response.statusText,
       error: errorText,
-      url: oauthUrl
+      url: oauthUrl,
+      clientIdFirstChars: ADUMO_CONFIG.oauthClientId?.substring(0, 8) + '...',
     });
     throw new Error(`OAuth token request failed: ${response.statusText} - ${errorText}`);
   }
