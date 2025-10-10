@@ -14,6 +14,9 @@ const ADUMO_CONFIG = {
   merchantId: process.env.ADUMO_MERCHANT_ID,
   jwtSecret: process.env.ADUMO_CLIENT_SECRET, // Use CLIENT_SECRET for JWT verification
   applicationId: process.env.ADUMO_APPLICATION_ID,
+  // OAuth credentials for subscription API
+  oauthClientId: process.env.ADUMO_CLIENT_ID,
+  oauthClientSecret: process.env.ADUMO_CLIENT_SECRET,
   // URLs - using staging for development, production when deployed
   apiUrl: process.env.ADUMO_BASE_URL || (process.env.NODE_ENV === "production" 
     ? "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual"
@@ -44,8 +47,8 @@ async function getAdumoOAuthToken(): Promise<string> {
 
   const params = new URLSearchParams({
     grant_type: "client_credentials",
-    client_id: ADUMO_CONFIG.merchantId!,
-    client_secret: ADUMO_CONFIG.jwtSecret!,
+    client_id: ADUMO_CONFIG.oauthClientId!,
+    client_secret: ADUMO_CONFIG.oauthClientSecret!,
   });
 
   const fullUrl = `${oauthUrl}?${params.toString()}`;
