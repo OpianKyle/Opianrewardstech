@@ -139,10 +139,59 @@ export default function Dashboard() {
   }
 
   const tierName = investor.tier === 'builder' ? 'The Builder' :
-                   investor.tier === 'innovator' ? 'The Innovator' : 'The Visionary';
+                   investor.tier === 'innovator' ? 'The Innovator' : 
+                   investor.tier === 'visionary' ? 'The Visionary' : 'The Cornerstone';
 
   const paymentStatusColor = investor.paymentStatus === 'completed' ? 'bg-green-500' :
                             investor.paymentStatus === 'pending' ? 'bg-yellow-500' : 'bg-red-500';
+
+  // Calculate payment details based on tier and payment method
+  const getPaymentDetails = () => {
+    const isLumpSum = investor.paymentMethod === 'lump_sum';
+    const totalAmount = investor.amount / 100;
+
+    let depositAmount = 0;
+    let monthlyAmount = 0;
+
+    if (!isLumpSum) {
+      // deposit_monthly payment method
+      switch (investor.tier) {
+        case 'builder':
+          depositAmount = 6000;
+          monthlyAmount = 500;
+          break;
+        case 'innovator':
+          depositAmount = 12000;
+          monthlyAmount = 1000;
+          break;
+        case 'visionary':
+          depositAmount = 18000;
+          monthlyAmount = 1500;
+          break;
+        default:
+          depositAmount = totalAmount;
+          monthlyAmount = 0;
+      }
+    }
+
+    // Calculate next payment date (first monthly payment is 1 month after signup)
+    let nextPaymentDate = null;
+    if (!isLumpSum && investor.createdAt) {
+      const signupDate = new Date(investor.createdAt);
+      nextPaymentDate = new Date(signupDate);
+      nextPaymentDate.setMonth(signupDate.getMonth() + 1);
+    }
+
+    return {
+      isLumpSum,
+      depositAmount,
+      monthlyAmount,
+      nextPaymentDate,
+      totalAmount
+    };
+  };
+
+  const paymentDetails = getPaymentDetails();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
@@ -209,15 +258,50 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-investment">
                 <CardHeader>
-                  <CardTitle className="text-white text-lg">Total Investment</CardTitle>
+                  <CardTitle className="text-white text-lg">
+                    {paymentDetails.isLumpSum ? 'Total Investment' : 'Deposit Amount'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-cyan-400" data-testid="text-amount">
-                    R {(investor.amount / 100).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                    R {paymentDetails.isLumpSum 
+                      ? paymentDetails.totalAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })
+                      : paymentDetails.depositAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })
+                    }
                   </p>
                   <p className="text-sm text-gray-400 mt-2">
-                    Payment Method: {investor.paymentMethod ? investor.paymentMethod.replace('_', ' ').toUpperCase() : 'Not specified'}
+                    {paymentDetails.isLumpSum ? 'One-off Payment' : `+ R${paymentDetails.monthlyAmount} × 12 months`}
                   </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-next-payment">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg">Next Payment</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {paymentDetails.isLumpSum ? (
+                    <>
+                      <p className="text-2xl font-bold text-green-400" data-testid="text-no-payments">
+                        No Future Payments
+                      </p>
+                      <p className="text-sm text-gray-400 mt-2">
+                        Paid in full
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-3xl font-bold text-cyan-400" data-testid="text-next-amount">
+                        R {paymentDetails.monthlyAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-sm text-gray-400 mt-2" data-testid="text-next-date">
+                        {paymentDetails.nextPaymentDate 
+                          ? `Due: ${paymentDetails.nextPaymentDate.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                          : 'Date TBD'
+                        }
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -229,23 +313,6 @@ export default function Dashboard() {
                   <p className="text-2xl font-bold text-cyan-400">{tierName}</p>
                   <p className="text-sm text-gray-400 mt-2">
                     Status: <span className="text-white">{investor.paymentStatus}</span>
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-joined">
-                <CardHeader>
-                  <CardTitle className="text-white text-lg">Member Since</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-cyan-400">
-                    {new Date(investor.createdAt).toLocaleDateString('en-ZA', { 
-                      month: 'short', 
-                      year: 'numeric' 
-                    })}
-                  </p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Joined on {new Date(investor.createdAt).toLocaleDateString('en-ZA')}
                   </p>
                 </CardContent>
               </Card>
@@ -274,6 +341,22 @@ export default function Dashboard() {
                     <Badge className={`${paymentStatusColor} text-white`}>
                       {investor.paymentStatus}
                     </Badge>
+                  </div>
+                  <div>
+                    <p className="text-gray-400">Total Investment</p>
+                    <p className="text-white font-semibold">
+                      R {paymentDetails.totalAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400">Payment Structure</p>
+                    <p className="text-white">
+                      {paymentDetails.isLumpSum ? (
+                        'One-off Payment'
+                      ) : (
+                        `R${paymentDetails.depositAmount.toLocaleString('en-ZA')} + R${paymentDetails.monthlyAmount} × 12`
+                      )}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -407,54 +490,32 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="text-white">Invoices & Payments</CardTitle>
                 <CardDescription className="text-gray-300">
-                  View and pay outstanding invoices
+                  {paymentDetails.isLumpSum 
+                    ? 'Your payment history' 
+                    : 'Upcoming monthly payments and payment history'
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {transactions && transactions.length > 0 ? (
+                {paymentDetails.isLumpSum ? (
                   <div className="space-y-4">
-                    {transactions.filter((t: any) => t.status === 'pending').length > 0 ? (
-                      <>
-                        <p className="text-yellow-400 font-semibold">Outstanding Payments</p>
-                        {transactions.filter((t: any) => t.status === 'pending').map((transaction: any, index: number) => (
-                          <div
-                            key={transaction.id}
-                            className="p-4 bg-gray-700/30 rounded-lg border border-yellow-500/30"
-                            data-testid={`invoice-${index}`}
-                          >
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <p className="text-white font-medium text-lg">
-                                  R {(transaction.amount / 100).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
-                                </p>
-                                <p className="text-sm text-gray-400">
-                                  Due Date: {new Date(transaction.createdAt).toLocaleDateString('en-ZA')}
-                                </p>
-                              </div>
-                              <Badge className="bg-yellow-500 text-white">
-                                Pending
-                              </Badge>
-                            </div>
-                            <Button
-                              className="w-full bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold"
-                              data-testid={`button-pay-${index}`}
-                            >
-                              Pay Now
-                            </Button>
-                          </div>
-                        ))}
-                      </>
-                    ) : (
-                      <p className="text-green-400 text-center py-4">
-                        ✓ All payments up to date!
+                    <div className="p-6 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
+                      <p className="text-green-400 text-lg font-semibold mb-2">
+                        ✓ Paid in Full
                       </p>
-                    )}
+                      <p className="text-gray-300 text-sm">
+                        Your one-off payment of R {paymentDetails.totalAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })} has been completed.
+                      </p>
+                      <p className="text-gray-400 text-xs mt-2">
+                        No future payments required
+                      </p>
+                    </div>
 
-                    {transactions.filter((t: any) => t.status === 'completed').length > 0 && (
+                    {transactions && transactions.length > 0 && (
                       <>
-                        <Separator className="bg-cyan-500/20 my-6" />
-                        <p className="text-gray-400 font-semibold">Paid Invoices</p>
-                        {transactions.filter((t: any) => t.status === 'completed').map((transaction: any, index: number) => (
+                        <Separator className="bg-cyan-500/20" />
+                        <p className="text-gray-400 font-semibold">Payment History</p>
+                        {transactions.map((transaction: any, index: number) => (
                           <div
                             key={transaction.id}
                             className="p-4 bg-gray-700/30 rounded-lg border border-green-500/20"
@@ -479,7 +540,72 @@ export default function Dashboard() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-400 text-center py-8">No invoices found</p>
+                  <div className="space-y-4">
+                    {/* Deposit Payment */}
+                    <div className="p-4 bg-gray-700/30 rounded-lg border border-cyan-500/30">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-white font-medium text-sm text-gray-400">Deposit Payment</p>
+                          <p className="text-white font-medium text-lg">
+                            R {paymentDetails.depositAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Paid on: {new Date(investor.createdAt).toLocaleDateString('en-ZA')}
+                          </p>
+                        </div>
+                        <Badge className="bg-green-500 text-white">
+                          Paid
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-cyan-500/20" />
+
+                    {/* Monthly Payments Schedule */}
+                    <p className="text-gray-400 font-semibold">Monthly Payment Schedule</p>
+                    <div className="space-y-3">
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const paymentDate = new Date(investor.createdAt);
+                        paymentDate.setMonth(paymentDate.getMonth() + i + 1);
+                        const isPast = paymentDate < new Date();
+                        const isCurrent = !isPast && i === 0;
+                        
+                        return (
+                          <div
+                            key={i}
+                            className={`p-3 rounded-lg border ${
+                              isCurrent 
+                                ? 'bg-yellow-500/10 border-yellow-500/30' 
+                                : isPast 
+                                  ? 'bg-gray-700/30 border-green-500/20'
+                                  : 'bg-gray-700/30 border-cyan-500/20'
+                            }`}
+                            data-testid={`monthly-payment-${i}`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-white font-medium">
+                                  R {paymentDetails.monthlyAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                                </p>
+                                <p className="text-sm text-gray-400">
+                                  Payment {i + 1} of 12 - Due: {paymentDate.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              </div>
+                              <Badge className={
+                                isCurrent 
+                                  ? 'bg-yellow-500 text-white' 
+                                  : isPast 
+                                    ? 'bg-green-500 text-white'
+                                    : 'bg-gray-500 text-white'
+                              }>
+                                {isCurrent ? 'Due Now' : isPast ? 'Paid' : 'Upcoming'}
+                              </Badge>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
