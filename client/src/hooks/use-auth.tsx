@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const setAuthToken = async (authToken: string) => {
+    setIsLoading(true);
     setToken(authToken);
     localStorage.setItem('investor_token', authToken);
     await fetchInvestor(authToken);
