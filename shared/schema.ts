@@ -70,7 +70,9 @@ export const paymentMethods = mysqlTable("payment_methods", {
   lastFourDigits: char("last_four_digits", { length: 4 }),
   expiryMonth: int("expiry_month"),
   expiryYear: int("expiry_year"),
-  puid: varchar("puid", { length: 36 }), // Profile UID for tokenized cards
+  tokenUid: varchar("token_uid", { length: 255 }), // Card token UID from Adumo tokenization
+  profileUid: varchar("profile_uid", { length: 255 }), // Profile UID from Adumo tokenization
+  puid: varchar("puid", { length: 36 }), // Legacy profile UID field (kept for compatibility)
   isActive: int("is_active").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),

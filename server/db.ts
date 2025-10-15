@@ -70,6 +70,41 @@ export function isDatabaseConnected(): boolean {
 }
 
 async function createTablesIfNotExist(connection: mysql.PoolConnection) {
+  // First, run migrations to add missing columns to existing tables
+  try {
+    // Check if payment_methods table exists
+    const [tables] = await connection.execute(
+      `SELECT TABLE_NAME FROM information_schema.TABLES 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment_methods'`
+    ) as any;
+
+    if (tables.length > 0) {
+      // Table exists, check for missing columns
+      const columnsToAdd = ['token_uid', 'profile_uid'];
+      
+      for (const columnName of columnsToAdd) {
+        const [columns] = await connection.execute(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS 
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment_methods' AND COLUMN_NAME = ?`,
+          [columnName]
+        ) as any;
+
+        if (columns.length === 0) {
+          // Column doesn't exist, add it
+          const alterSQL = columnName === 'token_uid' 
+            ? `ALTER TABLE payment_methods ADD COLUMN token_uid VARCHAR(255)`
+            : `ALTER TABLE payment_methods ADD COLUMN profile_uid VARCHAR(255)`;
+          
+          await connection.execute(alterSQL);
+          console.log(`✅ Added column ${columnName} to payment_methods table`);
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error('Migration error:', error);
+    throw error; // Fail fast on migration errors
+  }
+
   const tables = [
     `CREATE TABLE IF NOT EXISTS users (
       id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
@@ -140,6 +175,8 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
       last_four_digits CHAR(4),
       expiry_month INT,
       expiry_year INT,
+      token_uid VARCHAR(255),
+      profile_uid VARCHAR(255),
       puid VARCHAR(36),
       is_active INT NOT NULL DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
