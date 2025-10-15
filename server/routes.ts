@@ -719,12 +719,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiryMonth: z.string().length(2),
         expiryYear: z.string().length(2),
         cvv: z.string().min(3).max(4),
-        email: z.string().email(),
-        firstName: z.string().min(1),
-        lastName: z.string().min(1),
+        paymentReference: z.string().min(1), // To fetch user details from payment record
       });
 
       const cardData = tokenizeSchema.parse(req.body);
+      
+      // Fetch user details from payment record
+      const payment = await storage.getPaymentByMerchantReference(cardData.paymentReference);
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
+      
+      const paymentDataObj = payment.paymentData as any;
+      const userDetails = paymentDataObj?.userDetails;
+      
+      if (!userDetails || !userDetails.email || !userDetails.firstName || !userDetails.lastName) {
+        return res.status(400).json({ message: "User details not found in payment record" });
+      }
 
       // Step 1: Get OAuth token
       const token = await getAdumoOAuthToken();
@@ -746,9 +757,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           expiryMonth: cardData.expiryMonth,
           expiryYear: cardData.expiryYear,
           cvv: cardData.cvv,
-          email: cardData.email,
-          firstName: cardData.firstName,
-          lastName: cardData.lastName,
+          email: userDetails.email,
+          firstName: userDetails.firstName,
+          lastName: userDetails.lastName,
         }),
       });
 

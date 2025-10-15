@@ -39,7 +39,8 @@ export default function SubscriptionSetup() {
         expiryMonth: data.expiryMonth,
         expiryYear: data.expiryYear,
         cvv: data.cvv,
-        cardholderName: data.cardholderName
+        cardholderName: data.cardholderName,
+        paymentReference: reference
       });
       
       const tokenData = await tokenResponse.json();
