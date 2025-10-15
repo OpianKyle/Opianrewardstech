@@ -869,6 +869,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Step 2.3 - Create subscription from completed payment (for deposit + monthly flow)
+  app.post("/api/adumo/create-subscription-from-payment", async (req, res) => {
+    try {
+      const schema = z.object({
+        paymentId: z.string(),
+        reference: z.string(),
+        tokenUid: z.string(),
+        profileUid: z.string(),
+      });
+
+      const data = schema.parse(req.body);
+
+      // Get payment to extract subscription details
+      const payment = await storage.getPaymentByMerchantReference(data.reference);
+      
+      if (!payment) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Payment not found" 
+        });
+      }
+
+      // Verify payment is completed
+      if (payment.status !== "completed") {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Payment must be completed before creating subscription" 
+        });
+      }
+
+      const paymentData = payment.paymentData as any;
+      
+      // Verify this is a deposit payment with subscription details
+      if (!paymentData?.isDeposit || !paymentData?.monthlyAmount) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Payment is not a deposit payment with subscription" 
+        });
+      }
+
+      // Get user details
+      const userDetails = paymentData.userDetails;
+      if (!userDetails) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "User details not found in payment" 
+        });
+      }
+
+      console.log("🔄 Creating subscription from payment...");
+      console.log(`   Payment ID: ${payment.id}`);
+      console.log(`   Monthly Amount: R${(paymentData.monthlyAmount / 100).toFixed(2)}`);
+      console.log(`   Total Months: ${paymentData.totalMonths || 12}`);
+
+      // Create subscription with tokenized card
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() + 1); // Start next month
+      
+      const { subscriberId, scheduleId, profileToken } = await createAdumoSubscriptionWithToken({
+        email: userDetails.email,
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+        phone: userDetails.phone,
+        cardToken: data.tokenUid,
+        profileToken: data.profileUid,
+        monthlyAmount: paymentData.monthlyAmount,
+        totalMonths: paymentData.totalMonths || 12,
+        startDate,
+        collectionDay: "7"
+      });
+
+      console.log("✅ Subscription created successfully via Adumo API");
+
+      // Get user
+      const user = await storage.getUserByEmail(userDetails.email);
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "User not found" 
+        });
+      }
+
+      // Store subscription in database
+      const subscription = await storage.createSubscription({
+        userId: user.id,
+        tier: paymentData.tier,
+        monthlyAmount: (paymentData.monthlyAmount / 100).toString(),
+        totalMonths: paymentData.totalMonths || 12,
+        adumoSubscriberId: subscriberId,
+        adumoScheduleId: scheduleId,
+      });
+
+      // Store payment method token
+      await storage.createPaymentMethod({
+        userId: user.id,
+        puid: profileToken,
+        cardType: "CARD",
+        lastFourDigits: "****",
+      });
+
+      console.log(`✅ Subscription ${subscription.id} stored in database`);
+
+      res.json({
+        success: true,
+        subscriberId,
+        scheduleId,
+        subscriptionId: subscription.id,
+        message: "Subscription created successfully from payment"
+      });
+
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      console.error("❌ Subscription creation from payment error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Subscription creation failed: " + error.message 
+      });
+    }
+  });
+
   // Complete user registration with card tokenization and subscription (Step 1, 2.1, 2.2 combined)
   app.post("/api/register-with-subscription", async (req, res) => {
     try {

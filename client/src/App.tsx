@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import PaymentTest from "@/pages/payment-test";
+import SubscriptionSetup from "@/pages/subscription-setup";
 import NotFound from "@/pages/not-found";
 
 function ProtectedAscendancy() {
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/payment-test" component={PaymentTest} />
+      <Route path="/subscription-setup" component={SubscriptionSetup} />
       <Route component={NotFound} />
     </Switch>
   );
