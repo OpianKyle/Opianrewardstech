@@ -258,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           // Send email
-          await sendOtpEmail(email, code, user.firstName);
+          await sendOtpEmail(email, code, user.firstName || undefined);
           console.log(`🔐 OTP sent to ${email}`);
         } catch (otpError) {
           // Log error but don't reveal to attacker
@@ -358,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Verify using last 4 digits of phone
-      const last4Digits = user.phone.slice(-4);
+      const last4Digits = user.phone?.slice(-4) || '';
       if (phone !== last4Digits) {
         return res.status(401).json({ message: "Invalid email or phone number" });
       }
@@ -472,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate invoices based on payment method
       const invoices = [];
-      const totalAmount = user.amount;
+      const totalAmount = user.amount || 0;
       
       if (user.paymentMethod === 'lump_sum') {
         // Single invoice for lump sum
@@ -483,7 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: totalAmount,
           paid: paid,
           status: paid >= totalAmount ? 'paid' : 'outstanding',
-          description: `${user.tier.charAt(0).toUpperCase() + user.tier.slice(1)} Tier - Lump Sum Payment`
+          description: `${(user.tier || 'unknown').charAt(0).toUpperCase() + (user.tier || 'unknown').slice(1)} Tier - Lump Sum Payment`
         });
       } else {
         // Monthly installments
@@ -513,7 +513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             amount: monthlyAmount,
             paid: paidAmount,
             status: isPaid ? 'paid' : dueDate < new Date() ? 'overdue' : 'outstanding',
-            description: `${user.tier.charAt(0).toUpperCase() + user.tier.slice(1)} Tier - Installment ${i + 1} of ${months}`
+            description: `${(user.tier || 'unknown').charAt(0).toUpperCase() + (user.tier || 'unknown').slice(1)} Tier - Installment ${i + 1} of ${months}`
           });
         }
       }
@@ -545,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const payments = await storage.getPaymentsByUser(decoded.userId);
       const totalPaid = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
-      const totalAmount = user.amount;
+      const totalAmount = user.amount || 0;
       
       // Calculate progress percentage
       const paymentProgress = Math.round((totalPaid / totalAmount) * 100);
@@ -1588,16 +1588,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let transaction = await storage.getTransactionByMerchantReference(merchantReference);
           if (!transaction && transactionId) {
             transaction = await storage.createTransaction({
-              transactionId: transactionId,
+              userId: payment.userId,
+              invoiceId: payment.id,
               merchantReference: merchantReference,
-              status: status,
-              amount: payment.amount,
-              currencyCode: "ZAR",
+              amount: payment.amount.toString(),
+              adumoTransactionId: transactionId || null,
+              adumoStatus: isSuccess ? "SUCCESS" : status === "DECLINED" || status === "FAILED" ? "FAILED" : "PENDING",
               paymentMethod: paymentMethod || "CARD",
-              puid: puid || null,
-              tkn: tkn || null,
-              token: null,
-              paymentId: payment.id,
             });
           }
           
@@ -1672,7 +1669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/quest-progress/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
-      const user = await storage.getUser(investorId);
+      const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "Investor not found" });
@@ -1762,25 +1759,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!transaction) {
           const transactionData = {
-            transactionId: transactionReference || randomUUID(),
+            userId: payment.userId,
+            invoiceId: payment.id,
             merchantReference: merchantReference,
-            status: paymentStatus === "completed" ? "AUTHORIZED" : paymentStatus === "failed" ? "DECLINED" : "PENDING",
-            amount: payment.amount,
-            currencyCode: "ZAR" as const,
+            amount: payment.amount.toString(),
+            adumoTransactionId: transactionReference || null,
+            adumoStatus: (paymentStatus === "completed" ? "SUCCESS" : paymentStatus === "failed" ? "FAILED" : "PENDING") as "PENDING" | "SUCCESS" | "FAILED" | "CANCELED" | "REFUNDED",
             paymentMethod: "CARD",
-            puid: null,
-            tkn: null,
-            token: null,
-            paymentId: payment.id,
           };
           
           console.log(`📝 Transaction data prepared:`, JSON.stringify(transactionData, null, 2));
           
           transaction = await storage.createTransaction(transactionData);
-          console.log(`✅ Transaction ${transaction.transactionId} created SUCCESSFULLY via manual verification`);
+          console.log(`✅ Transaction ${transaction.adumoTransactionId} created SUCCESSFULLY via manual verification`);
           console.log(`✅ Transaction details:`, JSON.stringify(transaction, null, 2));
         } else {
-          console.log(`ℹ️ Transaction already exists: ${transaction.transactionId}`);
+          console.log(`ℹ️ Transaction already exists: ${transaction.adumoTransactionId}`);
         }
       } catch (transactionError: any) {
         console.error(`❌ TRANSACTION CREATION FAILED (manual verification):`, transactionError);
@@ -1852,7 +1846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Debug endpoint to check database tables
-  app.get("/api/debug/tables", async (req: Request, res: Response) => {
+  app.get("/api/debug/tables", async (req, res) => {
     try {
       const connection = await (pool as any).getConnection();
       const [tables] = await connection.execute('SHOW TABLES');
@@ -1869,7 +1863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Migration endpoint to update transactions table to new schema
-  app.post("/api/debug/migrate-transactions", async (req: Request, res: Response) => {
+  app.post("/api/debug/migrate-transactions", async (req, res) => {
     try {
       const connection = await (pool as any).getConnection();
       
@@ -1911,12 +1905,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Adumo Webhook Endpoint - receives payment status updates
-  app.post("/api/adumo/webhook", async (req: Request, res: Response) => {
+  app.post("/api/adumo/webhook", async (req, res) => {
     try {
       console.log("🔔 Adumo webhook notification received:", new Date().toISOString());
       console.log("📦 Webhook payload:", JSON.stringify(req.body, null, 2));
 
-      const webhookData = req.body;
+      const webhookData = req.body || {};
       
       // Extract key fields from Adumo notification
       // Based on the user's example, Adumo sends these fields
@@ -1996,12 +1990,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subscription Webhook Endpoint - receives subscription payment notifications from Adumo
-  app.post("/api/subscription-webhook", async (req: Request, res: Response) => {
+  app.post("/api/subscription-webhook", async (req, res) => {
     try {
       console.log("🔔 Subscription webhook notification received:", new Date().toISOString());
       console.log("📦 Subscription webhook payload:", JSON.stringify(req.body, null, 2));
 
-      const webhookData = req.body;
+      const webhookData = req.body || {};
       
       // Extract key fields from Adumo subscription notification
       const subscriberId = webhookData.subscriberUid || webhookData.subscriber_uid;
