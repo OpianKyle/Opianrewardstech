@@ -1843,6 +1843,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 await storage.updateUserInvestmentDetails(payment.userId, investmentDetails);
                 console.log("✅ Investment details updated successfully (webhook)");
               }
+              
+              // Check if this is a deposit payment that requires subscription creation
+              if (paymentData.isDeposit && paymentData.monthlyAmount) {
+                console.log("🔔 DEPOSIT PAYMENT DETECTED - Subscription creation required");
+                console.log(`   Monthly Amount: R${(paymentData.monthlyAmount / 100).toFixed(2)}`);
+                console.log(`   Total Months: ${paymentData.totalMonths || 12}`);
+                console.log(`   Card Token Available: ${tkn ? "YES" : "NO"}`);
+                console.log(`   Payment UID: ${puid || "N/A"}`);
+                
+                // TODO: Implement subscription creation
+                // Currently, subscriptions are only created via /api/register-with-subscription
+                // which includes card tokenization. The virtual payment form does not return
+                // the card token needed for subscription creation.
+                //
+                // To create subscriptions from regular payments, we need to:
+                // 1. Redirect user to card tokenization after successful payment, OR
+                // 2. Change the payment flow to tokenize card before payment
+                
+                if (tkn) {
+                  console.log("⚠️  Card token received but subscription creation not implemented yet");
+                  // Could call createAdumoSubscriptionWithToken here if we have all required data
+                } else {
+                  console.log("⚠️  No card token - cannot create subscription via Adumo API");
+                  console.log("💡 User will need to complete subscription setup separately");
+                }
+              }
             }
             
             // Initialize quest progress (only once)
