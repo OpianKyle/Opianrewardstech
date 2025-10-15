@@ -679,7 +679,210 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create user registration
+  // Step 2.1 - Create profile and card token (Adumo Tokenization)
+  app.post("/api/adumo/tokenize-card", async (req, res) => {
+    try {
+      const tokenizeSchema = z.object({
+        cardNumber: z.string().min(13).max(19),
+        cardholderName: z.string().min(1),
+        expiryMonth: z.string().length(2),
+        expiryYear: z.string().length(2),
+        cvv: z.string().min(3).max(4),
+        email: z.string().email(),
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+      });
+
+      const cardData = tokenizeSchema.parse(req.body);
+
+      // Step 1: Get OAuth token
+      const token = await getAdumoOAuthToken();
+
+      // Step 2: Create profile and card token
+      const tokenizationUrl = process.env.NODE_ENV === "production"
+        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
+        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
+
+      const tokenResponse = await fetch(tokenizationUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          cardNumber: cardData.cardNumber,
+          cardholderName: cardData.cardholderName,
+          expiryMonth: cardData.expiryMonth,
+          expiryYear: cardData.expiryYear,
+          cvv: cardData.cvv,
+          email: cardData.email,
+          firstName: cardData.firstName,
+          lastName: cardData.lastName,
+        }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error("❌ Tokenization failed:", errorText);
+        return res.status(tokenResponse.status).json({ 
+          message: "Card tokenization failed", 
+          error: errorText 
+        });
+      }
+
+      const tokenData = await tokenResponse.json();
+      
+      console.log("✅ Card tokenized successfully:", {
+        profileToken: tokenData.profileToken,
+        cardToken: tokenData.cardToken,
+      });
+
+      res.json({
+        success: true,
+        profileToken: tokenData.profileToken,
+        cardToken: tokenData.cardToken,
+        message: "Card tokenized successfully",
+      });
+
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("❌ Tokenization error:", error);
+      res.status(500).json({ message: "Tokenization failed: " + error.message });
+    }
+  });
+
+  // Step 2.2 - Create subscription with tokenized card
+  app.post("/api/adumo/create-subscription", async (req, res) => {
+    try {
+      const subscriptionSchema = z.object({
+        tokenUid: z.string(), // Card token from Step 2.1
+        profileUid: z.string(), // Profile token from Step 2.1
+        email: z.string().email(),
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        phone: z.string().min(1),
+        monthlyAmount: z.number().min(1), // in cents
+        totalMonths: z.number().min(1).max(24),
+        collectionDay: z.string().default("1"), // Day of month (1-28)
+        tier: z.string(),
+      });
+
+      const subData = subscriptionSchema.parse(req.body);
+
+      // Step 1: Get OAuth token
+      const token = await getAdumoOAuthToken();
+
+      // Step 2: Create subscription
+      const transactionUid = randomUUID();
+      const merchantReference = `SUB_${Date.now()}_${randomUUID().substring(0, 8)}`;
+      
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + subData.totalMonths);
+
+      const subscriptionUrl = process.env.NODE_ENV === "production"
+        ? `https://apiv3.adumoonline.com/product/subscription/v1/api/subscriber/${transactionUid}`
+        : `https://staging-apiv3.adumoonline.com/product/subscription/v1/api/subscriber/${transactionUid}`;
+
+      const subscriptionResponse = await fetch(subscriptionUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          applicationUid: ADUMO_CONFIG.applicationId,
+          tokenUid: subData.tokenUid,
+          transactionUid: transactionUid,
+          subscriberDetails: {
+            frequency: "MONTH",
+            collectionDay: subData.collectionDay,
+            accountNumber: randomUUID().substring(0, 10), // Generate unique account number
+            merchantReference: merchantReference,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            collectionValue: subData.monthlyAmount / 100, // Convert cents to currency
+            contactNumber: subData.phone,
+            mobileNumber: subData.phone,
+            shouldSendSms: true,
+            shouldSendEmail: true,
+            email: subData.email,
+          },
+        }),
+      });
+
+      if (!subscriptionResponse.ok) {
+        const errorText = await subscriptionResponse.text();
+        console.error("❌ Subscription creation failed:", errorText);
+        return res.status(subscriptionResponse.status).json({ 
+          message: "Subscription creation failed", 
+          error: errorText 
+        });
+      }
+
+      const subscriptionData = await subscriptionResponse.json();
+      
+      console.log("✅ Subscription created successfully:", subscriptionData);
+
+      // Create or update user with subscription details
+      let user = await storage.getUserByEmail(subData.email);
+      
+      if (!user) {
+        // Create new user
+        user = await storage.createUser({
+          email: subData.email,
+          firstName: subData.firstName,
+          lastName: subData.lastName,
+          phone: subData.phone,
+          tier: subData.tier,
+          paymentMethod: `${subData.totalMonths}_months`,
+          amount: subData.monthlyAmount * subData.totalMonths,
+        });
+      }
+
+      // Store subscription in database
+      await storage.createSubscription({
+        userId: user.id,
+        tier: subData.tier,
+        monthlyAmount: (subData.monthlyAmount / 100).toString(),
+        totalMonths: subData.totalMonths,
+        adumoSubscriberId: subscriptionData.subscriberUid || transactionUid,
+        adumoScheduleId: subscriptionData.scheduleUid || merchantReference,
+      });
+
+      // Store payment method token
+      await storage.createPaymentMethod({
+        userId: user.id,
+        puid: subData.profileUid,
+        cardType: "CARD",
+        lastFourDigits: "****", // We don't have this from tokenization
+      });
+
+      res.json({
+        success: true,
+        subscriptionId: subscriptionData.subscriberUid || transactionUid,
+        scheduleId: subscriptionData.scheduleUid || merchantReference,
+        merchantReference: merchantReference,
+        user: {
+          id: user.id,
+          email: user.email,
+          tier: user.tier,
+        },
+        message: "Subscription created successfully",
+      });
+
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("❌ Subscription creation error:", error);
+      res.status(500).json({ message: "Subscription creation failed: " + error.message });
+    }
+  });
+
+  // Create user registration (simplified - now handled by subscription flow)
   app.post("/api/investors", async (req, res) => {
     try {
       const validatedData = z.object({
