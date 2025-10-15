@@ -1670,9 +1670,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const status = paymentStatus === "completed" ? "success" : paymentStatus;
       console.log(`🔄 Redirecting to frontend with status: ${status}`);
       
-      // On successful payment, redirect to login page for OTP authentication
+      // Check if this is a deposit payment that needs subscription setup
+      let isDepositPayment = false;
+      let tier = "";
+      let monthlyAmount = "";
+      
+      if (paymentRef && paymentRef.startsWith('OPIAN_')) {
+        const payment = await storage.getPaymentByMerchantReference(paymentRef);
+        if (payment?.paymentData) {
+          const paymentData = payment.paymentData as any;
+          if (paymentData.isDeposit && paymentData.monthlyAmount) {
+            isDepositPayment = true;
+            tier = paymentData.tier || "builder";
+            monthlyAmount = ((paymentData.monthlyAmount / 100).toFixed(0)) || "500";
+          }
+        }
+      }
+      
+      // Redirect based on payment type and status
       if (status === "success") {
-        res.redirect(`/login?payment=${status}&reference=${paymentRef}`);
+        if (isDepositPayment) {
+          // Redirect to subscription setup for deposit payments
+          console.log(`🔄 Deposit payment successful - redirecting to subscription setup`);
+          res.redirect(`/subscription-setup?paymentId=${paymentRef}&reference=${paymentRef}&tier=${tier}&monthlyAmount=${monthlyAmount}`);
+        } else {
+          // Redirect to login page for regular payments
+          res.redirect(`/login?payment=${status}&reference=${paymentRef}`);
+        }
       } else {
         res.redirect(`/?payment=${status}&reference=${paymentRef}`);
       }
