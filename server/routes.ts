@@ -86,71 +86,102 @@ async function getAdumoOAuthToken(): Promise<string> {
   return data.access_token;
 }
 
-async function createAdumoSubscription(params: {
+async function createAdumoSubscriptionWithToken(params: {
   email: string;
   firstName: string;
   lastName: string;
   phone: string;
+  cardToken: string; // Token from tokenization
+  profileToken: string; // Profile token from tokenization
   monthlyAmount: number; // in cents
   totalMonths: number;
   startDate: Date;
-}): Promise<{ subscriberId: string; scheduleId: string }> {
+  collectionDay?: string;
+}): Promise<{ subscriberId: string; scheduleId: string; profileToken: string }> {
   const token = await getAdumoOAuthToken();
+  
+  const transactionUid = randomUUID();
+  const merchantReference = `SUB_${Date.now()}_${randomUUID().substring(0, 8)}`;
+  const endDate = new Date(params.startDate);
+  endDate.setMonth(endDate.getMonth() + params.totalMonths);
 
-  // Create subscriber
-  const subscriberResponse = await fetch(`${ADUMO_CONFIG.subscriptionApiUrl}/subscriber/`, {
+  // Generate numeric-only account number (10 digits)
+  const accountNumber = Math.floor(Math.random() * 9000000000 + 1000000000).toString();
+
+  // Create subscriber with tokenized card (as per Adumo API docs - Step 4)
+  const subscriptionUrl = `${ADUMO_CONFIG.subscriptionApiUrl}/subscriber/${transactionUid}`;
+  
+  const subscriberResponse = await fetch(subscriptionUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      merchantUid: ADUMO_CONFIG.merchantId,
       applicationUid: ADUMO_CONFIG.applicationId,
-      emailAddress: params.email,
-      firstName: params.firstName,
-      lastName: params.lastName,
-      phoneNumber: params.phone,
-      notifyUrl: ADUMO_CONFIG.subscriptionWebhookUrl,
+      tokenUid: params.cardToken,
+      transactionUid: transactionUid,
+      subscriberDetails: {
+        frequency: "MONTH",
+        collectionDay: params.collectionDay || "1",
+        accountNumber: accountNumber,
+        merchantReference: merchantReference,
+        startDate: params.startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        collectionValue: params.monthlyAmount / 100,
+        contactNumber: params.phone,
+        mobileNumber: params.phone,
+        shouldSendSms: true,
+        shouldSendEmail: true,
+        email: params.email,
+      },
     }),
   });
 
   if (!subscriberResponse.ok) {
     const error = await subscriberResponse.text();
-    throw new Error(`Failed to create subscription: ${error}`);
+    throw new Error(`Failed to create subscription with token: ${error}`);
   }
 
   const subscriberData = await subscriberResponse.json();
-  const subscriberId = subscriberData.subscriberUid;
+  const subscriberId = subscriberData.subscriberUid || transactionUid;
+  
+  // The subscriber endpoint returns schedule details in the response
+  // If not, create schedule separately (Adumo may require separate schedule creation)
+  let scheduleId = subscriberData.scheduleUid;
+  
+  if (!scheduleId) {
+    // Create payment schedule
+    const scheduleResponse = await fetch(`${ADUMO_CONFIG.subscriptionApiUrl}/schedule`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        subscriberUid: subscriberId,
+        amount: (params.monthlyAmount / 100).toFixed(2),
+        currencyCode: "ZAR",
+        frequency: "MONTHLY",
+        startDate: params.startDate.toISOString().split('T')[0],
+        numberOfPayments: params.totalMonths,
+        description: "Opian Rewards Monthly Subscription",
+      }),
+    });
 
-  // Create schedule for the subscriber
-  const scheduleResponse = await fetch(`${ADUMO_CONFIG.subscriptionApiUrl}/schedule`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      subscriberUid: subscriberId,
-      amount: (params.monthlyAmount / 100).toFixed(2), // Convert cents to currency
-      currencyCode: "ZAR",
-      frequency: "MONTHLY",
-      startDate: params.startDate.toISOString().split('T')[0], // YYYY-MM-DD format
-      numberOfPayments: params.totalMonths,
-      description: "Opian Rewards Monthly Subscription",
-    }),
-  });
+    if (!scheduleResponse.ok) {
+      const error = await scheduleResponse.text();
+      throw new Error(`Failed to create payment schedule: ${error}`);
+    }
 
-  if (!scheduleResponse.ok) {
-    const error = await scheduleResponse.text();
-    throw new Error(`Failed to create payment schedule: ${error}`);
+    const scheduleData = await scheduleResponse.json();
+    scheduleId = scheduleData.scheduleUid;
   }
-
-  const scheduleData = await scheduleResponse.json();
   
   return {
     subscriberId,
-    scheduleId: scheduleData.scheduleUid,
+    scheduleId: scheduleId || merchantReference,
+    profileToken: params.profileToken,
   };
 }
 
@@ -732,10 +763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const tokenData = await tokenResponse.json();
       
-      console.log("✅ Card tokenized successfully:", {
-        profileToken: tokenData.profileToken,
-        cardToken: tokenData.cardToken,
-      });
+      console.log("✅ Card tokenized successfully");
 
       res.json({
         success: true,
@@ -753,7 +781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Step 2.2 - Create subscription with tokenized card
+  // Step 2.2 - Create subscription with tokenized card (using proper Adumo flow)
   app.post("/api/adumo/create-subscription", async (req, res) => {
     try {
       const subscriptionSchema = z.object({
@@ -765,66 +793,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: z.string().min(1),
         monthlyAmount: z.number().min(1), // in cents
         totalMonths: z.number().min(1).max(24),
-        collectionDay: z.string().default("1"), // Day of month (1-28)
         tier: z.string(),
       });
 
       const subData = subscriptionSchema.parse(req.body);
 
-      // Step 1: Get OAuth token
-      const token = await getAdumoOAuthToken();
-
-      // Step 2: Create subscription
-      const transactionUid = randomUUID();
-      const merchantReference = `SUB_${Date.now()}_${randomUUID().substring(0, 8)}`;
-      
+      // Create subscription with tokenized card
       const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + subData.totalMonths);
-
-      const subscriptionUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/subscription/v1/api/subscriber/${transactionUid}`
-        : `https://staging-apiv3.adumoonline.com/product/subscription/v1/api/subscriber/${transactionUid}`;
-
-      const subscriptionResponse = await fetch(subscriptionUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          applicationUid: ADUMO_CONFIG.applicationId,
-          tokenUid: subData.tokenUid,
-          transactionUid: transactionUid,
-          subscriberDetails: {
-            frequency: "MONTH",
-            collectionDay: subData.collectionDay,
-            accountNumber: randomUUID().substring(0, 10), // Generate unique account number
-            merchantReference: merchantReference,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            collectionValue: subData.monthlyAmount / 100, // Convert cents to currency
-            contactNumber: subData.phone,
-            mobileNumber: subData.phone,
-            shouldSendSms: true,
-            shouldSendEmail: true,
-            email: subData.email,
-          },
-        }),
+      const { subscriberId, scheduleId, profileToken } = await createAdumoSubscriptionWithToken({
+        email: subData.email,
+        firstName: subData.firstName,
+        lastName: subData.lastName,
+        phone: subData.phone,
+        cardToken: subData.tokenUid,
+        profileToken: subData.profileUid,
+        monthlyAmount: subData.monthlyAmount,
+        totalMonths: subData.totalMonths,
+        startDate,
       });
 
-      if (!subscriptionResponse.ok) {
-        const errorText = await subscriptionResponse.text();
-        console.error("❌ Subscription creation failed:", errorText);
-        return res.status(subscriptionResponse.status).json({ 
-          message: "Subscription creation failed", 
-          error: errorText 
-        });
-      }
-
-      const subscriptionData = await subscriptionResponse.json();
-      
-      console.log("✅ Subscription created successfully:", subscriptionData);
+      console.log("✅ Subscription created with schedule");
 
       // Create or update user with subscription details
       let user = await storage.getUserByEmail(subData.email);
@@ -848,23 +836,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tier: subData.tier,
         monthlyAmount: (subData.monthlyAmount / 100).toString(),
         totalMonths: subData.totalMonths,
-        adumoSubscriberId: subscriptionData.subscriberUid || transactionUid,
-        adumoScheduleId: subscriptionData.scheduleUid || merchantReference,
+        adumoSubscriberId: subscriberId,
+        adumoScheduleId: scheduleId,
       });
 
-      // Store payment method token
+      // Store payment method token  
       await storage.createPaymentMethod({
         userId: user.id,
-        puid: subData.profileUid,
+        puid: profileToken,
         cardType: "CARD",
         lastFourDigits: "****", // We don't have this from tokenization
       });
 
       res.json({
         success: true,
-        subscriptionId: subscriptionData.subscriberUid || transactionUid,
-        scheduleId: subscriptionData.scheduleUid || merchantReference,
-        merchantReference: merchantReference,
+        subscriptionId: subscriberId,
+        scheduleId: scheduleId,
         user: {
           id: user.id,
           email: user.email,
@@ -882,7 +869,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create user registration (simplified - now handled by subscription flow)
+  // Complete user registration with card tokenization and subscription (Step 1, 2.1, 2.2 combined)
+  app.post("/api/register-with-subscription", async (req, res) => {
+    try {
+      const registrationSchema = z.object({
+        // User details
+        email: z.string().email(),
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        phone: z.string().min(1),
+        tier: z.string(),
+        paymentMethod: z.string(),
+        // Card details for tokenization
+        cardNumber: z.string().min(13).max(19),
+        cardholderName: z.string().min(1),
+        expiryMonth: z.string().length(2),
+        expiryYear: z.string().length(2),
+        cvv: z.string().min(3).max(4),
+        // Subscription details
+        monthlyAmount: z.number().min(1),
+        totalMonths: z.number().min(1).max(24),
+        collectionDay: z.string().default("1"),
+      });
+
+      const regData = registrationSchema.parse(req.body);
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(regData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already registered with this email" });
+      }
+
+      console.log("🔐 Step 1: Getting OAuth token...");
+      const token = await getAdumoOAuthToken();
+
+      console.log("💳 Step 2.1: Tokenizing card...");
+      // Tokenize card
+      const tokenizationUrl = process.env.NODE_ENV === "production"
+        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
+        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
+
+      const tokenResponse = await fetch(tokenizationUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          cardNumber: regData.cardNumber,
+          cardholderName: regData.cardholderName,
+          expiryMonth: regData.expiryMonth,
+          expiryYear: regData.expiryYear,
+          cvv: regData.cvv,
+          email: regData.email,
+          firstName: regData.firstName,
+          lastName: regData.lastName,
+        }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error("❌ Tokenization failed:", errorText);
+        return res.status(tokenResponse.status).json({ 
+          message: "Card tokenization failed", 
+          error: errorText 
+        });
+      }
+
+      const tokenData = await tokenResponse.json();
+      console.log("✅ Card tokenized successfully");
+
+      console.log("📅 Step 2.2: Creating subscription with tokenized card...");
+      // Create subscription with tokenized card
+      const startDate = new Date();
+      const { subscriberId, scheduleId, profileToken } = await createAdumoSubscriptionWithToken({
+        email: regData.email,
+        firstName: regData.firstName,
+        lastName: regData.lastName,
+        phone: regData.phone,
+        cardToken: tokenData.cardToken,
+        profileToken: tokenData.profileToken,
+        monthlyAmount: regData.monthlyAmount,
+        totalMonths: regData.totalMonths,
+        startDate,
+        collectionDay: regData.collectionDay,
+      });
+      console.log("✅ Subscription and schedule created successfully");
+
+      console.log("👤 Creating user record...");
+      // Create user
+      const user = await storage.createUser({
+        email: regData.email,
+        firstName: regData.firstName,
+        lastName: regData.lastName,
+        phone: regData.phone,
+        tier: regData.tier,
+        paymentMethod: regData.paymentMethod,
+        amount: regData.monthlyAmount * regData.totalMonths,
+      });
+
+      // Store subscription in database
+      await storage.createSubscription({
+        userId: user.id,
+        tier: regData.tier,
+        monthlyAmount: (regData.monthlyAmount / 100).toString(),
+        totalMonths: regData.totalMonths,
+        adumoSubscriberId: subscriberId,
+        adumoScheduleId: scheduleId,
+      });
+
+      // Store payment method token
+      await storage.createPaymentMethod({
+        userId: user.id,
+        puid: profileToken,
+        cardType: "CARD",
+        lastFourDigits: regData.cardNumber.slice(-4),
+      });
+
+      console.log("✅ Registration complete!");
+
+      res.status(201).json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          tier: user.tier,
+        },
+        subscription: {
+          subscriberId: subscriberId,
+          scheduleId: scheduleId,
+        },
+        message: "Registration and subscription created successfully",
+      });
+
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("❌ Registration error:", error);
+      res.status(500).json({ message: "Registration failed: " + error.message });
+    }
+  });
+
+  // Create user registration (simplified - for non-subscription flow)
   app.post("/api/investors", async (req, res) => {
     try {
       const validatedData = z.object({
@@ -1276,56 +1407,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     investmentDetails.paymentMethod = paymentData.paymentMethod;
                   }
                   
-                  // Create subscription if this is a deposit payment
+                  // Note: Subscription creation for deposit payments now handled via /api/register-with-subscription endpoint
+                  // which includes card tokenization. This webhook path is for payment verification only.
                   if (paymentData.isDeposit && paymentData.monthlyAmount) {
-                    console.log("💳 Creating subscription for deposit payment...");
-                    try {
-                      // Calculate subscription start date (30 days from deposit)
-                      const startDate = new Date();
-                      startDate.setDate(startDate.getDate() + 30);
-                      
-                      // Create subscription with Adumo
-                      const adumoSubscription = await createAdumoSubscription({
-                        email: paymentData.userDetails.email,
-                        firstName: paymentData.userDetails.firstName,
-                        lastName: paymentData.userDetails.lastName,
-                        phone: paymentData.userDetails.phone,
-                        monthlyAmount: paymentData.monthlyAmount,
-                        totalMonths: paymentData.totalMonths || 12,
-                        startDate,
-                      });
-                      
-                      // Create subscription record in database
-                      const subscription = await storage.createSubscription({
-                        userId: payment.userId,
-                        depositPaymentId: payment.id,
-                        adumoSubscriberId: adumoSubscription.subscriberId,
-                        adumoScheduleId: adumoSubscription.scheduleId,
-                        tier: paymentData.tier,
-                        monthlyAmount: (paymentData.monthlyAmount / 100).toFixed(2),
-                        totalMonths: paymentData.totalMonths || 12,
-                        paidMonths: 0,
-                        status: "ACTIVE",
-                        nextPaymentDate: startDate,
-                        subscriptionData: {
-                          adumoSubscriberId: adumoSubscription.subscriberId,
-                          adumoScheduleId: adumoSubscription.scheduleId,
-                        },
-                      });
-                      
-                      console.log(`✅ Subscription created successfully: ${subscription.id}`);
-                      console.log(`📅 Next payment date: ${startDate.toISOString()}`);
-                      
-                      // Update user with subscription ID
-                      await storage.updateUserInvestmentDetails(payment.userId, {
-                        subscriptionId: subscription.id,
-                      });
-                    } catch (subscriptionError: any) {
-                      console.error("❌ Failed to create subscription:", subscriptionError);
-                      console.error("❌ Subscription error details:", subscriptionError.message);
-                      // Continue processing even if subscription creation fails
-                      // Admin can manually create subscription later
-                    }
+                    console.log("ℹ️ Deposit payment detected - subscription should be created via registration endpoint");
                   }
                   if (payment.amount) {
                     investmentDetails.amount = payment.amount;
