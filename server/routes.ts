@@ -1194,7 +1194,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Return form data for client-side form POST to Adumo Virtual
       // Using EXACT field names as per Adumo Virtual API documentation
-      const formData = {
+      const formData: any = {
+        puid: randomUUID(), // Unique payment/transaction ID
         MerchantID: ADUMO_CONFIG.merchantId,
         ApplicationID: ADUMO_CONFIG.applicationId,
         MerchantReference: reference,
@@ -1203,10 +1204,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         txtCurrencyCode: "ZAR", // Adumo uses "txtCurrencyCode" not "CurrencyCode"
         RedirectSuccessfulURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}`,
         RedirectFailedURL: `${ADUMO_CONFIG.returnUrl}?paymentId=${payment.id}&reference=${reference}&status=failed`,
-        // Optional customer details
+        
+        // Additional variables for merchant use
         Variable1: validatedData.tier,
-        Variable2: payment.id
+        Variable2: payment.id,
+        
+        // First item details
+        Qty1: "1",
+        ItemRef1: `${validatedData.tier.toUpperCase()}_TIER`,
+        ItemDescr1: `Opian ${validatedData.tier.charAt(0).toUpperCase() + validatedData.tier.slice(1)} Tier`,
+        ItemAmount1: currencyAmount,
+        
+        // Shipping details
+        ShippingCost: "0.00",
+        Discount: "0.00",
+        
+        // Client shipping/contact details
+        Recipient: `${validatedData.firstName} ${validatedData.lastName}`,
+        ShippingAddress1: "",
+        ShippingAddress2: "",
+        ShippingAddress3: "",
+        ShippingAddress4: "",
+        ShippingAddress5: "South Africa"
       };
+      
+      // Add recurring payment fields if using deposit_monthly method
+      if (validatedData.paymentMethod === "deposit_monthly" && monthlyAmount > 0) {
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() + 1); // Start next month
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + 12); // 12 months duration
+        
+        formData.frequency = "MONTHLY";
+        formData.collectionDay = "7"; // 7th day of the month
+        formData.accountNumber = `ACC_${user.id}`;
+        formData.startDate = startDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        formData.endDate = endDate.toISOString().split('T')[0];
+        formData.collectionValue = (monthlyAmount / 100).toFixed(2); // Monthly amount in currency
+        formData.contactNumber = validatedData.phone || "";
+        formData.mobileNumber = validatedData.phone || "";
+        formData.emailAddress = validatedData.email;
+        formData.shouldSendSms = "false";
+        formData.shouldSendEmail = "true";
+      }
 
       // Log payment creation without sensitive data
       if (process.env.NODE_ENV === 'development') {
