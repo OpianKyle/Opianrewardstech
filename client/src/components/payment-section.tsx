@@ -335,15 +335,15 @@ export function PaymentSection({
 
       {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="glass-morphism border-2 border-primary max-w-md" data-testid="payment-modal">
+        <DialogContent className="glass-morphism border-2 border-primary max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="payment-modal">
           <DialogHeader>
             <DialogTitle className="font-orbitron font-bold text-2xl text-primary text-center">
               Payment Options
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handlePaymentSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handlePaymentSubmit} className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
@@ -512,7 +512,7 @@ export function PaymentSection({
               </p>
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button
                 type="button"
                 variant="outline"
