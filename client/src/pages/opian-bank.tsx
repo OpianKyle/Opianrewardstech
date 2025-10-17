@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, TrendingUp, Users, ArrowRight, Sparkles, CheckCircle2, Lock, BarChart3 } from "lucide-react";
+import { Shield, TrendingUp, Users, ArrowRight, Sparkles, CheckCircle2, Lock, BarChart3, Upload } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 import opianBankLogo from "@assets/Opian bank_1760685427396.png";
 import heroImage from "@assets/generated_images/Futuristic_financial_technology_hero_b9e18dc0.png";
@@ -22,7 +24,16 @@ export default function OpianBank() {
     email: "",
     phone: "",
     company: "",
+    streetAddress: "",
+    city: "",
+    province: "",
+    postalCode: "",
+    country: "South Africa",
+    acceptedTerms: false,
+    acceptedPrivacy: false,
   });
+  const [ficaFiles, setFicaFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const scrollToForm = () => {
     const formSection = document.getElementById('access-form');
@@ -31,10 +42,11 @@ export default function OpianBank() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone ||
+        !formData.streetAddress || !formData.city || !formData.province || !formData.postalCode || !formData.country) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -43,23 +55,80 @@ export default function OpianBank() {
       return;
     }
 
-    sessionStorage.setItem("opian_bank_access", "granted");
-    sessionStorage.setItem("opian_user_info", JSON.stringify(formData));
+    if (!formData.acceptedTerms || !formData.acceptedPrivacy) {
+      toast({
+        title: "Agreement Required",
+        description: "Please accept the Terms & Conditions and Privacy Policy to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    toast({
-      title: "Access Granted! 🎉",
-      description: "Welcome to Opian Bank. Redirecting you to the Ascendancy Project...",
-    });
+    setIsSubmitting(true);
 
-    setTimeout(() => {
-      setLocation("/ascendancy");
-    }, 1500);
+    try {
+      // Convert files to base64 if any
+      const ficaDocuments = ficaFiles.length > 0 ? await Promise.all(
+        ficaFiles.map(file => new Promise<{ name: string; data: string; type: string }>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({
+            name: file.name,
+            data: reader.result as string,
+            type: file.type
+          });
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        }))
+      ) : null;
+
+      const requestData = {
+        ...formData,
+        acceptedTerms: formData.acceptedTerms ? 1 : 0,
+        acceptedPrivacy: formData.acceptedPrivacy ? 1 : 0,
+        ficaDocuments
+      };
+
+      await apiRequest("POST", "/api/access-requests", requestData);
+
+      sessionStorage.setItem("opian_bank_access", "granted");
+      sessionStorage.setItem("opian_user_info", JSON.stringify(formData));
+
+      toast({
+        title: "Access Request Submitted! 🎉",
+        description: "Thank you for your interest. We'll be in touch soon. Redirecting you to the Ascendancy Project...",
+      });
+
+      setTimeout(() => {
+        setLocation("/ascendancy");
+      }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFicaFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleCheckboxChange = (field: "acceptedTerms" | "acceptedPrivacy") => (checked: boolean) => {
+    setFormData({
+      ...formData,
+      [field]: checked,
     });
   };
 
@@ -423,12 +492,143 @@ export default function OpianBank() {
                   />
                 </div>
 
+                {/* Address Section */}
+                <div className="pt-4 border-t border-slate-700">
+                  <h4 className="text-lg font-semibold text-cyan-400 mb-4">Address Information</h4>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="streetAddress" className="text-sm sm:text-base text-slate-300">Street Address *</Label>
+                      <Input
+                        id="streetAddress"
+                        name="streetAddress"
+                        value={formData.streetAddress}
+                        onChange={handleChange}
+                        required
+                        className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
+                        data-testid="input-streetAddress"
+                      />
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city" className="text-sm sm:text-base text-slate-300">City *</Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          required
+                          className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
+                          data-testid="input-city"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="province" className="text-sm sm:text-base text-slate-300">Province/State *</Label>
+                        <Input
+                          id="province"
+                          name="province"
+                          value={formData.province}
+                          onChange={handleChange}
+                          required
+                          className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
+                          data-testid="input-province"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode" className="text-sm sm:text-base text-slate-300">Postal Code *</Label>
+                        <Input
+                          id="postalCode"
+                          name="postalCode"
+                          value={formData.postalCode}
+                          onChange={handleChange}
+                          required
+                          className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
+                          data-testid="input-postalCode"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="country" className="text-sm sm:text-base text-slate-300">Country *</Label>
+                        <Input
+                          id="country"
+                          name="country"
+                          value={formData.country}
+                          onChange={handleChange}
+                          required
+                          className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11"
+                          data-testid="input-country"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* FICA Documents Upload */}
+                <div className="pt-4 border-t border-slate-700">
+                  <div className="space-y-2">
+                    <Label htmlFor="ficaDocuments" className="text-sm sm:text-base text-slate-300">
+                      FICA Documents (Optional)
+                    </Label>
+                    <p className="text-xs text-slate-500 mb-2">Upload ID, proof of address, or other verification documents</p>
+                    <div className="relative">
+                      <Input
+                        id="ficaDocuments"
+                        type="file"
+                        multiple
+                        onChange={handleFileChange}
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        className="bg-slate-800/50 border-slate-700 text-white focus:border-cyan-500 focus:ring-cyan-500/20 h-10 sm:h-11 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20"
+                        data-testid="input-ficaDocuments"
+                      />
+                      <Upload className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                    </div>
+                    {ficaFiles.length > 0 && (
+                      <p className="text-xs text-cyan-400 mt-1">
+                        {ficaFiles.length} file{ficaFiles.length > 1 ? 's' : ''} selected
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Terms and Privacy Checkboxes */}
+                <div className="pt-4 border-t border-slate-700 space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="acceptedTerms"
+                      checked={formData.acceptedTerms}
+                      onCheckedChange={handleCheckboxChange("acceptedTerms")}
+                      className="mt-1 border-slate-600 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
+                      data-testid="checkbox-terms"
+                    />
+                    <Label htmlFor="acceptedTerms" className="text-sm text-slate-300 cursor-pointer leading-relaxed">
+                      I accept the <span className="text-cyan-400 underline">Terms & Conditions</span> *
+                    </Label>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="acceptedPrivacy"
+                      checked={formData.acceptedPrivacy}
+                      onCheckedChange={handleCheckboxChange("acceptedPrivacy")}
+                      className="mt-1 border-slate-600 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
+                      data-testid="checkbox-privacy"
+                    />
+                    <Label htmlFor="acceptedPrivacy" className="text-sm text-slate-300 cursor-pointer leading-relaxed">
+                      I accept the <span className="text-cyan-400 underline">Privacy Policy</span> *
+                    </Label>
+                  </div>
+                </div>
+
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-5 sm:py-6 text-base sm:text-lg shadow-lg shadow-cyan-500/20 border-0"
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-5 sm:py-6 text-base sm:text-lg shadow-lg shadow-cyan-500/20 border-0 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-submit"
                 >
-                  Request Access to Ascendancy Project
+                  {isSubmitting ? "Submitting..." : "Request Access to Ascendancy Project"}
                   <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                 </Button>
               </form>

@@ -16,13 +16,16 @@ import {
   Otp,
   InsertSubscription,
   Subscription,
+  InsertAccessRequest,
+  AccessRequest,
   users,
   invoices,
   payments,
   transactions,
   paymentMethods,
   otps,
-  subscriptions
+  subscriptions,
+  accessRequests
 } from "@shared/schema";
 
 export interface IStorage {
@@ -69,6 +72,12 @@ export interface IStorage {
   getSubscriptionByAdumoSubscriberId(adumoSubscriberId: string): Promise<Subscription | undefined>;
   updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription>;
   incrementSubscriptionPaidMonths(id: string): Promise<Subscription>;
+  
+  // Access Request operations
+  createAccessRequest(accessRequest: InsertAccessRequest): Promise<AccessRequest>;
+  getAccessRequest(id: string): Promise<AccessRequest | undefined>;
+  getAllAccessRequests(): Promise<AccessRequest[]>;
+  updateAccessRequestStatus(id: string, status: string): Promise<AccessRequest>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -90,6 +99,13 @@ export class DatabaseStorage implements IStorage {
       firstName: insertUser.firstName || null,
       lastName: insertUser.lastName || null,
       phone: insertUser.phone || null,
+      company: insertUser.company || null,
+      streetAddress: insertUser.streetAddress || null,
+      city: insertUser.city || null,
+      province: insertUser.province || null,
+      postalCode: insertUser.postalCode || null,
+      country: insertUser.country || null,
+      ficaDocuments: insertUser.ficaDocuments || null,
       tier: insertUser.tier || null,
       paymentMethod: insertUser.paymentMethod || null,
       amount: insertUser.amount || null,
@@ -301,6 +317,8 @@ export class DatabaseStorage implements IStorage {
       lastFourDigits: insertPaymentMethod.lastFourDigits || null,
       expiryMonth: insertPaymentMethod.expiryMonth || null,
       expiryYear: insertPaymentMethod.expiryYear || null,
+      tokenUid: insertPaymentMethod.tokenUid || null,
+      profileUid: insertPaymentMethod.profileUid || null,
       puid: insertPaymentMethod.puid || null,
       isActive: 1,
     };
@@ -445,6 +463,55 @@ export class DatabaseStorage implements IStorage {
     
     return this.updateSubscription(id, updates);
   }
+
+  // Access Request Operations
+  async createAccessRequest(insertAccessRequest: InsertAccessRequest): Promise<AccessRequest> {
+    const id = randomUUID();
+    const newAccessRequest = {
+      id,
+      firstName: insertAccessRequest.firstName,
+      lastName: insertAccessRequest.lastName,
+      email: insertAccessRequest.email,
+      phone: insertAccessRequest.phone,
+      company: insertAccessRequest.company || null,
+      streetAddress: insertAccessRequest.streetAddress,
+      city: insertAccessRequest.city,
+      province: insertAccessRequest.province,
+      postalCode: insertAccessRequest.postalCode,
+      country: insertAccessRequest.country,
+      ficaDocuments: insertAccessRequest.ficaDocuments || null,
+      acceptedTerms: insertAccessRequest.acceptedTerms || 0,
+      acceptedPrivacy: insertAccessRequest.acceptedPrivacy || 0,
+      status: insertAccessRequest.status || "pending",
+    };
+    
+    await db.insert(accessRequests).values(newAccessRequest);
+    return newAccessRequest as AccessRequest;
+  }
+
+  async getAccessRequest(id: string): Promise<AccessRequest | undefined> {
+    const result = await db.select().from(accessRequests).where(eq(accessRequests.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getAllAccessRequests(): Promise<AccessRequest[]> {
+    return await db.select().from(accessRequests);
+  }
+
+  async updateAccessRequestStatus(id: string, status: string): Promise<AccessRequest> {
+    await db.update(accessRequests)
+      .set({ 
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(accessRequests.id, id));
+    
+    const result = await db.select().from(accessRequests).where(eq(accessRequests.id, id)).limit(1);
+    if (!result[0]) {
+      throw new Error("Access request not found");
+    }
+    return result[0];
+  }
 }
 
 // Legacy compatibility - fallback to MemStorage if database is not available
@@ -456,6 +523,7 @@ export class MemStorage implements IStorage {
   private paymentMethodsMap: Map<string, PaymentMethod>;
   private otpsMap: Map<string, Otp>;
   private subscriptionsMap: Map<string, Subscription>;
+  private accessRequestsMap: Map<string, AccessRequest>;
 
   constructor() {
     this.users = new Map();
@@ -465,6 +533,7 @@ export class MemStorage implements IStorage {
     this.paymentMethodsMap = new Map();
     this.otpsMap = new Map();
     this.subscriptionsMap = new Map();
+    this.accessRequestsMap = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -483,6 +552,13 @@ export class MemStorage implements IStorage {
       firstName: insertUser.firstName || null,
       lastName: insertUser.lastName || null,
       phone: insertUser.phone || null,
+      company: insertUser.company || null,
+      streetAddress: insertUser.streetAddress || null,
+      city: insertUser.city || null,
+      province: insertUser.province || null,
+      postalCode: insertUser.postalCode || null,
+      country: insertUser.country || null,
+      ficaDocuments: insertUser.ficaDocuments || null,
       tier: insertUser.tier || null,
       paymentMethod: insertUser.paymentMethod || null,
       amount: insertUser.amount || null,
@@ -634,6 +710,8 @@ export class MemStorage implements IStorage {
       lastFourDigits: insertPaymentMethod.lastFourDigits || null,
       expiryMonth: insertPaymentMethod.expiryMonth || null,
       expiryYear: insertPaymentMethod.expiryYear || null,
+      tokenUid: insertPaymentMethod.tokenUid || null,
+      profileUid: insertPaymentMethod.profileUid || null,
       puid: insertPaymentMethod.puid || null,
       isActive: 1, 
       createdAt: new Date(), 
@@ -757,6 +835,48 @@ export class MemStorage implements IStorage {
     }
     
     return this.updateSubscription(id, updates);
+  }
+
+  // Access Request Operations (in-memory implementation)
+  async createAccessRequest(insertAccessRequest: InsertAccessRequest): Promise<AccessRequest> {
+    const id = randomUUID();
+    const accessRequest: AccessRequest = {
+      id,
+      firstName: insertAccessRequest.firstName,
+      lastName: insertAccessRequest.lastName,
+      email: insertAccessRequest.email,
+      phone: insertAccessRequest.phone,
+      company: insertAccessRequest.company || null,
+      streetAddress: insertAccessRequest.streetAddress,
+      city: insertAccessRequest.city,
+      province: insertAccessRequest.province,
+      postalCode: insertAccessRequest.postalCode,
+      country: insertAccessRequest.country,
+      ficaDocuments: insertAccessRequest.ficaDocuments || null,
+      acceptedTerms: insertAccessRequest.acceptedTerms || 0,
+      acceptedPrivacy: insertAccessRequest.acceptedPrivacy || 0,
+      status: insertAccessRequest.status || "pending",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.accessRequestsMap.set(id, accessRequest);
+    return accessRequest;
+  }
+
+  async getAccessRequest(id: string): Promise<AccessRequest | undefined> {
+    return this.accessRequestsMap.get(id);
+  }
+
+  async getAllAccessRequests(): Promise<AccessRequest[]> {
+    return Array.from(this.accessRequestsMap.values());
+  }
+
+  async updateAccessRequestStatus(id: string, status: string): Promise<AccessRequest> {
+    const accessRequest = this.accessRequestsMap.get(id);
+    if (!accessRequest) throw new Error("Access request not found");
+    const updated = { ...accessRequest, status, updatedAt: new Date() };
+    this.accessRequestsMap.set(id, updated);
+    return updated;
   }
 }
 

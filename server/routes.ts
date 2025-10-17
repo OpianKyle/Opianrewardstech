@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertPaymentSchema } from "@shared/schema";
+import { insertPaymentSchema, insertAccessRequestSchema } from "@shared/schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { randomUUID, randomInt } from "crypto";
@@ -1198,6 +1198,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching investor: " + error.message });
+    }
+  });
+
+  // Create access request (Opian Bank form submission)
+  app.post("/api/access-requests", async (req, res) => {
+    try {
+      const validatedData = insertAccessRequestSchema.parse(req.body);
+      
+      const accessRequest = await storage.createAccessRequest(validatedData);
+      res.status(201).json({
+        success: true,
+        accessRequest: {
+          id: accessRequest.id,
+          email: accessRequest.email,
+          status: accessRequest.status,
+        },
+        message: "Access request submitted successfully",
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Error creating access request: " + error.message });
+      }
     }
   });
 

@@ -9,6 +9,15 @@ export const users = mysqlTable("users", {
   firstName: varchar("first_name", { length: 255 }),
   lastName: varchar("last_name", { length: 255 }),
   phone: varchar("phone", { length: 15 }),
+  company: varchar("company", { length: 255 }),
+  // Address fields
+  streetAddress: varchar("street_address", { length: 255 }),
+  city: varchar("city", { length: 100 }),
+  province: varchar("province", { length: 100 }),
+  postalCode: varchar("postal_code", { length: 20 }),
+  country: varchar("country", { length: 100 }),
+  // FICA documents
+  ficaDocuments: json("fica_documents"),
   // Investment-related fields (previously in investors table)
   tier: varchar("tier", { length: 50 }),
   paymentMethod: varchar("payment_method", { length: 50 }),
@@ -107,6 +116,26 @@ export const subscriptions = mysqlTable("subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+export const accessRequests = mysqlTable("access_requests", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
+  firstName: varchar("first_name", { length: 255 }).notNull(),
+  lastName: varchar("last_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 191 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  streetAddress: varchar("street_address", { length: 255 }).notNull(),
+  city: varchar("city", { length: 100 }).notNull(),
+  province: varchar("province", { length: 100 }).notNull(),
+  postalCode: varchar("postal_code", { length: 20 }).notNull(),
+  country: varchar("country", { length: 100 }).notNull(),
+  ficaDocuments: json("fica_documents"),
+  acceptedTerms: int("accepted_terms").notNull().default(0),
+  acceptedPrivacy: int("accepted_privacy").notNull().default(0),
+  status: varchar("status", { length: 50 }).notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -148,6 +177,12 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   updatedAt: true,
 });
 
+export const insertAccessRequestSchema = createInsertSchema(accessRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
@@ -162,3 +197,5 @@ export type InsertOtp = z.infer<typeof insertOtpSchema>;
 export type Otp = typeof otps.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertAccessRequest = z.infer<typeof insertAccessRequestSchema>;
+export type AccessRequest = typeof accessRequests.$inferSelect;
