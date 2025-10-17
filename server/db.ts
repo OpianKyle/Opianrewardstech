@@ -100,6 +100,39 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
         }
       }
     }
+
+    // Check if users table exists and add missing columns
+    const [usersTables] = await connection.execute(
+      `SELECT TABLE_NAME FROM information_schema.TABLES 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'`
+    ) as any;
+
+    if (usersTables.length > 0) {
+      // Table exists, check for missing columns
+      const userColumnsToAdd = [
+        { name: 'company', sql: 'ALTER TABLE users ADD COLUMN company VARCHAR(255)' },
+        { name: 'street_address', sql: 'ALTER TABLE users ADD COLUMN street_address VARCHAR(255)' },
+        { name: 'city', sql: 'ALTER TABLE users ADD COLUMN city VARCHAR(100)' },
+        { name: 'province', sql: 'ALTER TABLE users ADD COLUMN province VARCHAR(100)' },
+        { name: 'postal_code', sql: 'ALTER TABLE users ADD COLUMN postal_code VARCHAR(20)' },
+        { name: 'country', sql: 'ALTER TABLE users ADD COLUMN country VARCHAR(100)' },
+        { name: 'fica_documents', sql: 'ALTER TABLE users ADD COLUMN fica_documents JSON' }
+      ];
+      
+      for (const column of userColumnsToAdd) {
+        const [columns] = await connection.execute(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS 
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?`,
+          [column.name]
+        ) as any;
+
+        if (columns.length === 0) {
+          // Column doesn't exist, add it
+          await connection.execute(column.sql);
+          console.log(`✅ Added column ${column.name} to users table`);
+        }
+      }
+    }
   } catch (error: any) {
     console.error('Migration error:', error);
     throw error; // Fail fast on migration errors
