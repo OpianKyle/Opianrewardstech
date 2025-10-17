@@ -57,7 +57,9 @@ export interface IStorage {
   // Payment method operations
   createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
   getPaymentMethodsByUser(userId: string): Promise<PaymentMethod[]>;
+  getPaymentMethod(id: string): Promise<PaymentMethod | undefined>;
   deactivatePaymentMethod(id: string): Promise<PaymentMethod>;
+  deletePaymentMethod(id: string): Promise<void>;
   
   // OTP operations
   createOtp(otp: InsertOtp): Promise<Otp>;
@@ -331,6 +333,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(paymentMethods).where(eq(paymentMethods.userId, userId));
   }
 
+  async getPaymentMethod(id: string): Promise<PaymentMethod | undefined> {
+    const result = await db.select().from(paymentMethods).where(eq(paymentMethods.id, id)).limit(1);
+    return result[0];
+  }
+
   async deactivatePaymentMethod(id: string): Promise<PaymentMethod> {
     await db.update(paymentMethods)
       .set({ 
@@ -344,6 +351,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Payment method not found");
     }
     return result[0];
+  }
+
+  async deletePaymentMethod(id: string): Promise<void> {
+    await db.delete(paymentMethods).where(eq(paymentMethods.id, id));
   }
 
   // OTP Operations
@@ -725,12 +736,20 @@ export class MemStorage implements IStorage {
     return Array.from(this.paymentMethodsMap.values()).filter(pm => pm.userId === userId);
   }
 
+  async getPaymentMethod(id: string): Promise<PaymentMethod | undefined> {
+    return this.paymentMethodsMap.get(id);
+  }
+
   async deactivatePaymentMethod(id: string): Promise<PaymentMethod> {
     const paymentMethod = this.paymentMethodsMap.get(id);
     if (!paymentMethod) throw new Error("Payment method not found");
     const updated = { ...paymentMethod, isActive: 0, updatedAt: new Date() };
     this.paymentMethodsMap.set(id, updated);
     return updated;
+  }
+
+  async deletePaymentMethod(id: string): Promise<void> {
+    this.paymentMethodsMap.delete(id);
   }
 
   // OTP Operations (in-memory implementation)

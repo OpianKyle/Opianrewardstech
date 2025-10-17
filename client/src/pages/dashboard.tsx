@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { LogOut, TrendingUp, Wallet, ListChecks, Receipt, AlertCircle, ArrowRight } from 'lucide-react';
+import { LogOut, TrendingUp, Wallet, ListChecks, Receipt, AlertCircle, ArrowRight, CreditCard } from 'lucide-react';
+import { PaymentMethods } from '@/components/payment-methods';
 
 export default function Dashboard() {
   const { investor, token, logout, isLoading } = useAuth();
@@ -250,6 +251,10 @@ export default function Dashboard() {
             <TabsTrigger value="invoices" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-gray-900" data-testid="tab-invoices">
               <Receipt className="w-4 h-4 mr-2" />
               Invoices
+            </TabsTrigger>
+            <TabsTrigger value="payment-methods" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-gray-900" data-testid="tab-payment-methods">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Payment Methods
             </TabsTrigger>
           </TabsList>
 
@@ -609,6 +614,11 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Payment Methods Tab */}
+          <TabsContent value="payment-methods">
+            <PaymentMethods />
           </TabsContent>
         </Tabs>
       </div>
