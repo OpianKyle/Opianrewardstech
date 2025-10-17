@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Shield, TrendingUp, Users, ArrowRight, Sparkles, CheckCircle2, Lock, BarChart3 } from "lucide-react";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
+import opianBankLogo from "@assets/Opian bank_1760685427396.png";
 import heroImage from "@assets/generated_images/Futuristic_financial_technology_hero_b9e18dc0.png";
 import securityImage from "@assets/generated_images/Digital_security_shield_visualization_c6d91e21.png";
 import growthImage from "@assets/generated_images/Financial_growth_data_visualization_42860af4.png";
