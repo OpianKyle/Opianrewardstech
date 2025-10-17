@@ -214,6 +214,26 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (deposit_payment_id) REFERENCES payments(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    `CREATE TABLE IF NOT EXISTS access_requests (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      first_name VARCHAR(255) NOT NULL,
+      last_name VARCHAR(255) NOT NULL,
+      email VARCHAR(191) NOT NULL,
+      phone VARCHAR(20) NOT NULL,
+      company VARCHAR(255),
+      street_address VARCHAR(255) NOT NULL,
+      city VARCHAR(100) NOT NULL,
+      province VARCHAR(100) NOT NULL,
+      postal_code VARCHAR(20) NOT NULL,
+      country VARCHAR(100) NOT NULL,
+      fica_documents JSON,
+      accepted_terms INT NOT NULL DEFAULT 0,
+      accepted_privacy INT NOT NULL DEFAULT 0,
+      status VARCHAR(50) NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
   ];
 

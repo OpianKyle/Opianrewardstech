@@ -98,7 +98,7 @@ export const otps = mysqlTable("otps", {
 });
 
 export const subscriptions = mysqlTable("subscriptions", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
+  id: varchar("id", { length: 36 }).primaryKey(),
   userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id),
   depositPaymentId: varchar("deposit_payment_id", { length: 36 }).references(() => payments.id),
   adumoSubscriberId: varchar("adumo_subscriber_id", { length: 255 }),
@@ -117,7 +117,7 @@ export const subscriptions = mysqlTable("subscriptions", {
 });
 
 export const accessRequests = mysqlTable("access_requests", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
+  id: varchar("id", { length: 36 }).primaryKey(),
   firstName: varchar("first_name", { length: 255 }).notNull(),
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 191 }).notNull(),
