@@ -77,15 +77,11 @@ export default function OpianBank() {
           <div className="flex justify-between items-center py-3 sm:py-4">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <img 
-                src={opianLogo} 
+                src={opianBankLogo} 
                 alt="Opian Bank" 
                 className="h-8 sm:h-10 md:h-12 w-auto object-contain"
                 data-testid="bank-logo"
               />
-              <div>
-                <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Opian Bank</h1>
-                <p className="text-xs text-slate-400 hidden sm:block">Financial Innovation Redefined</p>
-              </div>
             </div>
             <Button
               onClick={scrollToForm}
