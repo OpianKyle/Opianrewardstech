@@ -14,6 +14,7 @@ const ADUMO_CONFIG = {
   merchantId: process.env.ADUMO_MERCHANT_ID,
   jwtSecret: process.env.ADUMO_JWTSECRET, // Use JWTSECRET for JWT signing/verification
   applicationId: process.env.ADUMO_APPLICATION_ID,
+  subscriptionApplicationId: process.env.ADUMO_SUBSCRIPTION_APPLICATION_ID || process.env.ADUMO_APPLICATION_ID, // Separate app ID for subscriptions
   // OAuth credentials for subscription API
   oauthClientId: process.env.ADUMO_CLIENT_ID,
   oauthClientSecret: process.env.ADUMO_CLIENT_SECRET,
@@ -118,7 +119,7 @@ async function createAdumoSubscriptionWithToken(params: {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      applicationUid: ADUMO_CONFIG.applicationId,
+      applicationUid: ADUMO_CONFIG.subscriptionApplicationId,
       tokenUid: params.cardToken,
       transactionUid: transactionUid,
       subscriberDetails: {
@@ -1393,12 +1394,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert amount from cents to currency with 2 decimal places
       const currencyAmount = (finalAmount / 100).toFixed(2);
 
+      // Use subscription application ID if this payment includes subscription fields
+      const useSubscriptionAppId = validatedData.paymentMethod === "deposit_monthly" && monthlyAmount > 0;
+      const appId = useSubscriptionAppId ? ADUMO_CONFIG.subscriptionApplicationId : ADUMO_CONFIG.applicationId;
+
       // Generate JWT token for Adumo API authentication
       // Using Adumo's exact JWT payload structure
       const jwtPayload = {
         iss: "Opian Rewards",
         cuid: ADUMO_CONFIG.merchantId,
-        auid: ADUMO_CONFIG.applicationId,
+        auid: appId,
         amount: currencyAmount,
         mref: reference,
         jti: randomUUID(),
@@ -1413,7 +1418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const formData: any = {
         puid: randomUUID(), // Unique payment/transaction ID
         MerchantID: ADUMO_CONFIG.merchantId,
-        ApplicationID: ADUMO_CONFIG.applicationId,
+        ApplicationID: appId,
         MerchantReference: reference,
         Amount: currencyAmount,
         Token: jwtToken, // Adumo uses "Token" not "JWT"
@@ -1544,11 +1549,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tempId = randomUUID().substring(0, 8);
       const reference = `TEST_SUB_${Date.now()}_${tempId}`;
       
-      // Generate JWT token for Adumo API authentication
+      // Generate JWT token for Adumo API authentication (using subscription-specific Application ID)
       const jwtPayload = {
         iss: "Opian Rewards",
         cuid: ADUMO_CONFIG.merchantId,
-        auid: ADUMO_CONFIG.applicationId,
+        auid: ADUMO_CONFIG.subscriptionApplicationId,
         amount: validatedData.amount,
         mref: reference,
         jti: randomUUID(),
@@ -1562,7 +1567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const formData: any = {
         puid: randomUUID(),
         MerchantID: ADUMO_CONFIG.merchantId,
-        ApplicationID: ADUMO_CONFIG.applicationId,
+        ApplicationID: ADUMO_CONFIG.subscriptionApplicationId,
         MerchantReference: reference,
         Amount: validatedData.amount,
         Token: jwtToken,
