@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import PaymentTest from "@/pages/payment-test";
+import SubscriptionTest from "@/pages/subscription-test";
 import SubscriptionSetup from "@/pages/subscription-setup";
 import NotFound from "@/pages/not-found";
 
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/payment-test" component={PaymentTest} />
+      <Route path="/subscription-test" component={SubscriptionTest} />
       <Route path="/subscription-setup" component={SubscriptionSetup} />
       <Route component={NotFound} />
     </Switch>

@@ -1493,6 +1493,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test Subscription Endpoint - Generate Adumo Virtual Form for subscription testing
+  app.post("/api/test-subscription", async (req, res) => {
+    try {
+      // Validate Adumo configuration first
+      validateAdumoConfig();
+      
+      const subscriptionTestSchema = z.object({
+        // Customer details
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        email: z.string().email(),
+        contactNumber: z.string().min(1),
+        mobileNumber: z.string().min(1),
+        recipient: z.string().min(1),
+        
+        // Subscription details
+        amount: z.string(), // Initial payment amount
+        collectionValue: z.string(), // Recurring amount
+        frequency: z.string(),
+        collectionDay: z.string(),
+        accountNumber: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+        
+        // Item details
+        itemDescription: z.string(),
+        itemRef: z.string(),
+        quantity: z.string(),
+        
+        // Shipping address
+        shippingAddress1: z.string(),
+        shippingAddress2: z.string(),
+        shippingAddress3: z.string(),
+        shippingAddress4: z.string(),
+        shippingAddress5: z.string(),
+        
+        // Notification options
+        shouldSendSms: z.boolean(),
+        shouldSendEmail: z.boolean(),
+        
+        // Custom variables
+        variable1: z.string().optional(),
+        variable2: z.string().optional(),
+      });
+      
+      const validatedData = subscriptionTestSchema.parse(req.body);
+      
+      // Generate unique reference
+      const tempId = randomUUID().substring(0, 8);
+      const reference = `TEST_SUB_${Date.now()}_${tempId}`;
+      
+      // Generate JWT token for Adumo API authentication
+      const jwtPayload = {
+        iss: "Opian Rewards",
+        cuid: ADUMO_CONFIG.merchantId,
+        auid: ADUMO_CONFIG.applicationId,
+        amount: validatedData.amount,
+        mref: reference,
+        jti: randomUUID(),
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (60 * 10) // 10 minutes expiry
+      };
+      
+      const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret!);
+      
+      // Build form data for Adumo Virtual Form Post with subscription fields
+      const formData: any = {
+        puid: randomUUID(),
+        MerchantID: ADUMO_CONFIG.merchantId,
+        ApplicationID: ADUMO_CONFIG.applicationId,
+        MerchantReference: reference,
+        Amount: validatedData.amount,
+        Token: jwtToken,
+        txtCurrencyCode: "ZAR",
+        RedirectSuccessfulURL: `${ADUMO_CONFIG.returnUrl}?test=subscription&reference=${reference}&status=success`,
+        RedirectFailedURL: `${ADUMO_CONFIG.returnUrl}?test=subscription&reference=${reference}&status=failed`,
+        
+        // Additional variables
+        Variable1: validatedData.variable1 || "Subscription Test",
+        Variable2: validatedData.variable2 || reference,
+        
+        // Item details
+        Qty1: validatedData.quantity,
+        ItemRef1: validatedData.itemRef,
+        ItemDescr1: validatedData.itemDescription,
+        ItemAmount1: validatedData.amount,
+        
+        // Shipping details
+        ShippingCost: "0.00",
+        Discount: "0.00",
+        Recipient: validatedData.recipient,
+        ShippingAddress1: validatedData.shippingAddress1,
+        ShippingAddress2: validatedData.shippingAddress2,
+        ShippingAddress3: validatedData.shippingAddress3,
+        ShippingAddress4: validatedData.shippingAddress4,
+        ShippingAddress5: validatedData.shippingAddress5,
+        
+        // Subscription-specific fields
+        frequency: validatedData.frequency,
+        collectionDay: validatedData.collectionDay,
+        accountNumber: validatedData.accountNumber,
+        startDate: validatedData.startDate,
+        endDate: validatedData.endDate,
+        collectionValue: validatedData.collectionValue,
+        contactNumber: validatedData.contactNumber,
+        mobileNumber: validatedData.mobileNumber,
+        emailAddress: validatedData.email,
+        shouldSendSms: validatedData.shouldSendSms.toString(),
+        shouldSendEmail: validatedData.shouldSendEmail.toString(),
+      };
+      
+      // Log test subscription creation
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🧪 Test subscription form created:', {
+          reference: reference,
+          frequency: validatedData.frequency,
+          collectionDay: validatedData.collectionDay,
+          startDate: validatedData.startDate,
+          endDate: validatedData.endDate,
+          amount: validatedData.amount,
+          collectionValue: validatedData.collectionValue
+        });
+      }
+      
+      // Return form data for client-side POST to Adumo
+      res.json({
+        formData: formData,
+        url: ADUMO_CONFIG.apiUrl,
+        reference: reference
+      });
+    } catch (error: any) {
+      console.error('❌ Test subscription creation error:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Error creating test subscription: " + error.message });
+      }
+    }
+  });
+
   // Utility function to detect card type from card number
   function detectCardType(cardNumber: string): string {
     const cleanNumber = cardNumber.replace(/\s/g, "");
