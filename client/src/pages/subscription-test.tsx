@@ -120,6 +120,11 @@ export default function SubscriptionTest() {
             <CardDescription className="text-slate-300">
               Test recurring payment subscriptions using Adumo Online virtual form integration
             </CardDescription>
+            <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+              <p className="text-sm text-blue-200">
+                <strong>Note:</strong> When redirected to Adumo's payment page, you may see technical fields like "puid" or other system identifiers. These are normal and used for payment processing - you can safely ignore them.
+              </p>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -250,14 +255,23 @@ export default function SubscriptionTest() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="collectionValue" className="text-slate-200">Collection Amount (ZAR)</Label>
+                    <Label htmlFor="collectionValue" className="text-slate-200">
+                      Monthly Collection Amount (ZAR)
+                    </Label>
                     <Input
                       id="collectionValue"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="123.54"
                       value={formData.collectionValue}
                       onChange={(e) => handleInputChange('collectionValue', e.target.value)}
                       className="bg-slate-800/50 border-slate-700 text-white"
                       data-testid="input-collectionValue"
                     />
+                    <p className="text-xs text-slate-400 mt-1">
+                      Recurring monthly amount (e.g., 123.54 for R123.54/month)
+                    </p>
                   </div>
                   <div>
                     <Label htmlFor="startDate" className="text-slate-200">Start Date</Label>
@@ -294,14 +308,23 @@ export default function SubscriptionTest() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="amount" className="text-slate-200">Initial Amount (ZAR)</Label>
+                    <Label htmlFor="amount" className="text-slate-200">
+                      Initial Payment Amount (ZAR)
+                    </Label>
                     <Input
                       id="amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="123.54"
                       value={formData.amount}
                       onChange={(e) => handleInputChange('amount', e.target.value)}
                       className="bg-slate-800/50 border-slate-700 text-white"
                       data-testid="input-amount"
                     />
+                    <p className="text-xs text-slate-400 mt-1">
+                      First payment amount (e.g., 123.54 for R123.54)
+                    </p>
                   </div>
                   <div>
                     <Label htmlFor="itemDescription" className="text-slate-200">Item Description</Label>

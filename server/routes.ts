@@ -1545,6 +1545,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = subscriptionTestSchema.parse(req.body);
       
+      // Format amounts to ensure they have exactly 2 decimal places
+      const formattedAmount = parseFloat(validatedData.amount).toFixed(2);
+      const formattedCollectionValue = parseFloat(validatedData.collectionValue).toFixed(2);
+      
       // Generate unique reference
       const tempId = randomUUID().substring(0, 8);
       const reference = `TEST_SUB_${Date.now()}_${tempId}`;
@@ -1554,7 +1558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         iss: "Opian Rewards",
         cuid: ADUMO_CONFIG.merchantId,
         auid: ADUMO_CONFIG.subscriptionApplicationId,
-        amount: validatedData.amount,
+        amount: formattedAmount,
         mref: reference,
         jti: randomUUID(),
         iat: Math.floor(Date.now() / 1000),
@@ -1569,7 +1573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         MerchantID: ADUMO_CONFIG.merchantId,
         ApplicationID: ADUMO_CONFIG.subscriptionApplicationId,
         MerchantReference: reference,
-        Amount: validatedData.amount,
+        Amount: formattedAmount,
         Token: jwtToken,
         txtCurrencyCode: "ZAR",
         RedirectSuccessfulURL: `${ADUMO_CONFIG.returnUrl}?test=subscription&reference=${reference}&status=success`,
@@ -1583,7 +1587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Qty1: validatedData.quantity,
         ItemRef1: validatedData.itemRef,
         ItemDescr1: validatedData.itemDescription,
-        ItemAmount1: validatedData.amount,
+        ItemAmount1: formattedAmount,
         
         // Shipping details
         ShippingCost: "0.00",
@@ -1601,7 +1605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accountNumber: validatedData.accountNumber,
         startDate: validatedData.startDate,
         endDate: validatedData.endDate,
-        collectionValue: validatedData.collectionValue,
+        collectionValue: formattedCollectionValue,
         contactNumber: validatedData.contactNumber,
         mobileNumber: validatedData.mobileNumber,
         emailAddress: validatedData.email,
@@ -1617,8 +1621,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           collectionDay: validatedData.collectionDay,
           startDate: validatedData.startDate,
           endDate: validatedData.endDate,
-          amount: validatedData.amount,
-          collectionValue: validatedData.collectionValue
+          amount: formattedAmount,
+          collectionValue: formattedCollectionValue
         });
       }
       
