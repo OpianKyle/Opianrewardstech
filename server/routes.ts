@@ -14,7 +14,7 @@ const ADUMO_CONFIG = {
   merchantId: process.env.ADUMO_MERCHANTID,
   jwtSecret: process.env.ADUMO_JWTSECRET, // Use JWTSECRET for JWT signing/verification
   applicationId: process.env.ADUMO_APPLICATIONID,
-  subscriptionApplicationId: process.env.ADUMO_SUBSCRIPTION_APPLICATION_ID || process.env.ADUMO_APPLICATION_ID, // Separate app ID for subscriptions
+  subscriptionApplicationId: process.env.ADUMO_SUBSCRIPTION_APPLICATION_ID || process.env.ADUMO_APPLICATIONID, // Separate app ID for subscriptions
   // OAuth credentials for subscription API
   oauthClientId: process.env.ADUMO_CLIENT_ID,
   oauthClientSecret: process.env.ADUMO_CLIENT_SECRET,
@@ -61,7 +61,7 @@ async function getAdumoOAuthToken(): Promise<string> {
     clientSecretLength: ADUMO_CONFIG.oauthClientSecret?.length
   });
 
-  // Try sending credentials in request body (common OAuth 2.0 format)
+  // Use POST request with form data (as required by Adumo)
   const response = await fetch(oauthUrl, {
     method: "POST",
     headers: {
@@ -783,6 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch user details from payment record
       const payment = await storage.getPaymentByMerchantReference(cardData.paymentReference);
       if (!payment) {
+        console.log('🔍 Payment lookup failed for merchant reference:', cardData.paymentReference);
         return res.status(404).json({ message: "Payment not found" });
       }
       
@@ -798,8 +799,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 2: Create profile and card token
       const tokenizationUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
-        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
+        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId.toLowerCase()}/profile`
+        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId.toLowerCase()}/profile`;
+
+      const tokenizationPayload = {
+        cardNumber: cardData.cardNumber,
+        cardholderName: cardData.cardholderName,
+        expiryMonth: cardData.expiryMonth,
+        expiryYear: cardData.expiryYear,
+        cvv: cardData.cvv,
+        email: userDetails.email,
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+      };
+
+      // Debug tokenization request
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 Tokenization URL:', tokenizationUrl);
+        console.log('🔐 Application ID:', ADUMO_CONFIG.applicationId);
+        console.log('🔐 Tokenization payload:', JSON.stringify({
+          ...tokenizationPayload,
+          cardNumber: cardData.cardNumber.substring(0, 4) + '****' + cardData.cardNumber.substring(cardData.cardNumber.length - 4),
+          cvv: '***'
+        }, null, 2));
+      }
 
       const tokenResponse = await fetch(tokenizationUrl, {
         method: "POST",
@@ -807,16 +830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          cardNumber: cardData.cardNumber,
-          cardholderName: cardData.cardholderName,
-          expiryMonth: cardData.expiryMonth,
-          expiryYear: cardData.expiryYear,
-          cvv: cardData.cvv,
-          email: userDetails.email,
-          firstName: userDetails.firstName,
-          lastName: userDetails.lastName,
-        }),
+        body: JSON.stringify(tokenizationPayload),
       });
 
       if (!tokenResponse.ok) {
@@ -1099,8 +1113,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("💳 Step 2.1: Tokenizing card...");
       // Tokenize card
       const tokenizationUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
-        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
+        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId.toLowerCase()}/profile`
+        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId.toLowerCase()}/profile`;
 
       const tokenResponse = await fetch(tokenizationUrl, {
         method: "POST",
@@ -1412,6 +1426,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const jwtToken = jwt.sign(jwtPayload, ADUMO_CONFIG.jwtSecret!);
+      
+      // Debug JWT payload in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 JWT Payload:', JSON.stringify(jwtPayload, null, 2));
+        console.log('🔐 JWT Secret length:', ADUMO_CONFIG.jwtSecret?.length);
+        console.log('🔐 Application ID used:', appId);
+        console.log('🔐 Merchant ID:', ADUMO_CONFIG.merchantId);
+      }
 
       // Return form data for client-side form POST to Adumo Virtual
       // Using EXACT field names as per Adumo Virtual API documentation
@@ -1478,6 +1500,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: currencyAmount,
           reference: reference
         });
+        
+        // Debug form data (without sensitive fields)
+        const debugFormData = { ...formData };
+        delete debugFormData.Token; // Remove JWT token from debug output
+        console.log('📋 Form data being sent to Adumo:', JSON.stringify(debugFormData, null, 2));
       }
 
       // Return form data for client-side POST
@@ -1696,8 +1723,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("💳 Step 2: Tokenizing card...");
       const tokenizationUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
-        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
+        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId.toLowerCase()}/profile`
+        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId.toLowerCase()}/profile`;
 
       const tokenResponse = await fetch(tokenizationUrl, {
         method: "POST",
@@ -2295,7 +2322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     if (decoded.auid !== ADUMO_CONFIG.applicationId) {
-      throw new Error(`JWT auid mismatch: expected ${ADUMO_CONFIG.applicationId}, got ${decoded.auid}`);
+      throw new Error(`JWT auid mismatch: expected ${ADUMO_CONFIG.applicationId.toLowerCase()}, got ${decoded.auid}`);
     }
 
     return decoded;
