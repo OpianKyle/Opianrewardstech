@@ -11,9 +11,9 @@ import { sendOtpEmail, testEmailConnection } from "./email";
 
 // Adumo payment configuration using environment variables (required)
 const ADUMO_CONFIG = {
-  merchantId: process.env.ADUMO_MERCHANT_ID,
+  merchantId: process.env.ADUMO_MERCHANTID,
   jwtSecret: process.env.ADUMO_JWTSECRET, // Use JWTSECRET for JWT signing/verification
-  applicationId: process.env.ADUMO_APPLICATION_ID,
+  applicationId: process.env.ADUMO_APPLICATIONID,
   subscriptionApplicationId: process.env.ADUMO_SUBSCRIPTION_APPLICATION_ID || process.env.ADUMO_APPLICATION_ID, // Separate app ID for subscriptions
   // OAuth credentials for subscription API
   oauthClientId: process.env.ADUMO_CLIENT_ID,
