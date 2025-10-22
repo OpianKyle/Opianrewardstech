@@ -1920,6 +1920,408 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enterprise API - Pay with saved card (uses saved profileUid and token)
+  app.post("/api/payment/enterprise/pay-with-saved-card", async (req, res) => {
+    try {
+      const schema = z.object({
+        userId: z.string(),
+        amount: z.number().min(1), // in cents
+        tier: z.string(),
+        paymentMethod: z.string(),
+        paymentMethodId: z.string(), // ID of the saved payment method
+        cvv: z.string().min(3).max(4).optional(), // May be required
+      });
+
+      const data = schema.parse(req.body);
+
+      // Get user
+      const user = await storage.getUser(data.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get saved payment method
+      const paymentMethod = await storage.getPaymentMethod(data.paymentMethodId);
+      if (!paymentMethod || paymentMethod.userId !== data.userId) {
+        return res.status(404).json({ message: "Payment method not found" });
+      }
+
+      if (!paymentMethod.profileUid) {
+        return res.status(400).json({ message: "Payment method does not have a saved profile" });
+      }
+
+      console.log("🔐 Getting OAuth token...");
+      const token = await getAdumoOAuthToken();
+
+      // Generate unique merchant reference
+      const merchantReference = `OPIAN_${Date.now()}_${randomUUID().substring(0, 8)}`;
+
+      // Get user's IP address and user agent
+      const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
+      const userAgent = req.headers['user-agent'] || "Mozilla/5.0";
+
+      console.log("💳 Initiating payment with saved card...");
+      const initiateUrl = process.env.NODE_ENV === "production"
+        ? "https://apiv3.adumoonline.com/products/payments/v1/card/initiate"
+        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/initiate";
+
+      // Use tokenUid if available, otherwise use profileUid
+      const tokenToUse = paymentMethod.tokenUid || paymentMethod.profileUid;
+
+      const initiateBody: any = {
+        merchantUid: ADUMO_CONFIG.merchantId,
+        applicationUid: ADUMO_CONFIG.applicationId,
+        budgetPeriod: 0,
+        merchantReference,
+        value: (data.amount / 100).toFixed(2),
+        token: tokenToUse, // Use saved token
+        ipAddress,
+        userAgent,
+      };
+
+      // Include CVV if provided
+      if (data.cvv) {
+        initiateBody.cvv = data.cvv;
+      }
+
+      const initiateResponse = await fetch(initiateUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(initiateBody),
+      });
+
+      if (!initiateResponse.ok) {
+        const errorText = await initiateResponse.text();
+        console.error("❌ Payment initiation failed:", errorText);
+        return res.status(initiateResponse.status).json({ 
+          message: "Payment initiation failed", 
+          error: errorText 
+        });
+      }
+
+      const initiateResult = await initiateResponse.json();
+      const transactionId = initiateResult.transactionId;
+      const threeDSecureRequired = initiateResult.threeDSecureAuthRequired;
+
+      // Create payment record
+      const payment = await storage.createPayment({
+        userId: user.id,
+        amount: data.amount,
+        method: data.paymentMethod,
+        status: "pending",
+        paymentData: {
+          userId: user.id,
+          tier: data.tier,
+          paymentMethod: data.paymentMethod,
+          merchantReference,
+          transactionId,
+        },
+      });
+
+      // If 3DS is required, return 3DS info
+      if (threeDSecureRequired) {
+        return res.json({
+          success: false,
+          requires3DS: true,
+          transactionId,
+          acsUrl: initiateResult.acsUrl,
+          acsPayload: initiateResult.acsPayload,
+          acsMD: initiateResult.acsMD,
+          paymentId: payment.id,
+          message: "3D Secure authentication required",
+        });
+      }
+
+      // No 3DS required, authorize
+      console.log("✅ Authorizing payment...");
+      const authorizeUrl = process.env.NODE_ENV === "production"
+        ? "https://apiv3.adumoonline.com/products/payments/v1/card/authorise"
+        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/authorise";
+
+      const authorizeResponse = await fetch(authorizeUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ transactionId }),
+      });
+
+      if (!authorizeResponse.ok) {
+        const errorText = await authorizeResponse.text();
+        console.error("❌ Authorization failed:", errorText);
+        await storage.updatePaymentStatus(payment.id, "failed");
+        return res.status(authorizeResponse.status).json({ 
+          message: "Authorization failed", 
+          error: errorText 
+        });
+      }
+
+      // Settle payment
+      console.log("✅ Settling payment...");
+      const settleUrl = process.env.NODE_ENV === "production"
+        ? "https://apiv3.adumoonline.com/products/payments/v1/card/settle"
+        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/settle";
+
+      const settleResponse = await fetch(settleUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          transactionId,
+          amount: (data.amount / 100).toFixed(2),
+        }),
+      });
+
+      if (!settleResponse.ok) {
+        const errorText = await settleResponse.text();
+        console.error("❌ Settlement failed:", errorText);
+        await storage.updatePaymentStatus(payment.id, "failed");
+        return res.status(settleResponse.status).json({ 
+          message: "Settlement failed", 
+          error: errorText 
+        });
+      }
+
+      // Update payment to completed
+      await storage.updatePaymentStatus(payment.id, "completed");
+      await storage.updateUserPaymentStatus(user.id, "completed", transactionId);
+
+      console.log("✅ Payment with saved card completed!");
+
+      res.json({
+        success: true,
+        paymentId: payment.id,
+        transactionId,
+        message: "Payment processed successfully",
+      });
+
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("❌ Saved card payment error:", error);
+      res.status(500).json({ message: "Payment failed: " + error.message });
+    }
+  });
+
+  // Enterprise API - Create subscription using saved profileUid
+  app.post("/api/subscription/enterprise/create", async (req, res) => {
+    try {
+      const schema = z.object({
+        userId: z.string(),
+        profileUid: z.string(), // From saved payment method or completed payment
+        tier: z.string(),
+        monthlyAmount: z.number().min(1), // in cents
+        totalMonths: z.number().default(12),
+        startDate: z.string().optional(),
+        collectionDay: z.string().default("7"),
+      });
+
+      const data = schema.parse(req.body);
+
+      // Get user
+      const user = await storage.getUser(data.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Parse start date or use next month
+      const startDate = data.startDate ? new Date(data.startDate) : new Date();
+      if (!data.startDate) {
+        startDate.setMonth(startDate.getMonth() + 1); // Start next month
+        startDate.setDate(parseInt(data.collectionDay));
+      }
+
+      console.log("🔐 Creating subscription with Adumo...");
+      
+      // Use the helper function to create subscription
+      const subscriptionResult = await createAdumoSubscriptionWithToken({
+        email: user.email,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        phone: user.phone || "",
+        cardToken: data.profileUid, // Use profileUid as token
+        profileToken: data.profileUid,
+        monthlyAmount: data.monthlyAmount,
+        totalMonths: data.totalMonths,
+        startDate,
+        collectionDay: data.collectionDay,
+      });
+
+      // Save subscription to database
+      const subscription = await storage.createSubscription({
+        userId: user.id,
+        tier: data.tier,
+        monthlyAmount: (data.monthlyAmount / 100).toString(),
+        totalMonths: data.totalMonths,
+        adumoSubscriberId: subscriptionResult.subscriberId,
+        adumoScheduleId: subscriptionResult.scheduleId,
+        status: "ACTIVE",
+        nextPaymentDate: startDate,
+        startDate,
+      });
+
+      console.log("✅ Subscription created successfully!");
+
+      res.json({
+        success: true,
+        subscriptionId: subscription.id,
+        adumoSubscriberId: subscriptionResult.subscriberId,
+        adumoScheduleId: subscriptionResult.scheduleId,
+        startDate,
+        message: "Subscription created successfully",
+      });
+
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("❌ Subscription creation error:", error);
+      res.status(500).json({ message: "Subscription creation failed: " + error.message });
+    }
+  });
+
+  // Enterprise API - Complete 3DS authentication and authorize payment
+  app.post("/api/payment/enterprise/complete-3ds", async (req, res) => {
+    try {
+      const schema = z.object({
+        transactionId: z.string(),
+        paymentId: z.string(),
+        paRes: z.string().optional(), // Payment Authentication Response from 3DS
+      });
+
+      const data = schema.parse(req.body);
+
+      // Get payment
+      const payment = await storage.getPaymentByMerchantReference(data.paymentId);
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
+
+      console.log("🔐 Getting OAuth token...");
+      const token = await getAdumoOAuthToken();
+
+      // Step 1: Authenticate (verify 3DS was successful)
+      console.log("🔐 Step 1: Authenticating 3DS...");
+      const authenticateUrl = process.env.NODE_ENV === "production"
+        ? `https://apiv3.adumoonline.com/product/authentication/v2/tds/authenticate/${data.transactionId}`
+        : `https://staging-apiv3.adumoonline.com/product/authentication/v2/tds/authenticate/${data.transactionId}`;
+
+      const authenticateResponse = await fetch(authenticateUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!authenticateResponse.ok) {
+        const errorText = await authenticateResponse.text();
+        console.error("❌ 3DS authentication check failed:", errorText);
+        await storage.updatePaymentStatus(payment.id, "failed");
+        return res.status(authenticateResponse.status).json({ 
+          message: "3DS authentication failed", 
+          error: errorText 
+        });
+      }
+
+      const authResult = await authenticateResponse.json();
+      
+      // Check if 3DS was successful
+      if (authResult.authorizationAllow !== "Y" || authResult.statusCode !== "TDS_AUTHENTICATED") {
+        console.error("❌ 3DS authentication was not successful");
+        await storage.updatePaymentStatus(payment.id, "failed");
+        return res.status(400).json({ 
+          message: "3DS authentication was not successful",
+          authResult 
+        });
+      }
+
+      console.log("✅ 3DS authentication successful");
+
+      // Step 2: Authorize the payment
+      console.log("✅ Step 2: Authorizing payment...");
+      const authorizeUrl = process.env.NODE_ENV === "production"
+        ? "https://apiv3.adumoonline.com/products/payments/v1/card/authorise"
+        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/authorise";
+
+      const authorizeResponse = await fetch(authorizeUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ transactionId: data.transactionId }),
+      });
+
+      if (!authorizeResponse.ok) {
+        const errorText = await authorizeResponse.text();
+        console.error("❌ Authorization failed:", errorText);
+        await storage.updatePaymentStatus(payment.id, "failed");
+        return res.status(authorizeResponse.status).json({ 
+          message: "Authorization failed", 
+          error: errorText 
+        });
+      }
+
+      // Step 3: Settle the payment
+      console.log("✅ Step 3: Settling payment...");
+      const settleUrl = process.env.NODE_ENV === "production"
+        ? "https://apiv3.adumoonline.com/products/payments/v1/card/settle"
+        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/settle";
+
+      const settleResponse = await fetch(settleUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          transactionId: data.transactionId,
+          amount: (payment.amount / 100).toFixed(2),
+        }),
+      });
+
+      if (!settleResponse.ok) {
+        const errorText = await settleResponse.text();
+        console.error("❌ Settlement failed:", errorText);
+        await storage.updatePaymentStatus(payment.id, "failed");
+        return res.status(settleResponse.status).json({ 
+          message: "Settlement failed", 
+          error: errorText 
+        });
+      }
+
+      // Update payment to completed
+      await storage.updatePaymentStatus(payment.id, "completed");
+      const paymentData = payment.paymentData as any;
+      if (paymentData?.userId) {
+        await storage.updateUserPaymentStatus(paymentData.userId, "completed", data.transactionId);
+      }
+
+      console.log("✅ 3DS payment completed successfully!");
+
+      res.json({
+        success: true,
+        paymentId: payment.id,
+        transactionId: data.transactionId,
+        message: "Payment completed successfully after 3DS authentication",
+      });
+
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("❌ 3DS completion error:", error);
+      res.status(500).json({ message: "3DS completion failed: " + error.message });
+    }
+  });
+
   // Handle payment return from Adumo (both GET and POST)
   const handlePaymentReturn = async (req: any, res: any) => {
     try {
