@@ -399,7 +399,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async cleanupExpiredOtps(): Promise<void> {
-    await db.delete(otps).where(sql`${otps.expiresAt} < NOW()`);
+    if (!db) {
+      return; // Skip cleanup if database is not available
+    }
+    
+    try {
+      await db.delete(otps).where(sql`${otps.expiresAt} < NOW()`);
+    } catch (error: any) {
+      // Handle connection reset errors gracefully
+      if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.warn('⚠️ Database connection was reset during OTP cleanup. Connection will be re-established on next query.');
+      } else {
+        throw error; // Re-throw unexpected errors
+      }
+    }
   }
 
   // Subscription Operations
