@@ -1,0 +1,1378 @@
+Enterprise API
+Introduction
+The purpose of this document is to explain in detail the information and steps necessary to integrate to the Adumo Online API in order to process card transactions.
+
+The following section, Process Flow Diagram, shows the higher level flow of what steps are necessary to process a transaction. Detailed explanations of each step are then given in the order in which they are presented in the diagram.
+
+During the onboarding process, the option is available to enable auto settlement of transactions, as explained in the Process Flow Diagram section and mentioned in the 3DS Secure - Authorise section.
+
+This is a PCI compliant payment solution, therefore PCI compliance is needed to integrate using this method, as card details will be entered and submitted.
+
+The URLs provided for the various API calls are from the QA testing environment.
+
+There is a Postman Collection available which interacts with the Adumo Online QA environment which can be used as a guide for integration.
+
+URL to postman collection: Postman_Collection.zip
+
+Process Flow Diagram
+As mentioned above, the following diagram shows the high level flow of the steps required to process a transaction:
+
+Process Flow Diagram
+To give a brief description of the process flow:
+
+First, a call to the OAuth service needs to be made, to acquire the bearer token which must be included in all subsequent calls. PLEASE NOTE: If the token expires, another call must be made to retrieve a new token before more calls can successfully be made. More information is available in the OAuth 2.0 section.
+Next the transaction is Initiated, with four possible options for card information related to the transaction.
+Initiate without saving card information - The card information is sent in order to initiate the transaction, however it is not saved for use again later by the same user.
+Initiate with saving card information - The card information sent is saved to a new user profile which is created for the user.
+Initiate with saving card to profile - The card information sent is saved to an existing profile, where the user then has multiple stored cards.
+Initiate with saved card details from profile - Card information is not sent, simply a reference to the card saved in the user profile which will be used to initiate the transaction.
+For each transaction, a check is done to determine whether 3DSecure is necessary for the transaction. If so, there are some extra steps to follow. If not, the transaction can be authorised.
+If 3DSecure is required for the transaction, an HTTP POST needs to be sent to Bankserv. The TermURL provided in that POST gives Bankserv a way to send an HTTP POST back, which needs to be exposed. That response is required before the transaction can continue, or else it is timed out.
+Upon Bankserv responding, the transaction can then be authenticated. This call verifies that the response from Bankserv was received and successful, or else the transaction is failed.
+After a successful authentication the transaction can then be authorised.
+While in an authorised state transactions may be reversed if required.
+The transaction can then be settled, and has successfully been completed.
+While in a settled state, transactions may be refunded if required.
+More detailed information is given in the rest of the document.
+
+OAuth 2.0
+The OAuth service provides authorization for subsequent API calls.
+
+URL for the Call:
+
+[POST]
+Test URL: https://staging-apiv3.adumoonline.com/oauth/token?grant_type={{grant_type}}&client_id={{client_id}}&client_secret={{client_secret}}
+Production URL: https://apiv3.adumoonline.com/oauth/token?grant_type={{grant_type}}&client_id={{client_id}}&client_secret={{client_secret}}
+
+The call itself requires three query parameters, which Adumo Online will provide:
+
+grant_type: client_credentials
+client_id: 9BA5008C-08EE-4286-A349-54AF91A621B0
+client_secret: 23adadc0-da2d-4dac-a128-4845a5d71293
+Example Call:
+
+[POST]
+https://staging-apiv3.adumoonline.com/oauth/token?grant_type=client_credentials&client_id=9BA5008C-08EE-4286-A349-54AF91A621B0&client_secret=23adadc0-da2d-4dac-a128-4845a5d71293
+
+
+Sample Output:
+
+{
+    "access_token": "{ your access token }",
+    "token_type": "bearer",
+    "expires_in": { in seconds },
+    "scope": "read",
+    "jti": "{ your jti }"
+}
+Sample Output Details:
+
+Field
+
+Description
+
+Type
+
+access_token
+
+Token required as a bearer token for subsequent calls
+
+String
+
+token_type
+
+Defaults to bearer
+
+String
+
+expires_in
+
+Lifespan of token validity in seconds
+
+integer
+
+scope
+
+Defaults to read
+
+String
+
+jti
+
+According to OAuth 2.0 spec
+
+String
+
+List of Message Types
+The below table represents the message body message types that the API supports and indicates the entity that originates the message type.
+
+Message Type
+
+Comments
+
+Initiate Transaction	
+The initiate transaction call is used to create the transaction.
+
+3DS Authenticate	
+This message is used direct the card holder to their banks authentication page where they will validate the transaction using their secret password.
+
+Authorise	
+The  Authorise message creates a request to hold the requested amount and mark it as unavailable from the customer's card until it is either Captured or the hold terminates, thus rendering the amount available again.
+
+Reverse	
+The Authorise – Reversal Message releases the hold that the Authorize placed on the customer's credit card funds. Use this service to reverse an unnecessary or undesired Authorisation. You can use full Authorise – Reversal only for an authorisation that has not been captured.
+
+Settle	
+When you are ready to fulfil a customer's order, Settle the Authorisation for that order.
+
+Refund	
+Refund messages are generated when a merchant wants to return the funds after a transaction that has been settled.
+
+API Explorer and Sample Code
+Initiate Transaction
+The initiate transaction call is used to create the transaction, and based on the input can be one of four options, the details of which are listed below.
+
+
+URL for the Call:
+
+[POST]
+Test URL: https://staging-apiv3.adumoonline.com/products/payments/v1/card/initiate
+Production URL: https://apiv3.adumoonline.com/products/payments/v1/card/initiate
+
+
+Initiate Without Saving Card Information
+Sample Input:
+
+{
+    "merchantUid": "{ your merchant UID }",
+    "applicationUid": "{ your application UID }",
+    "budgetPeriod": 0,
+    "cvv": "123"
+    "cardHolderFullName": "{ your customer full name }",
+    "cardNumber": "{ customer card number }",
+    "expiryMonth": { from 1 to 12 },
+    "expiryYear": { valid year in the future },
+    "merchantReference": "{ your order number to uniquely idetify the transaction}",
+    "value": { transaction amount to two decimal points eg. 15.25 },
+    "ipAddress": "{ IP Address of the user’s browser or merchant server  }",
+    "userAgent": "{ browser header }",
+    "saveCardDetails": false,
+    "uci": "{ unique client identifier }"
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+merchantUid
+
+Your Merchant UID provided by Adumo Online
+
+String
+
+Required
+
+applicationUid
+
+Your Application UID provided by Adumo Online
+
+String
+
+Required
+
+budgetPeriod
+
+Selected budget period
+
+integer
+
+Optional
+
+cvv
+
+Card CVV number. Required if not available in card authorization
+
+String
+
+Conditional
+
+cardHolderFullName
+
+Full names of the card holder
+
+String
+
+Optional
+
+cardNumber
+
+User’s card number
+
+String
+
+Optional
+
+expiryMonth
+
+Card expiry month
+
+integer
+
+Optional
+
+expiryYear
+
+Card expiry year
+
+integer
+
+Optional
+
+merchantReference
+
+Merchant provided identifying reference for order (eg. order number)
+
+String
+
+Required
+
+value
+
+Transaction value to two decimal places
+
+float
+
+Required
+
+ipAddress
+
+IP Address of user’s browser or merchant's server
+
+String
+
+Required
+
+userAgent
+
+Browser header
+
+String
+
+Required
+
+saveCardDetails
+
+Save card details or not
+
+Boolean
+
+Optional
+
+uci
+
+Unique Client Identifier, a way to uniquely identify customers
+
+String
+
+Optional
+
+
+Initiate With Saving Card Information
+Sample Input:
+
+{
+    "merchantUid": "{ your merchant UID }",
+    "applicationUid": "{ your application UID }",
+    "value": { transaction amount to two decimal points eg. 15.25 },
+    "budgetPeriod": 0,
+    "cvv": "123"
+    "merchantReference": "{ your order number to uniquely idetify the transaction}",
+    "cardNumber": "{ customer card number }",
+    "expiryMonth": { from 1 to 12 },
+    "expiryYear": { valid year in the future },
+    "cardHolderFullName": "{ your customer full name }",
+    "ipAddress": "{ IP Address of the user’s browser or merchants server  }",
+    "userAgent": "{ browser header }",
+    "saveCardDetails": true
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+merchantUid
+
+Your Merchant UID provided by Adumo Online
+
+String
+
+Required
+
+applicationUid
+
+Your Application UID provided by Adumo Online
+
+String
+
+Required
+
+value
+
+Transaction value to two decimal places
+
+float
+
+Required
+
+budgetPeriod
+
+Selected budget period
+
+integer
+
+Optional
+
+cvv
+
+Card CVV number. Required if not available in card authorization
+
+String
+
+Conditional
+
+merchantReference
+
+Merchant provided identifying reference for order (eg. order number)
+
+String
+
+Required
+
+cardNumber
+
+User’s card number
+
+integer
+
+Optional
+
+expiryYear
+
+Card expiry year
+
+integer
+
+Optional
+
+expiryMonth
+
+Card expiry month
+
+integer
+
+Optional
+
+cardHolderFullName
+
+Full name of the card owner
+
+String
+
+Optional
+
+ipAddress
+
+IP Address of user’s browser or merchants server
+
+String
+
+Required
+
+userAgent
+
+Browser header
+
+String
+
+Required
+
+saveCardDetails
+
+Whether or not to save the details of the card
+
+boolean
+
+Optional
+
+
+Initiate With Saving Card to Profile
+Sample Input:
+
+{
+    "merchantUid": "{ your merchant UID }",
+    "applicationUid": "{ your application UID }",
+    "value": { transaction amount to two decimal points eg. 15.25 },
+    "budgetPeriod": 0,
+    "cvv": "123",
+    "merchantReference": "{ your order number to uniquely idetify the transaction}",
+    "cardNumber": "{ customer card number }",
+    "expiryMonth": { from 1 to 12 },
+    "expiryYear": { valid year in the future },
+    "cardHolderFullName": "{ your customer full name }",
+    "ipAddress": "{ IP Address of the user’s browser or merchants server  }",
+    "userAgent": "{ browser header }",
+    "saveCardDetails": true,
+    "profileUid": "{ user’s card profile UID }"
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+applicationUid
+
+Your Application UID provided by Adumo Online
+
+String
+
+Required
+
+merchantUid
+
+Your Merchant UID provided by Adumo Online
+
+String
+
+Required
+
+value
+
+Transaction value to two decimal places
+
+float
+
+Required
+
+budgetPeriod
+
+Selected budget period
+
+integer
+
+Optional
+
+cvv
+
+Card CVV number. Required if not available in card authorization
+
+String
+
+Conditional
+
+merchantReference
+
+Merchant provided identifying reference for order (eg. order number)
+
+String
+
+Required
+
+cardNumber
+
+User’s card number
+
+integer
+
+Optional
+
+expiryYear
+
+Card expiry year
+
+integer
+
+Optional
+
+expiryMonth
+
+Card expiry month
+
+integer
+
+Optional
+
+cardHolderFullName
+
+Full name of the card owner
+
+String
+
+Optional
+
+ipAddress
+
+IP Address of user’s browser or merchants server
+
+String
+
+Required
+
+userAgent
+
+Browser header
+
+String
+
+Required
+
+saveCardDetails
+
+Whether or not to save the details of the card
+
+boolean
+
+Optional
+
+profileUid
+
+UID of the client’s profile for stored card information
+
+String
+
+Optional
+
+authCallbackUrl
+
+Not currently in use
+
+String
+
+Optional
+
+
+Initiate With Saved Card Details
+Sample Input:
+
+{
+    "merchantUid": "{ your merchant UID }",
+    "applicationUid": "{ your application UID }",
+    "value": { transaction amount to two decimal points eg. 15.25 },
+    "budgetPeriod": 10,
+    "cvv": "123",
+    "merchantReference": "{ your order number to uniquely idetify the transaction}",
+    "token": "{ user’s card token }",
+    "ipAddress": "{ IP Address of the user’s browser or merchant server  }",
+    "userAgent": "{ browser header }",
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+applicationUid
+
+Your Application UID provided by Adumo Online
+
+String
+
+Required
+
+merchantUid
+
+Your Merchant UID provided by Adumo Online
+
+String
+
+Required
+
+value
+
+Transaction value to two decimal places
+
+float
+
+Required
+
+budgetPeriod
+
+Selected budget period
+
+integer
+
+Optional
+
+cvv
+
+Card CVV number. Required if not provided in Initiate
+
+String
+
+Conditional
+
+merchantReference
+
+Merchant provided identifying reference for order (eg. order number)
+
+String
+
+Required
+
+token
+
+User’s card token from their profile
+
+String
+
+Optional
+
+ipAddress
+
+IP Address of user’s browser or merchant server
+
+String
+
+Required
+
+userAgent
+
+Browser header
+
+String
+
+Required
+
+
+Response
+PLEASE NOTE:
+
+If the threeDSecureAuthRequired field in the below mentioned output is false, the remaining fields will be empty, indicating that no 3DS authentication is required and the transaction can simply be authorised.
+
+If the threeDSecureAuthRequired field is true however, then 3DS authentication is required as described in the 3DS Secure section.
+
+Sample Response:
+
+{
+    "transactionId": "{ UID of transaction }",
+    "threeDSecureAuthRequired": { true or false },
+    "threeDSecureProvider": "{ provider for 3DS }",
+    "acsUrl": "{ acsUrl to Bankserv }",
+    "acsPayload": "{  Bankserv generated }",
+    "acsMD": "{ Bankserv generated }",
+    "profileUid": "{ returned if profile was created }"
+}
+
+Sample Response Details:
+
+Field
+
+Description
+
+Type
+
+transactionId
+
+UID of transaction
+
+String
+
+threeDSecureAuthRequired
+
+3DSecure required for transaction or not
+
+boolean
+
+threeDSecureProvider
+
+Provider of 3DSecure
+
+String
+
+acsUrl
+
+URL for POST to Bankserv
+
+String
+
+acsPayload
+
+Generated by Bankserv
+
+String
+
+acsMD
+
+Generated by Bankserv
+
+String
+
+profileUid
+
+UID for created user profile
+
+String
+
+The acsUrl, acsPayload and acsMD fields are required for the call to Bankserv mentioned in the following section.
+
+3D Secure
+Form Post to Bankserve
+As mentioned in the previous section, for this form post the acsUrl, acsPayload and acsMD fields are required, as well as a TermUrl field.
+
+The acsUrl is the URL to which the POST should be sent (form action), with the three fields in the POST being:
+
+
+Field
+
+Description
+
+MD
+
+acsMD returned from Initiate
+
+PaReq
+
+acsPayload returned from Initiate
+
+TermUrl
+
+Your own exposed URL to which Bankserv POSTs a response to
+
+
+The authenticate call can be made after a response has been received on the TermUrl.
+
+PLEASE NOTE: Adumo Online will time out a transaction if it is not completed within 5 minutes of being initiated, therefore if no response is received from Bankserv the transaction will be timed out.
+
+3D Secure Transactional Process
+The 3D Secure process consists of a web service call followed by a form post. Each call can bring back variable results that will form part of the next process.
+
+High Level 3D Secure Transaction Process:
+
+Step 1 - Shopper browses at merchant site, adds items to shopping cart, then finalizes purchase.
+
+Step 2 - The merchant will invoke a web service (3DS Lookup) to the Adumo Online's API.
+
+Step 3 - Adumo Online sends query including card number to Directory Server. This leg of the process is also commonly known as VERes.
+
+Step 4 - If card number is in a participating card range, Directory Server queries appropriate Access Control Server (ACS) to determine whether card number is enrolled.
+
+Step 5 - ACS responds to Directory Server, indicating whether authentication is available for the card number.
+
+Step 6 - Directory Server forwards ACS response (or its own) to Adumo Online.
+
+Step 7 - Adumo Online's will return a 3DS Lookup Response to the merchant. If cardholder is not enrolled in 3D Secure or if authentication is otherwise unavailable, the merchant submits a traditional authorization request and the 3D process ends.
+
+Step 8 - Based on the result (issuer or card type participating), merchant initiates a form post (3DS Authenticate) that posts the values retrieved from the 3DS Lookup Response (first web service call) to the Access Control Server (ACS) via the shopper's browser.
+
+Step 9 - ACS authenticates shopper as appropriate for the card number then formats the ACS Result message with appropriate values and digitally signs it.
+
+Step 10a - ACS returns an ACS result (PARes) to merchant via shopper's browser.
+
+Step 10b - ACS sends a copy of the Payer Authentication Response to the Authentication History Server.
+
+Step 11 – Merchant process the result with authorization request to Adumo Online.
+
+Sample ACS Form POST
+<form name="frmLaunchACS" method="POST" action="">
+    <textarea cols="50" rows="5" style="width:400" name="PaReq" >
+    </textarea><input type="text" style="width:400" name="TermUrl"
+    <!--This is the merchant URL that the form POST returns to -->      	value="http://www.merchant.com/3DSecure_Enterprise_Complete.php?Step=2"/>
+    <input type="text" style="width:400" name="MD" value=""/>
+    <input type="submit" value="Submit Form" style="width:250" >
+</form>
+This Form POST will return TransactionIndex and paresPayload values once the cardholder has correctly entered their OTP. These values will be entered into the Authorise or Sale actions (Actions 1 or 5).
+
+Understanding Electronic Commerce Indicators (ECI)
+The ECI indicates the security level associated with an Internet purchase transaction. The 3DS Lookup & 3DS Authenticate requests will return an ECI in the response message which the merchant can use to gauge risk associated with the transaction. The payment gateway will process the ECI to the acquirer or its processor for inclusion in the authorization request message.
+
+Note: Some ECI indicators will allow liability shift for certain transactions relating to chargebacks.
+
+Note: Merchants can request that Adumo Online block specific ECI's that do not allow for liability shift.
+
+Dispute evidence
+Merchants are recommended to store the below data as evidence in the event of a chargeback dispute relating to 3D Secure processing. The below data is returned on the 3DS Lookup & Authenticate responses.
+
+Dispute Situation
+
+ECI
+
+Evidence
+
+Proof of Authentication or Authentication Attempt
+
+5,6,1 or 2
+
+Minimum, if available:
+
+·   Purchase Date and Time
+
+·   XID
+
+·   Purchase Amount
+
+·   Order Description
+
+·   Transaction Status
+
+·   ECI
+
+·   Signature Date & Time
+
+·   CAVV / AAV
+
+3D Secure Calls
+The merchant will be required to initiate three 3D Secure calls as defined below:
+
+3DS Lookup: This message is used to verify if the issuer and cardholder participates in 3D Secure program.
+
+3DS Authenticate: This message is used to direct the card holder to their banks authentication page where they will validate the transaction using their secret password.
+
+Time Outs
+3DS Lookup
+
+The standard timeout value for the 3DS Lookup to complete is ten seconds.
+
+3DS Authenticate
+
+The 3DS Authenticate Request message has no timeout value as it relies on the merchant's eCommerce application to determine maximum time frames for various shopping session activities.
+
+Authenticate
+The purpose of the authenticate call is to retrieve 3D Secure status and data associated with the transaction. This step is optional and can be skipped
+
+
+URL for the Call:
+
+[GET]
+Test URL: https://staging-apiv3.adumoonline.com/product/authentication/v2/tds/authenticate/{{transactionId}}
+Production URL: https://apiv3.adumoonline.com/product/authentication/v2/tds/authenticate/{{transactionId}}
+
+
+Sample Output:
+
+{
+    "transactionId": "48a94027-49bd-46f3-a761-7741a86ee944",
+    "authorizationAllow": "Y",
+    "statusCode": "TDS_AUTHENTICATED",
+    "mdStatus": "1",
+    "statusMessage": "Y-status/Challenge authentication via ACS: https://acsabsatest.bankserv.co.za/mdpayacs-1/creq",
+    "eciFlag": "05",
+    "enrolledStatus": "Y",
+    "paresStatus": "Y",
+    "paresVerified": "Y",
+    "syntaxVerified": "Y",
+    "dsId": "941880ba-e945-4373-b066-b7766c3ac9f8",
+    "acsId": "eb3079e1-4e76-48ec-8366-a63e761541e7",
+    "acsReference": "00001ACS00001",
+    "cavv": "AAEBAiFXNwAAABRQcQEjdYSCkYQ=",
+    "cavvAlgorithm": null,
+    "tdsProtocol": "3DS2.2.0",
+    "tdsApiVersion": "4.0",
+    "cardType": "1",
+    "authenticationTime": "2024-05-02 10:43:00",
+    "authenticationType": "01",
+    "xid": "MDAwMDE0MDA0OVUwdjhnRXFOWnM="
+}
+Authorise
+The purpose of the authorise call is to authorise funds on the user’s card.
+
+
+URL for the Call:
+
+[POST]
+Test URL: https://staging-apiv3.adumoonline.com/products/payments/v1/card/authorise
+Production URL: https://apiv3.adumoonline.com/products/payments/v1/card/authorise
+
+
+Sample Input:
+
+{
+  "transactionId": "{ transaction ID from initiate response }",
+  "amount": { authorise amount }
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+transactionId
+
+Id for the transaction to be authorised
+
+String
+
+Required
+
+amount
+
+Amount for the transaction to be authorised
+
+integer
+
+Optional
+
+cvv
+
+Card CVV number. Required if not provided in Initiate
+
+String
+
+Conditional
+
+
+Sample Output:
+
+{
+  "statusCode": { 200 means success },
+  "statusMessage": "{ message from bank }",
+  "autoSettle": { indicates if the transaction was automatically settled or not },
+  "authorisedAmount": { should match the amount sent in, same as what is sent to bank },
+  "cardCountry": "{ issuing country for user’s card }",
+  "currencyCode": "{ code representing currency used in transaction }",
+  "eciFlag": "{ Bankserv ECI flag}",
+  "authorisationCode": "{ bank authorisation code }",
+  "processorResponse": "{ bank processor response }"
+}
+
+Sample Output Details:
+
+Field
+
+Description
+
+Type
+
+statusCode
+
+From user’s bank
+
+integer
+
+statusMessage
+
+From user’s bank
+
+String
+
+autoSettle
+
+Indicate whether transaction was auto settled or not on bank side
+
+boolean
+
+authorisedAmount
+
+Amount sent in to be authorised
+
+float
+
+cardCountry
+
+Country of issue for the card used
+
+String
+
+currencyCode
+
+Code for currency used in transaction
+
+String
+
+eciFlag
+
+Bankserv ECI flag
+
+String
+
+authorisationCode
+
+Bank authorisation code
+
+String
+
+processorResponse
+
+Bank processor response
+
+String
+
+Reverse
+The purpose of the reverse call is to reverse authorisation of a transaction.
+
+
+URL for the Call:
+
+[POST]
+Test URL: https://staging-apiv3.adumoonline.com/products/payments/v1/card/reverse
+Production URL: https://apiv3.adumoonline.com/products/payments/v1/card/reverse
+
+
+Sample Input:
+
+{
+  "transactionId": "{ UID of transaction to be reversed }"
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+transactionId
+
+UID of the transaction to be reversed, received from
+
+String
+
+Required
+
+
+Sample Output:
+
+{
+  "statusCode": { 200 means success },
+  "statusMessage": "{ message from bank }",
+  "autoSettle": { indicates if the transaction was automatically settled or not },
+  "authorisedAmount": { should match the amount sent in, same as what is sent to bank },
+  "cardCountry": "{ issuing country for user’s card }",
+  "currencyCode": "{ code representing currency used in transaction }",
+  "eciFlag": "{ Bankserv ECI flag}",
+  "authorisationCode": "{ bank authorisation code }",
+  "processorResponse": "{ bank processor response }"
+}
+
+Sample Output Details:
+
+Field
+
+Description
+
+Type
+
+statusCode
+
+From user’s bank
+
+integer
+
+statusMessage
+
+From user’s bank
+
+String
+
+autoSettle
+
+Indicate whether transaction was auto settled or not on bank side
+
+boolean
+
+authorisedAmount
+
+Amount sent in to be authorised
+
+float
+
+cardCountry
+
+Country of issue for the card used
+
+String
+
+currencyCode
+
+Code for currency used in transaction
+
+String
+
+eciFlag
+
+Bankserv ECI flag
+
+String
+
+authorisationCode
+
+Bank authorisation code
+
+String
+
+processorResponse
+
+Bank processor response
+
+String
+
+Settle
+The purpose of the settle call is to settle the authorised amount to the merchant’s account.
+
+
+URL for the Call:
+
+[POST]
+Test URL: https://staging-apiv3.adumoonline.com/products/payments/v1/card/settle
+Production URL: https://apiv3.adumoonline.com/products/payments/v1/card/settle
+
+
+Sample Input:
+
+{
+  "transactionId": "{ UID of transaction to be reversed }",
+  "amount": { amount to be settled }
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+transactionId
+
+UID of the transaction to be settled
+
+String
+
+Required
+
+amount
+
+Amount to be settled for the transaction
+
+float
+
+Required
+
+
+Sample Output:
+
+{
+  "statusCode": { 200 means success },
+  "statusMessage": "{ message from bank }",
+  "autoSettle": { indicates if the transaction was automatically settled or not },
+  "authorisedAmount": { should match the amount sent in, same as what is sent to bank },
+  "cardCountry": "{ issuing country for user’s card }",
+  "currencyCode": "{ code representing currency used in transaction }",
+  "eciFlag": "{ Bankserv ECI flag}",
+  "authorisationCode": "{ bank authorisation code }",
+  "processorResponse": "{ bank processor response }"
+}
+
+Sample Output Details:
+
+Field
+
+Description
+
+Type
+
+statusCode
+
+From user’s bank
+
+integer
+
+statusMessage
+
+From user’s bank
+
+String
+
+autoSettle
+
+Indicate whether transaction was auto settled or not on bank side
+
+boolean
+
+authorisedAmount
+
+Amount sent in to be authorised
+
+float
+
+cardCountry
+
+Country of issue for the card used
+
+String
+
+currencyCode
+
+Code for currency used in transaction
+
+String
+
+eciFlag
+
+Bankserv ECI flag
+
+String
+
+authorisationCode
+
+Bank authorisation code
+
+String
+
+processorResponse
+
+Bank processor response
+
+String
+
+Refund
+The purpose of the refund call is to refund a settled transaction.
+
+
+URL for the Call:
+
+[POST]
+Test URL: https://staging-apiv3.adumoonline.com/products/payments/v1/card/refund
+Production URL: https://apiv3.adumoonline.com/products/payments/v1/card/refund
+
+
+Sample Input:
+
+{
+  "transactionId": "{ UID of transaction to be reversed }",
+  "amount": { amount to be refunded}
+}
+
+Sample Input Details:
+
+Field
+
+Description
+
+Type
+
+Required
+
+transactionId
+
+UID of the transaction to be settled
+
+String
+
+Required
+
+amount
+
+Amount to be refunded for the transaction
+
+float
+
+Required
+
+
+Sample Output:
+
+{
+  "statusCode": { 200 means success },
+  "statusMessage": "{ message from bank }",
+  "autoSettle": { indicates if the transaction was automatically settled or not },
+  "authorisedAmount": { should match the amount sent in, same as what is sent to bank },
+  "cardCountry": "{ issuing country for user’s card }",
+  "currencyCode": "{ code representing currency used in transaction }",
+  "eciFlag": "{ Bankserv ECI flag}",
+  "authorisationCode": "{ bank authorisation code }",
+  "processorResponse": "{ bank processor response }"
+}
+
+Sample Output Details:
+
+Field
+
+Description
+
+Type
+
+statusCode
+
+From user’s bank
+
+integer
+
+statusMessage
+
+From user’s bank
+
+String
+
+autoSettle
+
+Indicate whether transaction was auto settled or not on bank side
+
+boolean
+
+authorisedAmount
+
+Amount sent in to be authorised
+
+float
+
+cardCountry
+
+Country of issue for the card used
+
+String
+
+currencyCode
+
+Code for currency used in transaction
+
+String
+
+eciFlag
+
+Bankserv ECI flag
+
+String
+
+authorisationCode
+
+Bank authorisation code
+
+String
+
+processorResponse
+
+Bank processor response
+
+String
+

@@ -1656,8 +1656,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return "Unknown";
   }
 
-  // NEW: Tokenize card and process payment directly (Enterprise API flow)
-  app.post("/api/payment/tokenize-and-pay", async (req, res) => {
+  // NEW: Enterprise API - Initiate payment with card saving (per Adumo docs)
+  app.post("/api/payment/enterprise/initiate", async (req, res) => {
     try {
       const paymentSchema = z.object({
         // User details
@@ -1667,96 +1667,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: z.string().min(1),
         // Payment details
         tier: z.string(),
-        paymentMethod: z.string(), // "monthly" or "deposit_monthly"
+        paymentMethod: z.string(), // "lump_sum" or "deposit_monthly"
         amount: z.number().min(1), // in cents
-        // Card details for tokenization
+        // Card details
         cardNumber: z.string().min(13).max(19),
-        cardholderName: z.string().min(1),
-        expiryMonth: z.string().length(2),
-        expiryYear: z.string().length(2),
+        cardHolderFullName: z.string().min(1),
+        expiryMonth: z.number().min(1).max(12),
+        expiryYear: z.number().min(2024),
         cvv: z.string().min(3).max(4),
-        saveCard: z.boolean().default(true),
+        saveCardDetails: z.boolean().default(true),
+        // Optional: existing profileUid for adding card to existing profile
+        profileUid: z.string().optional(),
       });
 
-      const paymentData = paymentSchema.parse(req.body);
+      const data = paymentSchema.parse(req.body);
 
-      // Create or get user first
-      let user = await storage.getUserByEmail(paymentData.email);
+      // Create or get user
+      let user = await storage.getUserByEmail(data.email);
       if (!user) {
         user = await storage.createUser({
-          email: paymentData.email,
-          firstName: paymentData.firstName,
-          lastName: paymentData.lastName,
-          phone: paymentData.phone,
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
         });
       }
 
-      console.log("🔐 Step 1: Getting OAuth token...");
+      console.log("🔐 Step 1: Getting OAuth token for Enterprise API...");
       const token = await getAdumoOAuthToken();
 
-      console.log("💳 Step 2: Tokenizing card...");
-      const tokenizationUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
-        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
-
-      const tokenResponse = await fetch(tokenizationUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          cardNumber: paymentData.cardNumber,
-          cardholderName: paymentData.cardholderName,
-          expiryMonth: paymentData.expiryMonth,
-          expiryYear: paymentData.expiryYear,
-          cvv: paymentData.cvv,
-          email: paymentData.email,
-          firstName: paymentData.firstName,
-          lastName: paymentData.lastName,
-        }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error("❌ Tokenization failed:", errorText);
-        return res.status(tokenResponse.status).json({ 
-          message: "Card tokenization failed", 
-          error: errorText 
-        });
-      }
-
-      const tokenData = await tokenResponse.json();
-      const cardToken = tokenData.tokenUid || tokenData.token;
-      const profileToken = tokenData.profileUid || tokenData.profileToken;
-
-      console.log("✅ Card tokenized successfully");
-
-      // Save payment method if requested
-      if (paymentData.saveCard && cardToken && profileToken) {
-        const lastFour = paymentData.cardNumber.slice(-4);
-        const cardType = detectCardType(paymentData.cardNumber);
-
-        await storage.createPaymentMethod({
-          userId: user.id,
-          cardType,
-          lastFourDigits: lastFour,
-          expiryMonth: parseInt(paymentData.expiryMonth),
-          expiryYear: parseInt(paymentData.expiryYear),
-          tokenUid: cardToken,
-          profileUid: profileToken,
-        });
-
-        console.log("✅ Payment method saved");
-      }
-
-      console.log("💰 Step 3: Processing payment with tokenized card...");
-      
       // Calculate amounts
-      let finalAmount = paymentData.amount;
+      let finalAmount = data.amount;
       let monthlyAmount = 0;
       
-      if (paymentData.paymentMethod === "deposit_monthly") {
+      if (data.paymentMethod === "deposit_monthly") {
         const depositAmounts: Record<string, number> = {
           builder: 600000,
           innovator: 1200000,
@@ -1769,85 +1713,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
           visionary: 150000,
         };
         
-        finalAmount = depositAmounts[paymentData.tier] || paymentData.amount;
-        monthlyAmount = monthlyAmounts[paymentData.tier] || 0;
+        finalAmount = depositAmounts[data.tier] || data.amount;
+        monthlyAmount = monthlyAmounts[data.tier] || 0;
       }
 
-      // Generate unique reference
-      const tempId = randomUUID().substring(0, 8);
-      const reference = `OPIAN_${Date.now()}_${tempId}`;
+      // Generate unique merchant reference
+      const merchantReference = `OPIAN_${Date.now()}_${randomUUID().substring(0, 8)}`;
 
-      // Create payment record
-      const payment = await storage.createPayment({
-        userId: user.id,
-        amount: finalAmount,
-        method: paymentData.paymentMethod,
-        status: "pending",
-        paymentData: {
-          userId: user.id,
-          tier: paymentData.tier,
-          paymentMethod: paymentData.paymentMethod,
-          isDeposit: paymentData.paymentMethod === "deposit_monthly",
-          monthlyAmount,
-          totalMonths: 12,
-          userDetails: {
-            email: paymentData.email,
-            firstName: paymentData.firstName,
-            lastName: paymentData.lastName,
-            phone: paymentData.phone,
-          },
-        },
-      });
+      // Get user's IP address and user agent for Adumo requirement
+      const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
+      const userAgent = req.headers['user-agent'] || "Mozilla/5.0";
 
-      // Initiate payment with Adumo using tokenized card
+      console.log("💳 Step 2: Initiating payment with Adumo Enterprise API...");
       const initiateUrl = process.env.NODE_ENV === "production"
         ? "https://apiv3.adumoonline.com/products/payments/v1/card/initiate"
         : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/initiate";
 
-      const paymentResponse = await fetch(initiateUrl, {
+      const initiateBody: any = {
+        merchantUid: ADUMO_CONFIG.merchantId,
+        applicationUid: ADUMO_CONFIG.applicationId,
+        budgetPeriod: 0,
+        cvv: data.cvv,
+        cardHolderFullName: data.cardHolderFullName,
+        cardNumber: data.cardNumber,
+        expiryMonth: data.expiryMonth,
+        expiryYear: data.expiryYear,
+        merchantReference,
+        value: (finalAmount / 100).toFixed(2), // Convert cents to currency
+        ipAddress,
+        userAgent,
+        saveCardDetails: data.saveCardDetails,
+        uci: user.id, // Unique Client Identifier
+      };
+
+      // If profileUid exists, add card to existing profile
+      if (data.profileUid) {
+        initiateBody.profileUid = data.profileUid;
+      }
+
+      const initiateResponse = await fetch(initiateUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          merchantReference: reference,
-          amount: (finalAmount / 100).toFixed(2),
-          currency: "ZAR",
-          customerReference: user.id,
-          useToken: true,
-          tokenUid: cardToken,
-        }),
+        body: JSON.stringify(initiateBody),
       });
 
-      if (!paymentResponse.ok) {
-        const errorText = await paymentResponse.text();
+      if (!initiateResponse.ok) {
+        const errorText = await initiateResponse.text();
         console.error("❌ Payment initiation failed:", errorText);
-        
-        // Update payment status to failed
-        await storage.updatePaymentStatus(payment.id, "failed");
-        
-        return res.status(paymentResponse.status).json({ 
+        return res.status(initiateResponse.status).json({ 
           message: "Payment initiation failed", 
           error: errorText 
         });
       }
 
-      const paymentResult = await paymentResponse.json();
-      const transactionIndex = paymentResult.transactionIndex;
+      const initiateResult = await initiateResponse.json();
+      console.log("✅ Payment initiated:", initiateResult);
 
-      // Check if 3D Secure is required
-      if (paymentResult.threeDSecureAuthRequired) {
+      // Extract important fields from response
+      const transactionId = initiateResult.transactionId;
+      const profileUid = initiateResult.profileUid; // Profile UID if card was saved
+      const threeDSecureRequired = initiateResult.threeDSecureAuthRequired;
+
+      // Create payment record
+      const payment = await storage.createPayment({
+        userId: user.id,
+        amount: finalAmount,
+        method: data.paymentMethod,
+        status: "pending",
+        paymentData: {
+          userId: user.id,
+          tier: data.tier,
+          paymentMethod: data.paymentMethod,
+          merchantReference,
+          transactionId,
+          profileUid,
+          isDeposit: data.paymentMethod === "deposit_monthly",
+          monthlyAmount,
+          totalMonths: 12,
+          userDetails: {
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+          },
+        },
+      });
+
+      // If 3DS is required, return 3DS info for client to handle
+      if (threeDSecureRequired) {
         console.log("🔐 3D Secure authentication required");
-        // For now, return error - we'll implement 3DS flow later
-        return res.status(400).json({
-          message: "3D Secure authentication required. Please use a different card.",
+        
+        return res.json({
+          success: false,
           requires3DS: true,
+          transactionId,
+          acsUrl: initiateResult.acsUrl,
+          acsPayload: initiateResult.acsPayload,
+          acsMD: initiateResult.acsMD,
+          paymentId: payment.id,
+          message: "3D Secure authentication required",
         });
       }
 
-      // Authorize the payment
-      console.log("✅ Step 4: Authorizing payment...");
+      // No 3DS required, proceed to authorize
+      console.log("✅ Step 3: Authorizing payment (no 3DS required)...");
       const authorizeUrl = process.env.NODE_ENV === "production"
         ? "https://apiv3.adumoonline.com/products/payments/v1/card/authorise"
         : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/authorise";
@@ -1859,63 +1831,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          transactionIndex,
+          transactionId,
         }),
       });
 
       if (!authorizeResponse.ok) {
         const errorText = await authorizeResponse.text();
-        console.error("❌ Payment authorization failed:", errorText);
+        console.error("❌ Authorization failed:", errorText);
         await storage.updatePaymentStatus(payment.id, "failed");
         return res.status(authorizeResponse.status).json({ 
-          message: "Payment authorization failed", 
+          message: "Authorization failed", 
           error: errorText 
         });
       }
 
-      // Capture the payment
-      console.log("✅ Step 5: Capturing payment...");
-      const captureUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/capture"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/capture";
+      const authorizeResult = await authorizeResponse.json();
+      console.log("✅ Payment authorized:", authorizeResult);
 
-      const captureResponse = await fetch(captureUrl, {
+      // Step 4: Settle the payment (capture funds)
+      console.log("✅ Step 4: Settling payment...");
+      const settleUrl = process.env.NODE_ENV === "production"
+        ? "https://apiv3.adumoonline.com/products/payments/v1/card/settle"
+        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/settle";
+
+      const settleResponse = await fetch(settleUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          transactionIndex,
+          transactionId,
+          amount: (finalAmount / 100).toFixed(2),
         }),
       });
 
-      if (!captureResponse.ok) {
-        const errorText = await captureResponse.text();
-        console.error("❌ Payment capture failed:", errorText);
+      if (!settleResponse.ok) {
+        const errorText = await settleResponse.text();
+        console.error("❌ Settlement failed:", errorText);
         await storage.updatePaymentStatus(payment.id, "failed");
-        return res.status(captureResponse.status).json({ 
-          message: "Payment capture failed", 
+        return res.status(settleResponse.status).json({ 
+          message: "Settlement failed", 
           error: errorText 
         });
       }
 
-      const captureResult = await captureResponse.json();
-      
-      // Update payment status to completed
-      await storage.updatePaymentStatus(payment.id, "completed");
-      
-      // Update user payment status
-      await storage.updateUserPaymentStatus(
-        user.id,
-        "completed",
-        transactionIndex
-      );
+      const settleResult = await settleResponse.json();
+      console.log("✅ Payment settled:", settleResult);
 
-      // If deposit payment, we may need to create subscription later
-      if (paymentData.paymentMethod === "deposit_monthly" && monthlyAmount > 0) {
-        console.log("📝 Note: Subscription setup may be needed for deposit payment");
-        // This would typically be handled by calling createAdumoSubscriptionWithToken
+      // Update payment to completed
+      await storage.updatePaymentStatus(payment.id, "completed");
+      await storage.updateUserPaymentStatus(user.id, "completed", transactionId);
+
+      // Save card details if profileUid was returned
+      if (data.saveCardDetails && profileUid) {
+        const lastFour = data.cardNumber.slice(-4);
+        const cardType = detectCardType(data.cardNumber);
+
+        await storage.createPaymentMethod({
+          userId: user.id,
+          cardType,
+          lastFourDigits: lastFour,
+          expiryMonth: data.expiryMonth,
+          expiryYear: data.expiryYear,
+          profileUid: profileUid,
+          puid: profileUid, // Store profileUid as puid for legacy compatibility
+        });
+
+        console.log("✅ Card saved to profile:", profileUid);
       }
 
       console.log("✅ Payment completed successfully!");
@@ -1923,7 +1906,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         paymentId: payment.id,
-        transactionIndex,
+        transactionId,
+        profileUid, // Return profileUid for subscription creation
         message: "Payment processed successfully",
       });
 
@@ -1931,7 +1915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      console.error("❌ Tokenization and payment error:", error);
+      console.error("❌ Enterprise payment error:", error);
       res.status(500).json({ message: "Payment failed: " + error.message });
     }
   });
