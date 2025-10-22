@@ -15,16 +15,22 @@ const ADUMO_CONFIG = {
   jwtSecret: process.env.ADUMO_JWTSECRET, // Use JWTSECRET for JWT signing/verification
   applicationId: process.env.ADUMO_APPLICATION_ID,
   subscriptionApplicationId: process.env.ADUMO_SUBSCRIPTION_APPLICATION_ID || process.env.ADUMO_APPLICATION_ID, // Separate app ID for subscriptions
-  // OAuth credentials for subscription API
+  // OAuth credentials for Enterprise API
   oauthClientId: process.env.ADUMO_CLIENT_ID,
   oauthClientSecret: process.env.ADUMO_CLIENT_SECRET,
-  // URLs - using staging for development, production when deployed
-  apiUrl: process.env.ADUMO_BASE_URL || (process.env.NODE_ENV === "production" 
+  // Base URLs for different API types
+  baseUrl: process.env.NODE_ENV === "production"
+    ? "https://apiv3.adumoonline.com"
+    : "https://staging-apiv3.adumoonline.com",
+  // Legacy Virtual API URL (for /api/create-payment-intent - DEPRECATED)
+  virtualApiUrl: process.env.ADUMO_BASE_URL || (process.env.NODE_ENV === "production" 
     ? "https://apiv3.adumoonline.com/product/payment/v1/initialisevirtual"
     : "https://staging-apiv3.adumoonline.com/product/payment/v1/initialisevirtual"),
+  // Subscription API URL
   subscriptionApiUrl: process.env.NODE_ENV === "production"
     ? "https://apiv3.adumoonline.com/product/subscription/v1/api"
     : "https://staging-apiv3.adumoonline.com/product/subscription/v1/api",
+  // Callback URLs
   returnUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/payment-return`,
   notifyUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/payment-webhook`,
   subscriptionWebhookUrl: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000"}/api/subscription-webhook`
@@ -42,9 +48,7 @@ const validateAdumoConfig = () => {
 
 // Adumo Subscription API Helper Functions
 async function getAdumoOAuthToken(): Promise<string> {
-  const oauthUrl = process.env.NODE_ENV === "production"
-    ? "https://apiv3.adumoonline.com/oauth/token"
-    : "https://staging-apiv3.adumoonline.com/oauth/token";
+  const oauthUrl = `${ADUMO_CONFIG.baseUrl}/oauth/token`;
 
   const params = new URLSearchParams({
     grant_type: "client_credentials",
@@ -797,9 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = await getAdumoOAuthToken();
 
       // Step 2: Create profile and card token
-      const tokenizationUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
-        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
+      const tokenizationUrl = `${ADUMO_CONFIG.baseUrl}/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
 
       const tokenResponse = await fetch(tokenizationUrl, {
         method: "POST",
@@ -1098,9 +1100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("💳 Step 2.1: Tokenizing card...");
       // Tokenize card
-      const tokenizationUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`
-        : `https://staging-apiv3.adumoonline.com/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
+      const tokenizationUrl = `${ADUMO_CONFIG.baseUrl}/product/security/tokenization/v1/${ADUMO_CONFIG.applicationId}/profile`;
 
       const tokenResponse = await fetch(tokenizationUrl, {
         method: "POST",
@@ -1483,7 +1483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return form data for client-side POST
       res.json({ 
         formData: formData,
-        url: ADUMO_CONFIG.apiUrl,
+        url: ADUMO_CONFIG.virtualApiUrl,
         paymentId: payment.id,
         userId: user.id,
         reference: reference
@@ -1629,7 +1629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return form data for client-side POST to Adumo
       res.json({
         formData: formData,
-        url: ADUMO_CONFIG.apiUrl,
+        url: ADUMO_CONFIG.virtualApiUrl,
         reference: reference
       });
     } catch (error: any) {
@@ -1725,9 +1725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userAgent = req.headers['user-agent'] || "Mozilla/5.0";
 
       console.log("💳 Step 2: Initiating payment with Adumo Enterprise API...");
-      const initiateUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/initiate"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/initiate";
+      const initiateUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/initiate`;
 
       const initiateBody: any = {
         merchantUid: ADUMO_CONFIG.merchantId,
@@ -1820,9 +1818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // No 3DS required, proceed to authorize
       console.log("✅ Step 3: Authorizing payment (no 3DS required)...");
-      const authorizeUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/authorise"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/authorise";
+      const authorizeUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/authorise`;
 
       const authorizeResponse = await fetch(authorizeUrl, {
         method: "POST",
@@ -1850,9 +1846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 4: Settle the payment (capture funds)
       console.log("✅ Step 4: Settling payment...");
-      const settleUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/settle"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/settle";
+      const settleUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/settle`;
 
       const settleResponse = await fetch(settleUrl, {
         method: "POST",
@@ -1961,9 +1955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userAgent = req.headers['user-agent'] || "Mozilla/5.0";
 
       console.log("💳 Initiating payment with saved card...");
-      const initiateUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/initiate"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/initiate";
+      const initiateUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/initiate`;
 
       // Use tokenUid if available, otherwise use profileUid
       const tokenToUse = paymentMethod.tokenUid || paymentMethod.profileUid;
@@ -2037,9 +2029,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // No 3DS required, authorize
       console.log("✅ Authorizing payment...");
-      const authorizeUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/authorise"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/authorise";
+      const authorizeUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/authorise`;
 
       const authorizeResponse = await fetch(authorizeUrl, {
         method: "POST",
@@ -2062,9 +2052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Settle payment
       console.log("✅ Settling payment...");
-      const settleUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/settle"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/settle";
+      const settleUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/settle`;
 
       const settleResponse = await fetch(settleUrl, {
         method: "POST",
@@ -2209,9 +2197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 1: Authenticate (verify 3DS was successful)
       console.log("🔐 Step 1: Authenticating 3DS...");
-      const authenticateUrl = process.env.NODE_ENV === "production"
-        ? `https://apiv3.adumoonline.com/product/authentication/v2/tds/authenticate/${data.transactionId}`
-        : `https://staging-apiv3.adumoonline.com/product/authentication/v2/tds/authenticate/${data.transactionId}`;
+      const authenticateUrl = `${ADUMO_CONFIG.baseUrl}/product/authentication/v2/tds/authenticate/${data.transactionId}`;
 
       const authenticateResponse = await fetch(authenticateUrl, {
         method: "GET",
@@ -2246,9 +2232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 2: Authorize the payment
       console.log("✅ Step 2: Authorizing payment...");
-      const authorizeUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/authorise"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/authorise";
+      const authorizeUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/authorise`;
 
       const authorizeResponse = await fetch(authorizeUrl, {
         method: "POST",
@@ -2271,9 +2255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 3: Settle the payment
       console.log("✅ Step 3: Settling payment...");
-      const settleUrl = process.env.NODE_ENV === "production"
-        ? "https://apiv3.adumoonline.com/products/payments/v1/card/settle"
-        : "https://staging-apiv3.adumoonline.com/products/payments/v1/card/settle";
+      const settleUrl = `${ADUMO_CONFIG.baseUrl}/products/payments/v1/card/settle`;
 
       const settleResponse = await fetch(settleUrl, {
         method: "POST",
