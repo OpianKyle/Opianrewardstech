@@ -475,7 +475,7 @@ export default function OpianBank() {
             </p>
           </div>
 
-          <Card className="bg-gradient-to-br from-zinc-900/90 to-zinc-800/90 border-primary/30 backdrop-blur-xl" data-testid="access-form-card">
+          <Card className="bg-card border-primary/30 backdrop-blur-xl" data-testid="access-form-card">
             <CardHeader>
               <CardTitle className="text-xl sm:text-2xl text-primary">Consultation Request</CardTitle>
               <CardDescription className="text-sm sm:text-base text-muted-foreground">
@@ -486,33 +486,33 @@ export default function OpianBank() {
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-sm sm:text-base text-amber-200">First Name *</Label>
+                    <Label htmlFor="firstName" className="text-sm sm:text-base text-foreground">First Name *</Label>
                     <Input
                       id="firstName"
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
                       required
-                      className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                      className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                       data-testid="input-firstName"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-sm sm:text-base text-amber-200">Last Name *</Label>
+                    <Label htmlFor="lastName" className="text-sm sm:text-base text-foreground">Last Name *</Label>
                     <Input
                       id="lastName"
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
                       required
-                      className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                      className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                       data-testid="input-lastName"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm sm:text-base text-amber-200">Email Address *</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base text-foreground">Email Address *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -520,13 +520,13 @@ export default function OpianBank() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                     data-testid="input-email"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm sm:text-base text-amber-200">Phone Number *</Label>
+                  <Label htmlFor="phone" className="text-sm sm:text-base text-foreground">Phone Number *</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -534,62 +534,62 @@ export default function OpianBank() {
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                     data-testid="input-phone"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="company" className="text-sm sm:text-base text-amber-200">Company (Optional)</Label>
+                  <Label htmlFor="company" className="text-sm sm:text-base text-foreground">Company (Optional)</Label>
                   <Input
                     id="company"
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                     data-testid="input-company"
                   />
                 </div>
 
-                <div className="pt-4 border-t border-amber-700/30">
+                <div className="pt-4 border-t border-border">
                   <h4 className="text-lg font-semibold text-primary mb-4">Address Information</h4>
                   
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="streetAddress" className="text-sm sm:text-base text-amber-200">Street Address *</Label>
+                      <Label htmlFor="streetAddress" className="text-sm sm:text-base text-foreground">Street Address *</Label>
                       <Input
                         id="streetAddress"
                         name="streetAddress"
                         value={formData.streetAddress}
                         onChange={handleChange}
                         required
-                        className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                         data-testid="input-streetAddress"
                       />
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city" className="text-sm sm:text-base text-amber-200">City *</Label>
+                        <Label htmlFor="city" className="text-sm sm:text-base text-foreground">City *</Label>
                         <Input
                           id="city"
                           name="city"
                           value={formData.city}
                           onChange={handleChange}
                           required
-                          className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                           data-testid="input-city"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="province" className="text-sm sm:text-base text-amber-200">Province/State *</Label>
+                        <Label htmlFor="province" className="text-sm sm:text-base text-foreground">Province/State *</Label>
                         <Input
                           id="province"
                           name="province"
                           value={formData.province}
                           onChange={handleChange}
                           required
-                          className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                           data-testid="input-province"
                         />
                       </div>
@@ -597,26 +597,26 @@ export default function OpianBank() {
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="postalCode" className="text-sm sm:text-base text-amber-200">Postal Code *</Label>
+                        <Label htmlFor="postalCode" className="text-sm sm:text-base text-foreground">Postal Code *</Label>
                         <Input
                           id="postalCode"
                           name="postalCode"
                           value={formData.postalCode}
                           onChange={handleChange}
                           required
-                          className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                           data-testid="input-postalCode"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="country" className="text-sm sm:text-base text-amber-200">Country *</Label>
+                        <Label htmlFor="country" className="text-sm sm:text-base text-foreground">Country *</Label>
                         <Input
                           id="country"
                           name="country"
                           value={formData.country}
                           onChange={handleChange}
                           required
-                          className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
                           data-testid="input-country"
                         />
                       </div>
@@ -624,12 +624,12 @@ export default function OpianBank() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-amber-700/30">
+                <div className="pt-4 border-t border-border">
                   <div className="space-y-2">
-                    <Label htmlFor="ficaDocuments" className="text-sm sm:text-base text-amber-200">
+                    <Label htmlFor="ficaDocuments" className="text-sm sm:text-base text-foreground">
                       FICA Documents (Optional)
                     </Label>
-                    <p className="text-xs text-amber-200/60 mb-2">Upload ID, proof of address, or other verification documents</p>
+                    <p className="text-xs text-foreground/60 mb-2">Upload ID, proof of address, or other verification documents</p>
                     <div className="relative">
                       <Input
                         id="ficaDocuments"
@@ -637,7 +637,7 @@ export default function OpianBank() {
                         multiple
                         onChange={handleFileChange}
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        className="bg-zinc-800/50 border-amber-700/50 text-card-foreground focus:border-amber-500 focus:ring-amber-500/20 h-10 sm:h-11 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-amber-500/30"
+                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-amber-500/30"
                         data-testid="input-ficaDocuments"
                       />
                       <Upload className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500/50 pointer-events-none" />
@@ -650,16 +650,16 @@ export default function OpianBank() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-amber-700/30 space-y-4">
+                <div className="pt-4 border-t border-border space-y-4">
                   <div className="flex items-start space-x-3">
                     <Checkbox
                       id="acceptedTerms"
                       checked={formData.acceptedTerms}
                       onCheckedChange={handleCheckboxChange("acceptedTerms")}
-                      className="mt-1 border-amber-600/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                      className="mt-1 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       data-testid="checkbox-terms"
                     />
-                    <Label htmlFor="acceptedTerms" className="text-sm text-amber-200 cursor-pointer leading-relaxed">
+                    <Label htmlFor="acceptedTerms" className="text-sm text-foreground cursor-pointer leading-relaxed">
                       I accept the <span className="text-primary underline">Terms & Conditions</span> *
                     </Label>
                   </div>
@@ -669,10 +669,10 @@ export default function OpianBank() {
                       id="acceptedPrivacy"
                       checked={formData.acceptedPrivacy}
                       onCheckedChange={handleCheckboxChange("acceptedPrivacy")}
-                      className="mt-1 border-amber-600/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                      className="mt-1 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       data-testid="checkbox-privacy"
                     />
-                    <Label htmlFor="acceptedPrivacy" className="text-sm text-amber-200 cursor-pointer leading-relaxed">
+                    <Label htmlFor="acceptedPrivacy" className="text-sm text-foreground cursor-pointer leading-relaxed">
                       I accept the <span className="text-primary underline">Privacy Policy</span> *
                     </Label>
                   </div>
@@ -689,7 +689,7 @@ export default function OpianBank() {
                 </Button>
               </form>
 
-              <p className="text-xs text-amber-200/60 mt-4 sm:mt-6 text-center px-2">
+              <p className="text-xs text-foreground/60 mt-4 sm:mt-6 text-center px-2">
                 By submitting this form, you agree to our terms and conditions. Your data is secured with industry-standard encryption. A senior advisor will contact you within 24-48 hours.
               </p>
             </CardContent>
@@ -706,11 +706,11 @@ export default function OpianBank() {
                 alt="Opian Bank" 
                 className="h-6 sm:h-8 w-auto object-contain opacity-70"
               />
-              <div className="text-xs sm:text-sm text-amber-200/60">
+              <div className="text-xs sm:text-sm text-foreground/60">
                 © 2024 Opian Bank. FSP Licensed & Regulatory Compliant. All Rights Reserved.
               </div>
             </div>
-            <div className="flex items-center space-x-4 sm:space-x-6 text-xs sm:text-sm text-amber-200/60">
+            <div className="flex items-center space-x-4 sm:space-x-6 text-xs sm:text-sm text-foreground/60">
               <span className="hover:text-primary cursor-pointer transition">Privacy Policy</span>
               <span className="hover:text-primary cursor-pointer transition">Terms of Service</span>
               <span className="hover:text-primary cursor-pointer transition">Contact</span>
