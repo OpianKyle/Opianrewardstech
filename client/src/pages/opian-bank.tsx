@@ -706,7 +706,7 @@ export default function OpianBank() {
               <img 
                 src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
                 alt="Opian Capital" 
-                className="h-8 sm:h-10 w-auto object-contain opacity-70"
+                className="h-12 sm:h-16 w-auto object-contain opacity-70"
               />
               <div className="text-xs sm:text-sm text-foreground/60">
                 © 2024 Opian Capital. FSP Licensed & Regulatory Compliant. All Rights Reserved.

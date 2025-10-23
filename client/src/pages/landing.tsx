@@ -221,7 +221,7 @@ export default function Landing() {
                 <img 
                   src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
                   alt="Opian Capital" 
-                  className="h-14 w-auto object-contain"
+                  className="h-24 w-auto object-contain"
                   data-testid="footer-logo-image"
                 />
               </div>
