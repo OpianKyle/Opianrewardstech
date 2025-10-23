@@ -182,6 +182,20 @@
   .animate-pulse-slow {
     animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  .parallax-banner {
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: relative;
+  }
+
+  @media (max-width: 768px) {
+    .parallax-banner {
+      background-attachment: scroll;
+    }
+  }
 }
 
 /* Mobile navigation scroll offset */
