@@ -27,23 +27,15 @@ export function RewardsSection() {
   return (
     <section id="rewards" className="py-20 relative overflow-hidden bg-black">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
-      <div className="max-w-6xl mx-auto px-4 relative z-20">
-        <motion.div 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
-            Partnership Benefits & Recognition
-          </h2>
-          <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
-            More than an investment—a prestigious partnership that acknowledges your commitment to excellence and shared financial success
-          </p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 relative z-20">
+        <div className="grid lg:grid-cols-12 gap-12">
+          <motion.div 
+            className="lg:col-span-8 grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
           {benefits.map((benefit, index) => {
             const Icon = benefit.Icon;
             
@@ -83,6 +75,42 @@ export function RewardsSection() {
               </motion.div>
             );
           })}
+          </motion.div>
+
+          <motion.div 
+            className="lg:col-span-4"
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="font-serif font-bold text-4xl md:text-5xl mb-6 text-amber-400">
+              Partnership Benefits & Recognition
+            </h2>
+            <p className="text-xl text-amber-200/80 mb-8 leading-relaxed">
+              More than an investment—a prestigious partnership that acknowledges your commitment to excellence and shared financial success.
+            </p>
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                <h4 className="font-semibold text-amber-300 mb-2">Comprehensive Documentation</h4>
+                <p className="text-sm text-amber-200/70">
+                  Official partnership certificates in both digital and physical formats, providing tangible proof of your investment commitment.
+                </p>
+              </div>
+              <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                <h4 className="font-semibold text-amber-300 mb-2">Dedicated Support</h4>
+                <p className="text-sm text-amber-200/70">
+                  Direct access to your personal investment advisor with quarterly portfolio reviews and real-time performance tracking.
+                </p>
+              </div>
+              <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                <h4 className="font-semibold text-amber-300 mb-2">Exclusive Opportunities</h4>
+                <p className="text-sm text-amber-200/70">
+                  Priority access to future investment opportunities and new partnership programs as they become available.
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>

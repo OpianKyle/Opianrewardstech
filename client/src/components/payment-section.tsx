@@ -243,60 +243,59 @@ export function PaymentSection({
     <>
       <section id="payment" className="py-20 relative overflow-hidden bg-black">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
-        <div className="max-w-4xl mx-auto px-4 relative z-20">
-          <motion.div 
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
-              Begin Your Investment Journey
-            </h2>
-            <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
-              Join Opian Bank as a valued investment partner. Secure your position as a founding investor 
-              in our exclusive partnership program with proven returns and professional wealth management.
-            </p>
-          </motion.div>
+        <div className="max-w-7xl mx-auto px-4 relative z-20">
+          <div className="grid lg:grid-cols-12 gap-12">
+            <motion.div 
+              className="lg:col-span-5"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="font-serif font-bold text-4xl md:text-5xl mb-6 text-amber-400">
+                Begin Your Investment Journey
+              </h2>
+              <p className="text-xl text-amber-200/80 mb-8 leading-relaxed">
+                Join Opian Bank as a valued investment partner. Secure your position as a founding investor 
+                in our exclusive partnership program with proven returns and professional wealth management.
+              </p>
+              
+              <div className="space-y-4 mb-8">
+                {[
+                  "Secure Payment Processing via Adumo",
+                  "Multiple Payment Options: Credit Cards & EFT", 
+                  "Licensed FSP & 3D Secure Compliance",
+                  "Immediate Partnership Confirmation"
+                ].map((feature, index) => (
+                  <motion.div
+                    key={feature}
+                    className="flex items-center space-x-3"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                  >
+                    <i className="fas fa-check-circle text-amber-400"></i>
+                    <span className="text-amber-200/80">{feature}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-amber-500/30" data-testid="payment-card">
-              <CardContent className="p-8">
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <h3 className="font-serif font-bold text-2xl mb-6 text-amber-400">Ready to Invest?</h3>
-                    
-                    <div className="space-y-4 mb-8">
-                      {[
-                        "Secure Payment Processing via Adumo",
-                        "Multiple Payment Options: Credit Cards & EFT", 
-                        "Licensed FSP & 3D Secure Compliance",
-                        "Immediate Partnership Confirmation"
-                      ].map((feature, index) => (
-                        <motion.div
-                          key={feature}
-                          className="flex items-center space-x-3"
-                          initial={{ opacity: 0, x: -20 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.4, delay: index * 0.1 }}
-                          viewport={{ once: true }}
-                        >
-                          <i className="fas fa-check-circle text-amber-400"></i>
-                          <span className="text-amber-200/80">{feature}</span>
-                        </motion.div>
-                      ))}
-                    </div>
-
+            <motion.div
+              className="lg:col-span-7"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-amber-500/30" data-testid="payment-card">
+                <CardContent className="p-8">
+                  <div className="grid grid-cols-1 gap-8">
                     <div className="grid grid-cols-2 gap-4">
                       <AnimatedButton
                         onClick={() => setShowPaymentModal(true)}
-                        className="py-3 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold rounded-lg shadow-lg shadow-amber-500/20"
+                        className="py-6 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold rounded-lg shadow-lg shadow-amber-500/20"
                         data-testid="button-pledge-now"
                       >
                         <i className="fas fa-credit-card mr-2"></i>Invest Now
@@ -305,28 +304,28 @@ export function PaymentSection({
                       <AnimatedButton
                         onClick={() => setShowContactModal(true)}
                         variant="outline"
-                        className="py-3 border-2 border-amber-500 text-amber-400 font-bold rounded-lg hover:bg-amber-500/10"
+                        className="py-6 border-2 border-amber-500 text-amber-400 font-bold rounded-lg hover:bg-amber-500/10"
                         data-testid="button-contact-us"
                       >
                         <i className="fas fa-envelope mr-2"></i>Contact Us
                       </AnimatedButton>
                     </div>
-                  </div>
 
-                  <div className="text-center">
-                    <div className="w-full h-64 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-xl border border-amber-500/30 flex items-center justify-center">
-                      <div className="text-center">
-                        <i className="fas fa-handshake text-6xl text-amber-400 mb-4" />
-                        <p className="text-lg font-serif font-semibold text-amber-300">
-                          Your Wealth. Our Expertise.
-                        </p>
+                    <div className="text-center py-12">
+                      <div className="w-full h-64 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-xl border border-amber-500/30 flex items-center justify-center">
+                        <div className="text-center">
+                          <i className="fas fa-handshake text-6xl text-amber-400 mb-4" />
+                          <p className="text-lg font-serif font-semibold text-amber-300">
+                            Your Wealth. Our Expertise.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </div>
       </section>
 

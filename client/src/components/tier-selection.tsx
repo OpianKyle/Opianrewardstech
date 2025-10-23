@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { TierCard } from "@/components/ui/tier-card";
 import { useQuery } from "@tanstack/react-query";
-import { StarsBackground } from "./stars-background";
 
 type TierData = {
   name: string;
@@ -54,65 +53,98 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
     <section id="tiers" className="py-20 relative overflow-hidden bg-black">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
       <div className="max-w-7xl mx-auto px-4 relative z-20">
-        <motion.div 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
-            Investment Partnership Tiers
-          </h2>
-          <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
-            Choose the partnership level that aligns with your investment goals and commitment to our shared success
-          </p>
-        </motion.div>
+        <div className="grid lg:grid-cols-12 gap-12 mb-12">
+          <motion.div 
+            className="lg:col-span-4"
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="font-serif font-bold text-4xl md:text-5xl mb-6 text-amber-400">
+              Investment Partnership Tiers
+            </h2>
+            <p className="text-lg text-amber-200/80 mb-8 leading-relaxed">
+              Choose the partnership level that aligns with your investment goals and commitment to our shared success. Each tier offers distinct benefits and return structures tailored to your investment horizon.
+            </p>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <i className="fas fa-shield-alt text-amber-400 mt-1"></i>
+                <div>
+                  <h4 className="font-semibold text-amber-300 mb-1">Licensed & Regulated</h4>
+                  <p className="text-sm text-amber-200/70">FSP compliant with full regulatory oversight</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <i className="fas fa-chart-line text-amber-400 mt-1"></i>
+                <div>
+                  <h4 className="font-semibold text-amber-300 mb-1">Proven Returns</h4>
+                  <p className="text-sm text-amber-200/70">Track record of sustainable growth since 2013</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <i className="fas fa-handshake text-amber-400 mt-1"></i>
+                <div>
+                  <h4 className="font-semibold text-amber-300 mb-1">Partnership Model</h4>
+                  <p className="text-sm text-amber-200/70">Shared success through aligned interests</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-          {tiers && (
-            <>
-              <TierCard
-                tier={tiers.builder}
-                isSelected={selectedTier === "builder"}
-                onSelect={() => handleTierSelect("builder")}
-                colorScheme="muted"
-              />
-              
-              <TierCard
-                tier={tiers.innovator}
-                isSelected={selectedTier === "innovator"}
-                onSelect={() => handleTierSelect("innovator")}
-                colorScheme="primary"
-              />
-              
-              <TierCard
-                tier={tiers.visionary}
-                isSelected={selectedTier === "visionary"}
-                onSelect={() => handleTierSelect("visionary")}
-                colorScheme="secondary"
-              />
-              
-              <TierCard
-                tier={tiers.cornerstone}
-                isSelected={selectedTier === "cornerstone"}
-                onSelect={() => handleTierSelect("cornerstone")}
-                colorScheme="primary"
-              />
-            </>
-          )}
+          <motion.div 
+            className="lg:col-span-8"
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <div className="grid md:grid-cols-2 gap-6">
+              {tiers && (
+                <>
+                  <TierCard
+                    tier={tiers.builder}
+                    isSelected={selectedTier === "builder"}
+                    onSelect={() => handleTierSelect("builder")}
+                    colorScheme="muted"
+                  />
+                  
+                  <TierCard
+                    tier={tiers.innovator}
+                    isSelected={selectedTier === "innovator"}
+                    onSelect={() => handleTierSelect("innovator")}
+                    colorScheme="primary"
+                  />
+                  
+                  <TierCard
+                    tier={tiers.visionary}
+                    isSelected={selectedTier === "visionary"}
+                    onSelect={() => handleTierSelect("visionary")}
+                    colorScheme="secondary"
+                  />
+                  
+                  <TierCard
+                    tier={tiers.cornerstone}
+                    isSelected={selectedTier === "cornerstone"}
+                    onSelect={() => handleTierSelect("cornerstone")}
+                    colorScheme="primary"
+                  />
+                </>
+              )}
+            </div>
+          </motion.div>
         </div>
 
         <motion.div 
-          className="text-center mt-12 bg-amber-500/10 border border-amber-500/30 rounded-lg p-6 max-w-4xl mx-auto"
+          className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-6"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
         >
-          <p className="text-lg text-amber-300 flex items-center justify-center gap-2">
-            <i className="fas fa-info-circle"></i>
-            <span className="font-semibold">Important:</span> Your commitment period is 12 months. Upon completion, you receive a Certificate of Partnership representing your total contribution and future investment returns.
+          <p className="text-lg text-amber-300 flex items-start gap-3">
+            <i className="fas fa-info-circle mt-1"></i>
+            <span><span className="font-semibold">Investment Period:</span> Your commitment period is 12 months. Upon completion, you receive a Certificate of Partnership representing your total contribution and future investment returns.</span>
           </p>
         </motion.div>
       </div>

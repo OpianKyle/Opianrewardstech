@@ -8,25 +8,74 @@ export function QuestProgression() {
     <section id="progression" className="py-20 relative overflow-hidden bg-black">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
       <div className="max-w-7xl mx-auto px-4 relative z-20">
-        <motion.div 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
-            Investment Timeline & Returns
-          </h2>
-          <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
-            A clear breakdown of your investment journey and projected returns over the partnership period
-          </p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-12 gap-12">
           <motion.div 
-            className="space-y-8"
+            className="lg:col-span-5"
             initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="font-serif font-bold text-4xl md:text-5xl mb-6 text-amber-400">
+              Investment Timeline & Returns
+            </h2>
+            <p className="text-xl text-amber-200/80 mb-8 leading-relaxed">
+              A clear breakdown of your investment journey and projected returns over the partnership period. Our structured approach ensures transparency and sustainable growth.
+            </p>
+            
+            <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30 text-center mb-6" data-testid="investment-summary">
+              <CardContent className="p-8">
+                <h3 className="font-serif font-bold text-2xl mb-6 text-amber-400">Investment Summary</h3>
+                
+                <div className="grid grid-cols-1 gap-6 mb-8">
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-total-return">R132,000</div>
+                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Total Returns</div>
+                    <div className="text-xs text-amber-200/60">Over 13-year investment period</div>
+                  </div>
+                  
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-initial-investment">R24,000</div>
+                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Initial Investment</div>
+                    <div className="text-xs text-amber-200/60">Your partnership commitment</div>
+                  </div>
+                  
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-total-gain">550%</div>
+                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Total Return</div>
+                    <div className="text-xs text-amber-200/60">On original investment</div>
+                  </div>
+                </div>
+
+                <div className="relative h-48 rounded-lg overflow-hidden border border-amber-500/20 mb-6">
+                  <img 
+                    src={returnsImage} 
+                    alt="Investment Growth Chart" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="text-left space-y-3 text-sm text-amber-200/70 border-t border-amber-500/20 pt-6">
+                  <p className="flex items-start">
+                    <span className="text-amber-400 mr-2">•</span>
+                    <span>Investment period: 12 months</span>
+                  </p>
+                  <p className="flex items-start">
+                    <span className="text-amber-400 mr-2">•</span>
+                    <span>Total return timeline: 13 years</span>
+                  </p>
+                  <p className="flex items-start">
+                    <span className="text-amber-400 mr-2">•</span>
+                    <span>Certificate of Partnership issued upon completion</span>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div 
+            className="lg:col-span-7 space-y-8"
+            initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
@@ -83,63 +132,6 @@ export function QuestProgression() {
                 </p>
               </div>
             </div>
-          </motion.div>
-
-          <motion.div 
-            className="space-y-6"
-            initial={{ opacity: 0, x: 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30 text-center" data-testid="investment-summary">
-              <CardContent className="p-8">
-                <h3 className="font-serif font-bold text-2xl mb-6 text-amber-400">Investment Summary</h3>
-                
-                <div className="grid grid-cols-1 gap-6 mb-8">
-                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-total-return">R132,000</div>
-                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Total Returns</div>
-                    <div className="text-xs text-amber-200/60">Over 13-year investment period</div>
-                  </div>
-                  
-                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-initial-investment">R24,000</div>
-                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Initial Investment</div>
-                    <div className="text-xs text-amber-200/60">Your partnership commitment</div>
-                  </div>
-                  
-                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-total-gain">550%</div>
-                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Total Return</div>
-                    <div className="text-xs text-amber-200/60">On original investment</div>
-                  </div>
-                </div>
-
-                <div className="relative h-48 rounded-lg overflow-hidden border border-amber-500/20 mb-6">
-                  <img 
-                    src={returnsImage} 
-                    alt="Investment Growth Chart" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="text-left space-y-3 text-sm text-amber-200/70 border-t border-amber-500/20 pt-6">
-                  <p className="flex items-start">
-                    <span className="text-amber-400 mr-2">•</span>
-                    <span>Investment period: 12 months</span>
-                  </p>
-                  <p className="flex items-start">
-                    <span className="text-amber-400 mr-2">•</span>
-                    <span>Total return timeline: 13 years</span>
-                  </p>
-                  <p className="flex items-start">
-                    <span className="text-amber-400 mr-2">•</span>
-                    <span>Certificate of Partnership issued upon completion</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </motion.div>
         </div>
       </div>
