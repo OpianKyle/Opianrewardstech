@@ -8,6 +8,7 @@ import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
 import { useToast } from "@/hooks/use-toast";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
+import wealthImage from "@assets/generated_images/Gold_and_wealth_management_681ca419.png";
 
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -100,7 +101,7 @@ export default function Landing() {
               <a href="#briefing" className="hover:text-primary transition-colors" data-testid="nav-protocol">
                 Protocol
               </a>
-              <a href="/login" className="px-4 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold transition-colors" data-testid="nav-login">
+              <a href="/login" className="px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors shadow-lg shadow-amber-500/20" data-testid="nav-login">
                 Investor Login
               </a>
             </div>
@@ -153,7 +154,7 @@ export default function Landing() {
             </a>
             <a 
               href="/login" 
-              className="block px-4 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold transition-colors text-center"
+              className="block px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors text-center shadow-lg shadow-amber-500/20"
               onClick={closeMobileMenu}
               data-testid="mobile-nav-login"
             >
@@ -166,6 +167,28 @@ export default function Landing() {
       <div id="hero">
         <HeroSection onScrollToTiers={scrollToTiers} />
       </div>
+
+      <section 
+        className="parallax-banner relative h-[400px] sm:h-[500px] md:h-[600px] flex items-center justify-center overflow-hidden"
+        style={{
+          backgroundImage: `url(${wealthImage})`,
+        }}
+      >
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-amber-400 mb-6">
+            Strategic Investment Excellence
+          </h2>
+          <p className="text-lg sm:text-xl md:text-2xl text-amber-100/90 leading-relaxed">
+            "Building generational wealth through disciplined investment strategies and proven partnership models. Your success is our commitment."
+          </p>
+          <div className="mt-8 flex items-center justify-center space-x-4">
+            <div className="h-1 w-12 bg-amber-400"></div>
+            <span className="text-amber-400 font-semibold">Trusted Since 2013</span>
+            <div className="h-1 w-12 bg-amber-400"></div>
+          </div>
+        </div>
+      </section>
 
       <TierSelection onTierSelect={handleTierSelect} />
 
@@ -197,8 +220,8 @@ export default function Landing() {
                   data-testid="footer-logo-image"
                 />
               </div>
-              <p className="text-muted-foreground mb-4">
-                The future of AI and financial technology. Join the mission.
+              <p className="text-amber-200/70 mb-4">
+                Building legacies through strategic investment partnerships and proven wealth management excellence.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-muted-foreground hover:text-primary transition-colors" data-testid="social-twitter">
@@ -235,11 +258,11 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="border-t border-border mt-8 pt-8 text-center">
-            <p className="text-muted-foreground text-sm">
+          <div className="border-t border-amber-500/30 mt-8 pt-8 text-center">
+            <p className="text-amber-200/60 text-sm">
               © 2024 The Ascendancy Project. All rights reserved. 
-              <span className="text-primary ml-1">Licensed FSP</span> • 
-              <span className="text-accent ml-1">Future Ready</span>
+              <span className="text-amber-400 ml-1">Licensed FSP</span> • 
+              <span className="text-amber-300 ml-1">Regulatory Compliant</span>
             </p>
           </div>
         </div>

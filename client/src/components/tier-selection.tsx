@@ -52,9 +52,7 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
 
   return (
     <section id="tiers" className="py-20 relative overflow-hidden bg-black">
-      <StarsBackground className="opacity-80" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background/80 pointer-events-none z-10"></div>
-      <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
       <div className="max-w-7xl mx-auto px-4 relative z-20">
         <motion.div 
           className="text-center mb-16"
@@ -63,11 +61,11 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="font-orbitron font-bold text-4xl md:text-5xl mb-4 text-foreground">
-            Partnership Model: How It Works
+          <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
+            Investment Partnership Tiers
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Choose the level of support that aligns with your vision for our shared success:
+          <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
+            Choose the partnership level that aligns with your investment goals and commitment to our shared success
           </p>
         </motion.div>
 
@@ -106,15 +104,15 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
         </div>
 
         <motion.div 
-          className="text-center mt-12 bg-blue-500/10 border border-blue-500/30 rounded-lg p-6 max-w-4xl mx-auto"
+          className="text-center mt-12 bg-amber-500/10 border border-amber-500/30 rounded-lg p-6 max-w-4xl mx-auto"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
         >
-          <p className="text-lg text-blue-400 flex items-center justify-center gap-2">
+          <p className="text-lg text-amber-300 flex items-center justify-center gap-2">
             <i className="fas fa-info-circle"></i>
-            <span className="font-semibold">Important:</span> Your commitment ends after 12 months. You then receive a Certificate of Partnership representing your total contribution and future returns.
+            <span className="font-semibold">Important:</span> Your commitment period is 12 months. Upon completion, you receive a Certificate of Partnership representing your total contribution and future investment returns.
           </p>
         </motion.div>
       </div>

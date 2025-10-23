@@ -69,9 +69,7 @@ export function RewardsSection() {
 
   return (
     <section id="rewards" className="py-20 relative overflow-hidden bg-black">
-      <StarsBackground className="opacity-70" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/60 to-background/90 pointer-events-none z-10"></div>
-      <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
       <div className="max-w-6xl mx-auto px-4 relative z-20">
         <motion.div 
           className="text-center mb-16"
@@ -80,11 +78,11 @@ export function RewardsSection() {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="font-orbitron font-bold text-4xl md:text-5xl mb-4 neon-text text-primary">
-            EARN YOUR STATUS
+          <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
+            PARTNERSHIP RECOGNITION
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            This is more than a transaction; it's a partnership that recognizes your early belief in our mission.
+          <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
+            More than an investment—a prestigious partnership that acknowledges your commitment to excellence and shared success
           </p>
         </motion.div>
 

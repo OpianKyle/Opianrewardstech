@@ -1,84 +1,100 @@
 import { motion } from "framer-motion";
-import { AnimatedButton } from "@/components/ui/animated-button";
-import { ShaderBackground } from "./shader-background";
-import { MobileCosmicBackground } from "./mobile-cosmic-background";
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Award, Shield, TrendingUp } from "lucide-react";
+import heroImage from "@assets/generated_images/Classic_investment_banking_office_91d0af6c.png";
 
 interface HeroSectionProps {
   onScrollToTiers: () => void;
 }
 
 export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent.toLowerCase();
-      const isMobileDevice = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent) || window.innerWidth < 768;
-      setIsMobile(isMobileDevice);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
-      {isMobile ? (
-        <MobileCosmicBackground className="opacity-100" />
-      ) : (
-        <ShaderBackground className="opacity-100" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background/80 pointer-events-none z-10"></div>
-      <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-950/30 via-black to-yellow-950/20"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0iI0ZGRDcwMCIgc3Ryb2tlLW9wYWNpdHk9Ii4xIiBzdHJva2Utd2lkdGg9IjEiLz48L2c+PC9zdmc+')] opacity-40"></div>
+      </div>
       
-      <div className="relative z-30 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        
+      <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <motion.div 
+            className="space-y-8 text-center lg:text-left"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 1, delay: 0.3 }}
+          >
+            <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30">
+              <Award className="h-4 w-4 text-amber-400" />
+              <span className="text-sm text-amber-300">Exclusive Investment Partnership</span>
+            </div>
 
-        <motion.div 
-          className="space-y-8"
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1, delay: 0.3 }}
-        >
-          <div>
-            <h1 className="font-orbitron font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-6 neon-text text-primary leading-tight px-2 sm:px-0">
-              THE ASCENDANCY<br />PROJECT
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl font-orbitron font-bold text-accent mb-4 px-2 sm:px-0">
-              Join the Mission. Build the Future. Claim Your Tier.
-            </p>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
-              This isn't an investment. It's an upgrade. Step into the game and become part of something transformative.
-            </p>
-          </div>
+            <div>
+              <h1 className="font-serif font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 text-amber-100 leading-tight">
+                THE ASCENDANCY<br />
+                <span className="text-amber-400">PROJECT</span>
+              </h1>
+              <p className="text-xl sm:text-2xl font-semibold text-amber-300 mb-4">
+                Build Wealth. Secure Legacy. Claim Your Position.
+              </p>
+              <p className="text-base sm:text-lg text-amber-200/80 max-w-2xl mx-auto lg:mx-0">
+                Join an exclusive circle of discerning investors committed to sustainable growth through strategic partnerships in South Africa's most promising ventures.
+              </p>
+            </div>
 
-          <div className="space-y-4">
-            <AnimatedButton
-              onClick={onScrollToTiers}
-              className="px-12 py-4 bg-primary text-primary-foreground font-orbitron font-bold text-xl rounded-lg"
-              data-testid="button-press-start"
-            >
-              <span className="relative z-10">PRESS START</span>
-            </AnimatedButton>
-            
-            <p className="text-sm text-muted-foreground">
-              <i className="fas fa-shield-alt mr-2"></i>
-              Licensed FSP • Regulatory Compliant • Future-Ready
-            </p>
-          </div>
-        </motion.div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Button
+                onClick={onScrollToTiers}
+                size="lg"
+                className="bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold text-lg px-10 py-6 shadow-2xl shadow-amber-500/40"
+                data-testid="button-press-start"
+              >
+                EXPLORE TIERS
+              </Button>
+              
+              <div className="flex items-center justify-center gap-2 text-sm text-amber-200/70">
+                <Shield className="h-4 w-4" />
+                <span>FSP Licensed • Regulatory Compliant</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-amber-500/30">
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-bold text-amber-400">R50M+</p>
+                <p className="text-xs text-amber-200/70">Portfolio Value</p>
+              </div>
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-bold text-amber-400">500+</p>
+                <p className="text-xs text-amber-200/70">Partners</p>
+              </div>
+              <div className="text-center lg:text-left">
+                <p className="text-2xl font-bold text-amber-400">10Y</p>
+                <p className="text-xs text-amber-200/70">Track Record</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="relative h-96 lg:h-[600px] hidden lg:block"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.5 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 blur-3xl" />
+            <img 
+              src={heroImage} 
+              alt="Investment Excellence" 
+              className="relative w-full h-full object-cover rounded-lg shadow-2xl border border-amber-500/20"
+            />
+          </motion.div>
+        </div>
       </div>
 
-      {/* Floating particles effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
         <motion.div 
-          className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full"
+          className="absolute top-1/4 left-1/4 w-2 h-2 bg-amber-400 rounded-full"
           animate={{ 
             opacity: [0.3, 1, 0.3],
-            scale: [1, 1.2, 1]
+            scale: [1, 1.5, 1]
           }}
           transition={{ 
             duration: 3,
@@ -87,7 +103,7 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
           }}
         />
         <motion.div 
-          className="absolute top-3/4 right-1/4 w-1 h-1 bg-secondary rounded-full"
+          className="absolute top-3/4 right-1/4 w-1 h-1 bg-yellow-500 rounded-full"
           animate={{ 
             opacity: [0.5, 1, 0.5],
             y: [0, -10, 0]
@@ -100,7 +116,7 @@ export function HeroSection({ onScrollToTiers }: HeroSectionProps) {
           }}
         />
         <motion.div 
-          className="absolute top-1/2 left-1/3 w-1.5 h-1.5 bg-accent rounded-full"
+          className="absolute top-1/2 left-1/3 w-1.5 h-1.5 bg-amber-300 rounded-full"
           animate={{ 
             opacity: [0.4, 1, 0.4],
             x: [0, 15, 0]
