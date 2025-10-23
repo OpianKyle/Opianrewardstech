@@ -288,19 +288,19 @@ export default function OpianBank() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-amber-200/70 text-sm sm:text-base mb-4 sm:mb-6">
+                <CardDescription className="text-muted-foreground text-sm sm:text-base mb-4 sm:mb-6">
                   Personalized portfolio management strategies designed to preserve and grow your wealth across generations.
                 </CardDescription>
                 <ul className="space-y-2 sm:space-y-3">
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Diversified Portfolio Management</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Tax Optimization Strategies</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Estate Planning Support</span>
                   </li>
@@ -310,7 +310,7 @@ export default function OpianBank() {
 
             <Card className="bg-card border-primary/30 hover:border-primary/60 transition-all duration-300 group" data-testid="growth-card">
               <CardHeader>
-                <div className="w-full h-40 sm:h-48 mb-4 sm:mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-yellow-500/10 to-amber-500/10">
+                <div className="w-full h-40 sm:h-48 mb-4 sm:mb-6 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/10">
                   <img 
                     src={growthImage} 
                     alt="Investment Growth" 
@@ -326,19 +326,19 @@ export default function OpianBank() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-amber-200/70 text-sm sm:text-base mb-4 sm:mb-6">
+                <CardDescription className="text-muted-foreground text-sm sm:text-base mb-4 sm:mb-6">
                   Carefully curated investment opportunities across diverse sectors including technology, property, and emerging markets.
                 </CardDescription>
                 <ul className="space-y-2 sm:space-y-3">
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Alternative Investment Access</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Real Estate Opportunities</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Venture Capital Partnerships</span>
                   </li>
@@ -364,19 +364,19 @@ export default function OpianBank() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-amber-200/70 text-sm sm:text-base mb-4 sm:mb-6">
+                <CardDescription className="text-muted-foreground text-sm sm:text-base mb-4 sm:mb-6">
                   Dedicated financial advisors with decades of combined experience guiding your investment decisions.
                 </CardDescription>
                 <ul className="space-y-2 sm:space-y-3">
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Personal Account Managers</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Quarterly Performance Reviews</span>
                   </li>
-                  <li className="flex items-center space-x-2 text-sm sm:text-base text-amber-200/90">
+                  <li className="flex items-center space-x-2 text-sm sm:text-base text-card-foreground">
                     <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                     <span>Market Insights & Research</span>
                   </li>
@@ -393,34 +393,34 @@ export default function OpianBank() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold mb-4 sm:mb-6 text-primary">
               Why Investors Choose Opian
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-amber-200/80 max-w-3xl mx-auto px-4">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
               Our commitment to excellence, transparency, and results has made us a preferred partner for serious investors
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            <div className="text-center p-6 rounded-lg bg-gradient-to-br from-zinc-900/50 to-zinc-800/50 border border-border">
+            <div className="text-center p-6 rounded-lg bg-card border border-border">
               <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-bold text-card-foreground mb-2">Regulatory Compliance</h3>
-              <p className="text-amber-200/70 text-sm">FSP licensed and fully compliant with South African financial regulations</p>
+              <p className="text-muted-foreground text-sm">FSP licensed and fully compliant with South African financial regulations</p>
             </div>
 
-            <div className="text-center p-6 rounded-lg bg-gradient-to-br from-zinc-900/50 to-zinc-800/50 border border-border">
+            <div className="text-center p-6 rounded-lg bg-card border border-border">
               <BarChart3 className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-bold text-card-foreground mb-2">Proven Track Record</h3>
-              <p className="text-amber-200/70 text-sm">Consistent returns and portfolio growth over 10+ years of operation</p>
+              <p className="text-muted-foreground text-sm">Consistent returns and portfolio growth over 10+ years of operation</p>
             </div>
 
-            <div className="text-center p-6 rounded-lg bg-gradient-to-br from-zinc-900/50 to-zinc-800/50 border border-border">
+            <div className="text-center p-6 rounded-lg bg-card border border-border">
               <Target className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-bold text-card-foreground mb-2">Tailored Solutions</h3>
-              <p className="text-amber-200/70 text-sm">Custom investment strategies aligned with your unique financial goals</p>
+              <p className="text-muted-foreground text-sm">Custom investment strategies aligned with your unique financial goals</p>
             </div>
 
-            <div className="text-center p-6 rounded-lg bg-gradient-to-br from-zinc-900/50 to-zinc-800/50 border border-border">
+            <div className="text-center p-6 rounded-lg bg-card border border-border">
               <Users className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-bold text-card-foreground mb-2">Client-First Approach</h3>
-              <p className="text-amber-200/70 text-sm">Dedicated support and transparent communication at every step</p>
+              <p className="text-muted-foreground text-sm">Dedicated support and transparent communication at every step</p>
             </div>
           </div>
         </div>
@@ -428,22 +428,22 @@ export default function OpianBank() {
 
       <section className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-500/20 via-yellow-500/10 to-amber-600/20 border border-primary/30 p-8 sm:p-12 md:p-16">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/20 border border-primary/30 p-8 sm:p-12 md:p-16">
             <div className="relative text-center space-y-6 sm:space-y-8">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold px-2">
                 <span className="text-card-foreground">
                   Ready to Build Your Financial Future?
                 </span>
               </h2>
-              <p className="text-base sm:text-lg lg:text-xl text-amber-200/90 max-w-3xl mx-auto px-2">
+              <p className="text-base sm:text-lg lg:text-xl text-card-foreground max-w-3xl mx-auto px-2">
                 Join the Ascendancy Project and gain exclusive access to premium investment opportunities, expert portfolio management, and a community of successful investors shaping South Africa's financial landscape.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <div className="flex items-center space-x-2 text-amber-200/80">
+                <div className="flex items-center space-x-2 text-muted-foreground">
                   <CheckCircle2 className="h-5 w-5 text-primary" />
                   <span className="text-sm">No minimum investment required to start</span>
                 </div>
-                <div className="flex items-center space-x-2 text-amber-200/80">
+                <div className="flex items-center space-x-2 text-muted-foreground">
                   <CheckCircle2 className="h-5 w-5 text-primary" />
                   <span className="text-sm">Flexible portfolio options</span>
                 </div>
@@ -461,16 +461,16 @@ export default function OpianBank() {
         </div>
       </section>
 
-      <section id="access-form" className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent to-zinc-900/50">
+      <section id="access-form" className="relative py-16 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent to-background">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center justify-center p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-primary/30 mb-4 sm:mb-6">
+            <div className="inline-flex items-center justify-center p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary/20 to-primary/20 border border-primary/30 mb-4 sm:mb-6">
               <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             </div>
             <h3 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold mb-3 sm:mb-4 text-primary">
               Begin Your Investment Journey
             </h3>
-            <p className="text-base sm:text-lg text-amber-200/80 px-4">
+            <p className="text-base sm:text-lg text-muted-foreground px-4">
               Complete this form to schedule a confidential consultation with one of our senior investment advisors
             </p>
           </div>
@@ -478,7 +478,7 @@ export default function OpianBank() {
           <Card className="bg-gradient-to-br from-zinc-900/90 to-zinc-800/90 border-primary/30 backdrop-blur-xl" data-testid="access-form-card">
             <CardHeader>
               <CardTitle className="text-xl sm:text-2xl text-primary">Consultation Request</CardTitle>
-              <CardDescription className="text-sm sm:text-base text-amber-200/70">
+              <CardDescription className="text-sm sm:text-base text-muted-foreground">
                 Join hundreds of satisfied investors in the Ascendancy Project
               </CardDescription>
             </CardHeader>
