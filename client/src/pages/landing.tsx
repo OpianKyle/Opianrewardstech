@@ -7,8 +7,10 @@ import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "@/contexts/theme-provider";
 import { useToast } from "@/hooks/use-toast";
-import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
+import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
+import opianCapitalLight from "@assets/GetAttachmentThumbnail_1761219213754.png";
 import wealthImage from "@assets/generated_images/Gold_and_wealth_management_681ca419.png";
 
 export default function Landing() {
@@ -16,6 +18,7 @@ export default function Landing() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
+  const { theme } = useTheme();
 
   // Handle payment return from Adumo
   useEffect(() => {
@@ -83,8 +86,8 @@ export default function Landing() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
               <img 
-                src={opianLogo} 
-                alt="Opian Rewards" 
+                src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
+                alt="Opian Capital" 
                 className="h-10 w-auto object-contain"
                 data-testid="logo-image"
               />
@@ -216,8 +219,8 @@ export default function Landing() {
             <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <img 
-                  src={opianLogo} 
-                  alt="Opian Investment Partners" 
+                  src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
+                  alt="Opian Capital" 
                   className="h-10 w-auto object-contain"
                   data-testid="footer-logo-image"
                 />

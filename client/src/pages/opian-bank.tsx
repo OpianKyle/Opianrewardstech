@@ -8,9 +8,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, TrendingUp, Users, ArrowRight, Award, CheckCircle2, Lock, BarChart3, Upload, Briefcase, Target, DollarSign } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "@/contexts/theme-provider";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
-import opianBankLogo from "@assets/Opian bank_1760685427396.png";
+import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
+import opianCapitalLight from "@assets/GetAttachmentThumbnail_1761219213754.png";
 import heroImage from "@assets/generated_images/Classic_investment_banking_office_91d0af6c.png";
 import wealthImage from "@assets/generated_images/Gold_and_wealth_management_681ca419.png";
 import growthImage from "@assets/generated_images/Traditional_financial_growth_chart_fb6470a0.png";
@@ -19,6 +20,7 @@ import partnershipImage from "@assets/generated_images/Professional_business_par
 export default function OpianBank() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { theme } = useTheme();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -143,8 +145,8 @@ export default function OpianBank() {
           <div className="flex justify-between items-center py-3 sm:py-4">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <img 
-                src={opianBankLogo} 
-                alt="Opian Bank" 
+                src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
+                alt="Opian Capital" 
                 className="h-8 sm:h-10 md:h-12 w-auto object-contain"
                 data-testid="bank-logo"
               />
@@ -702,12 +704,12 @@ export default function OpianBank() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 text-center sm:text-left">
               <img 
-                src={opianLogo} 
-                alt="Opian Bank" 
+                src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
+                alt="Opian Capital" 
                 className="h-6 sm:h-8 w-auto object-contain opacity-70"
               />
               <div className="text-xs sm:text-sm text-foreground/60">
-                © 2024 Opian Bank. FSP Licensed & Regulatory Compliant. All Rights Reserved.
+                © 2024 Opian Capital. FSP Licensed & Regulatory Compliant. All Rights Reserved.
               </div>
             </div>
             <div className="flex items-center space-x-4 sm:space-x-6 text-xs sm:text-sm text-foreground/60">

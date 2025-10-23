@@ -8,7 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
 import { CheckCircle2, Shield, Building } from 'lucide-react';
-import opianBankLogo from "@assets/Opian bank_1760685427396.png";
+import { useTheme } from '@/contexts/theme-provider';
+import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
+import opianCapitalLight from "@assets/GetAttachmentThumbnail_1761219213754.png";
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,6 +20,7 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { setAuthToken } = useAuth();
+  const { theme } = useTheme();
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
@@ -114,8 +117,8 @@ export default function Login() {
         <CardHeader className="space-y-1 text-center pb-6">
           <div className="flex items-center justify-center mb-4">
             <img 
-              src={opianBankLogo} 
-              alt="Opian Investment Partners" 
+              src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
+              alt="Opian Capital" 
               className="h-16 w-auto object-contain"
             />
           </div>
