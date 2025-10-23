@@ -87,11 +87,11 @@
     font-family: var(--font-serif);
   }
   
-  body.dark {
+  :root.dark body, html.dark body {
     background: linear-gradient(135deg, #000000 0%, #1a1510 50%, #0f0a05 100%);
   }
   
-  body:not(.dark) {
+  :root:not(.dark) body, html:not(.dark) body {
     background: linear-gradient(135deg, #ffffff 0%, #fef7e8 50%, #fdf3dc 100%);
   }
 }
