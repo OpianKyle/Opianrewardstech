@@ -182,18 +182,18 @@ export default function Landing() {
           backgroundImage: `url(${wealthImage})`,
         }}
       >
-        <div className="absolute inset-0 bg-black/70" />
+        <div className="absolute inset-0 bg-background/70" />
         <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-amber-400 mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-primary mb-6">
             Strategic Investment Excellence
           </h2>
-          <p className="text-lg sm:text-xl md:text-2xl text-amber-100/90 leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl text-foreground/90 leading-relaxed">
             "Building generational wealth through disciplined investment strategies and proven partnership models. Your success is our commitment."
           </p>
           <div className="mt-8 flex items-center justify-center space-x-4">
-            <div className="h-1 w-12 bg-amber-400"></div>
-            <span className="text-amber-400 font-semibold">Trusted Since 2013</span>
-            <div className="h-1 w-12 bg-amber-400"></div>
+            <div className="h-1 w-12 bg-primary"></div>
+            <span className="text-primary font-semibold">Trusted Since 2013</span>
+            <div className="h-1 w-12 bg-primary"></div>
           </div>
         </div>
       </section>
@@ -213,7 +213,7 @@ export default function Landing() {
       />
 
       {/* Footer */}
-      <footer className="py-12 relative overflow-hidden bg-gradient-to-b from-black to-zinc-950" data-testid="footer">
+      <footer className="py-12 relative overflow-hidden bg-card border-t border-border" data-testid="footer">
         <div className="max-w-7xl mx-auto px-4 relative z-20">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
@@ -225,66 +225,66 @@ export default function Landing() {
                   data-testid="footer-logo-image"
                 />
               </div>
-              <p className="text-amber-200/70 mb-6 leading-relaxed">
+              <p className="text-foreground/70 mb-6 leading-relaxed">
                 Building generational wealth through disciplined investment strategies and proven partnership models. The Ascendancy Project represents a unique opportunity for discerning investors committed to long-term financial excellence.
               </p>
               <div className="flex space-x-4">
-                <a href="#" className="text-amber-400 hover:text-amber-300 transition-colors" data-testid="social-linkedin">
+                <a href="#" className="text-primary hover:text-primary/80 transition-colors" data-testid="social-linkedin">
                   <i className="fab fa-linkedin text-xl"></i>
                 </a>
-                <a href="#" className="text-amber-400 hover:text-amber-300 transition-colors" data-testid="social-twitter">
+                <a href="#" className="text-primary hover:text-primary/80 transition-colors" data-testid="social-twitter">
                   <i className="fab fa-twitter text-xl"></i>
                 </a>
               </div>
             </div>
 
             <div>
-              <h4 className="font-serif font-bold text-lg mb-4 text-amber-400">Investment</h4>
-              <div className="space-y-2 text-amber-200/70">
-                <a href="#tiers" className="block hover:text-amber-300 transition-colors">Partnership Tiers</a>
-                <a href="#rewards" className="block hover:text-amber-300 transition-colors">Benefits & Returns</a>
-                <a href="#progression" className="block hover:text-amber-300 transition-colors">Investment Timeline</a>
-                <a href="#briefing" className="block hover:text-amber-300 transition-colors">Risk Disclosure</a>
+              <h4 className="font-serif font-bold text-lg mb-4 text-primary">Investment</h4>
+              <div className="space-y-2 text-foreground/70">
+                <a href="#tiers" className="block hover:text-primary transition-colors">Partnership Tiers</a>
+                <a href="#rewards" className="block hover:text-primary transition-colors">Benefits & Returns</a>
+                <a href="#progression" className="block hover:text-primary transition-colors">Investment Timeline</a>
+                <a href="#briefing" className="block hover:text-primary transition-colors">Risk Disclosure</a>
               </div>
             </div>
 
             <div>
-              <h4 className="font-serif font-bold text-lg mb-4 text-amber-400">Compliance & Legal</h4>
-              <div className="space-y-2 text-amber-200/70 text-sm">
+              <h4 className="font-serif font-bold text-lg mb-4 text-primary">Compliance & Legal</h4>
+              <div className="space-y-2 text-foreground/70 text-sm">
                 <p className="flex items-start">
-                  <span className="text-amber-400 mr-2">•</span>
+                  <span className="text-primary mr-2">•</span>
                   <span>Licensed Financial Services Provider</span>
                 </p>
                 <p className="flex items-start">
-                  <span className="text-amber-400 mr-2">•</span>
+                  <span className="text-primary mr-2">•</span>
                   <span>FSP Regulatory Compliant</span>
                 </p>
                 <p className="flex items-start">
-                  <span className="text-amber-400 mr-2">•</span>
+                  <span className="text-primary mr-2">•</span>
                   <span>Secure Payment Processing</span>
                 </p>
-                <a href="#" className="block hover:text-amber-300 transition-colors mt-3">Terms & Conditions</a>
-                <a href="#" className="block hover:text-amber-300 transition-colors">Privacy Policy</a>
+                <a href="#" className="block hover:text-primary transition-colors mt-3">Terms & Conditions</a>
+                <a href="#" className="block hover:text-primary transition-colors">Privacy Policy</a>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-amber-500/30 pt-8">
+          <div className="border-t border-border pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-amber-200/60 text-sm text-center md:text-left">
+              <p className="text-foreground/60 text-sm text-center md:text-left">
                 © 2024 The Ascendancy Project by Opian Investment Partners. All rights reserved.
               </p>
-              <div className="flex items-center gap-4 text-xs text-amber-200/60">
+              <div className="flex items-center gap-4 text-xs text-foreground/60">
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
+                  <span className="w-2 h-2 bg-primary rounded-full"></span>
                   FSP Licensed
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
+                  <span className="w-2 h-2 bg-primary rounded-full"></span>
                   Regulatory Compliant
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
+                  <span className="w-2 h-2 bg-primary rounded-full"></span>
                   Established 2013
                 </span>
               </div>
