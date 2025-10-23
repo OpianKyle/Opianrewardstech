@@ -254,12 +254,12 @@ export function PaymentSection({
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="font-orbitron font-bold text-4xl md:text-5xl mb-4 neon-text text-primary">
-              THE FUTURE IS A CO-OP MODE
+            <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
+              Begin Your Investment Journey
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We're building it together. Move from the sidelines to the inside track, 
-              becoming a founding partner in the next generation of AI and financial technology.
+            <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
+              Join Opian Bank as a valued investment partner. Secure your position as a founding investor 
+              in our exclusive partnership program with proven returns and professional wealth management.
             </p>
           </motion.div>
 
@@ -269,18 +269,18 @@ export function PaymentSection({
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <Card className="glass-morphism border border-border" data-testid="payment-card">
+            <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-amber-500/30" data-testid="payment-card">
               <CardContent className="p-8">
                 <div className="grid md:grid-cols-2 gap-8 items-center">
                   <div>
-                    <h3 className="font-orbitron font-bold text-2xl mb-6 text-primary">Ready to Press START?</h3>
+                    <h3 className="font-serif font-bold text-2xl mb-6 text-amber-400">Ready to Invest?</h3>
                     
                     <div className="space-y-4 mb-8">
                       {[
-                        "Secure Adumo Online Payment Processing",
-                        "Credit Cards, EFT & Multiple Payment Methods", 
-                        "Licensed FSP Compliance & 3D Secure",
-                        "Instant Tier Activation"
+                        "Secure Payment Processing via Adumo",
+                        "Multiple Payment Options: Credit Cards & EFT", 
+                        "Licensed FSP & 3D Secure Compliance",
+                        "Immediate Partnership Confirmation"
                       ].map((feature, index) => (
                         <motion.div
                           key={feature}
@@ -290,8 +290,8 @@ export function PaymentSection({
                           transition={{ duration: 0.4, delay: index * 0.1 }}
                           viewport={{ once: true }}
                         >
-                          <i className="fas fa-check-circle text-accent"></i>
-                          <span>{feature}</span>
+                          <i className="fas fa-check-circle text-amber-400"></i>
+                          <span className="text-amber-200/80">{feature}</span>
                         </motion.div>
                       ))}
                     </div>
@@ -299,16 +299,16 @@ export function PaymentSection({
                     <div className="grid grid-cols-2 gap-4">
                       <AnimatedButton
                         onClick={() => setShowPaymentModal(true)}
-                        className="py-3 bg-primary text-primary-foreground font-bold rounded-lg"
+                        className="py-3 bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold rounded-lg shadow-lg shadow-amber-500/20"
                         data-testid="button-pledge-now"
                       >
-                        <i className="fas fa-credit-card mr-2"></i>Pledge Now
+                        <i className="fas fa-credit-card mr-2"></i>Invest Now
                       </AnimatedButton>
                       
                       <AnimatedButton
                         onClick={() => setShowContactModal(true)}
                         variant="outline"
-                        className="py-3 border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary hover:text-primary-foreground"
+                        className="py-3 border-2 border-amber-500 text-amber-400 font-bold rounded-lg hover:bg-amber-500/10"
                         data-testid="button-contact-us"
                       >
                         <i className="fas fa-envelope mr-2"></i>Contact Us
@@ -317,11 +317,11 @@ export function PaymentSection({
                   </div>
 
                   <div className="text-center">
-                    <div className="w-full h-64 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl border border-primary/30 flex items-center justify-center">
+                    <div className="w-full h-64 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-xl border border-amber-500/30 flex items-center justify-center">
                       <div className="text-center">
-                        <i className="fas fa-handshake text-6xl text-primary mb-4" />
-                        <p className="text-lg font-orbitron font-bold text-accent">
-                          Let's build. Let's ascend.
+                        <i className="fas fa-handshake text-6xl text-amber-400 mb-4" />
+                        <p className="text-lg font-serif font-semibold text-amber-300">
+                          Your Wealth. Our Expertise.
                         </p>
                       </div>
                     </div>
@@ -335,10 +335,10 @@ export function PaymentSection({
 
       {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="glass-morphism border-2 border-primary max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="payment-modal">
+        <DialogContent className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-2 border-amber-500/30 max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="payment-modal">
           <DialogHeader>
-            <DialogTitle className="font-orbitron font-bold text-2xl text-primary text-center">
-              Payment Options
+            <DialogTitle className="font-serif font-bold text-2xl text-amber-400 text-center">
+              Investment Options
             </DialogTitle>
           </DialogHeader>
           
@@ -539,10 +539,10 @@ export function PaymentSection({
 
       {/* Contact Modal */}
       <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
-        <DialogContent className="glass-morphism border-2 border-primary max-w-md" data-testid="contact-modal">
+        <DialogContent className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-2 border-amber-500/30 max-w-md" data-testid="contact-modal">
           <DialogHeader>
-            <DialogTitle className="font-orbitron font-bold text-2xl text-primary text-center">
-              Contact Mission Control
+            <DialogTitle className="font-serif font-bold text-2xl text-amber-400 text-center">
+              Contact Our Investment Team
             </DialogTitle>
           </DialogHeader>
           
