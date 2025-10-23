@@ -5,37 +5,37 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 0%);
-  --foreground: hsl(45, 100%, 85%);
-  --card: hsl(0, 0%, 8%);
-  --card-foreground: hsl(45, 100%, 85%);
-  --popover: hsl(0, 0%, 0%);
-  --popover-foreground: hsl(45, 100%, 85%);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 0%, 10%);
+  --card: hsl(0, 0%, 98%);
+  --card-foreground: hsl(0, 0%, 10%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(0, 0%, 10%);
   --primary: hsl(45, 100%, 50%);
   --primary-foreground: hsl(0, 0%, 0%);
-  --secondary: hsl(38, 70%, 40%);
-  --secondary-foreground: hsl(45, 100%, 85%);
-  --muted: hsl(0, 0%, 15%);
-  --muted-foreground: hsl(45, 60%, 60%);
+  --secondary: hsl(38, 70%, 60%);
+  --secondary-foreground: hsl(0, 0%, 0%);
+  --muted: hsl(0, 0%, 96%);
+  --muted-foreground: hsl(0, 0%, 40%);
   --accent: hsl(45, 100%, 50%);
   --accent-foreground: hsl(0, 0%, 0%);
   --destructive: hsl(0, 85%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --border: hsl(45, 50%, 25%);
-  --input: hsl(0, 0%, 12%);
+  --border: hsl(45, 50%, 85%);
+  --input: hsl(0, 0%, 96%);
   --ring: hsl(45, 100%, 50%);
   --chart-1: hsl(45, 100%, 50%);
   --chart-2: hsl(38, 70%, 40%);
   --chart-3: hsl(51, 100%, 50%);
   --chart-4: hsl(45, 85%, 45%);
   --chart-5: hsl(35, 75%, 50%);
-  --sidebar: hsl(0, 0%, 8%);
-  --sidebar-foreground: hsl(45, 100%, 85%);
+  --sidebar: hsl(0, 0%, 98%);
+  --sidebar-foreground: hsl(0, 0%, 10%);
   --sidebar-primary: hsl(45, 100%, 50%);
   --sidebar-primary-foreground: hsl(0, 0%, 0%);
-  --sidebar-accent: hsl(38, 70%, 40%);
-  --sidebar-accent-foreground: hsl(45, 100%, 85%);
-  --sidebar-border: hsl(45, 50%, 25%);
+  --sidebar-accent: hsl(38, 70%, 60%);
+  --sidebar-accent-foreground: hsl(0, 0%, 0%);
+  --sidebar-border: hsl(45, 50%, 85%);
   --sidebar-ring: hsl(45, 100%, 50%);
   --font-sans: 'Exo 2', sans-serif;
   --font-serif: Georgia, serif;
@@ -84,8 +84,15 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    background: linear-gradient(135deg, #000000 0%, #1a1510 50%, #0f0a05 100%);
     font-family: var(--font-serif);
+  }
+  
+  body.dark {
+    background: linear-gradient(135deg, #000000 0%, #1a1510 50%, #0f0a05 100%);
+  }
+  
+  body:not(.dark) {
+    background: linear-gradient(135deg, #ffffff 0%, #fef7e8 50%, #fdf3dc 100%);
   }
 }
 

@@ -6,6 +6,7 @@ import { QuestProgression } from "@/components/quest-progression";
 import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 import wealthImage from "@assets/generated_images/Gold_and_wealth_management_681ca419.png";
@@ -101,6 +102,7 @@ export default function Landing() {
               <a href="#briefing" className="hover:text-primary transition-colors" data-testid="nav-protocol">
                 Protocol
               </a>
+              <ThemeToggle />
               <a href="/login" className="px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors shadow-lg shadow-amber-500/20" data-testid="nav-login">
                 Investor Login
               </a>
@@ -152,6 +154,9 @@ export default function Landing() {
             >
               Protocol
             </a>
+            <div className="py-2">
+              <ThemeToggle />
+            </div>
             <a 
               href="/login" 
               className="block px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors text-center shadow-lg shadow-amber-500/20"

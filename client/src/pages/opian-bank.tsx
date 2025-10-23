@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, TrendingUp, Users, ArrowRight, Award, CheckCircle2, Lock, BarChart3, Upload, Briefcase, Target, DollarSign } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import opianLogo from "@assets/opian-rewards-logo-blue_1758534360427.png";
 import opianBankLogo from "@assets/Opian bank_1760685427396.png";
@@ -148,14 +149,17 @@ export default function OpianBank() {
                 data-testid="bank-logo"
               />
             </div>
-            <Button
-              onClick={scrollToForm}
-              className="hidden md:inline-flex bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold border-0 shadow-lg shadow-amber-500/30"
-              data-testid="nav-request-access"
-            >
-              Begin Your Journey
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Button
+                onClick={scrollToForm}
+                className="hidden md:inline-flex bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold border-0 shadow-lg shadow-amber-500/30"
+                data-testid="nav-request-access"
+              >
+                Begin Your Journey
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
