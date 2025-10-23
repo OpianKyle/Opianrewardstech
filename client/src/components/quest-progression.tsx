@@ -1,15 +1,13 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { ProgressBar } from "@/components/ui/progress-bar";
-import { StarsBackground } from "./stars-background";
+import returnsImage from "@assets/generated_images/Investment_returns_growth_chart_c39818d0.png";
+import meetingImage from "@assets/generated_images/Investment_portfolio_review_meeting_75e693f5.png";
 
 export function QuestProgression() {
   return (
     <section id="progression" className="py-20 relative overflow-hidden bg-black">
-      <StarsBackground className="opacity-70" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/60 to-background/90 pointer-events-none z-10"></div>
-      <div className="absolute inset-0 bg-black/20 pointer-events-none z-10"></div>
-      <div className="max-w-6xl mx-auto px-4 relative z-20">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
+      <div className="max-w-7xl mx-auto px-4 relative z-20">
         <motion.div 
           className="text-center mb-16"
           initial={{ opacity: 0, y: 50 }}
@@ -17,15 +15,15 @@ export function QuestProgression() {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="font-orbitron font-bold text-4xl md:text-5xl mb-4 neon-text text-primary">
-            THE INNOVATOR QUEST LINE
+          <h2 className="font-serif font-bold text-4xl md:text-5xl mb-4 text-amber-400">
+            Investment Timeline & Returns
           </h2>
-          <p className="text-xl text-muted-foreground">
-            Track your progression through the Ascendancy Project
+          <p className="text-xl text-amber-200/80 max-w-3xl mx-auto">
+            A clear breakdown of your investment journey and projected returns over the partnership period
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="grid md:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
           <motion.div 
             className="space-y-8"
             initial={{ opacity: 0, x: -50 }}
@@ -33,51 +31,58 @@ export function QuestProgression() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            {/* Level 1 */}
-            <Card className="glass-morphism border-l-4 border-accent" data-testid="quest-level-1">
+            <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30" data-testid="phase-capital-return">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-accent-foreground">1</span>
+                  <div className="w-12 h-12 bg-amber-500/20 border-2 border-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-amber-400 text-xl">1</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-orbitron font-bold text-xl mb-2 text-accent">LEVEL 1 COMPLETE</h3>
-                    <p className="text-sm text-muted-foreground mb-3">Month 36</p>
-                    <h4 className="font-bold text-lg mb-3 text-foreground">
-                      <i className="fas fa-trophy mr-2"></i>
-                      ACHIEVEMENT UNLOCKED: CAPITAL RECLAIMED
+                    <h3 className="font-serif font-bold text-2xl mb-2 text-amber-400">Capital Return Phase</h3>
+                    <p className="text-sm text-amber-200/60 mb-3">Month 36 (End of Year 3)</p>
+                    <h4 className="font-semibold text-lg mb-3 text-amber-100">
+                      Initial Investment Returned
                     </h4>
-                    <p className="text-muted-foreground">
-                      You receive a one-time payload of <span className="text-accent font-bold">R24,000</span>. 
-                      Your initial capital is safely returned to your inventory.
+                    <p className="text-amber-200/80 leading-relaxed">
+                      After 36 months of partnership, you receive a one-time return of <span className="text-amber-400 font-bold">R24,000</span> — your full initial capital investment returned to you while maintaining your partnership benefits.
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Level 2 */}
-            <Card className="glass-morphism border-l-4 border-primary" data-testid="quest-level-2">
+            <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30" data-testid="phase-dividend-returns">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="font-bold text-primary-foreground">2</span>
+                  <div className="w-12 h-12 bg-amber-500/20 border-2 border-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="font-bold text-amber-400 text-xl">2</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-orbitron font-bold text-xl mb-2 text-primary">LEVEL 2 UNLOCKED</h3>
-                    <p className="text-sm text-muted-foreground mb-3">Years 4 - 13</p>
-                    <h4 className="font-bold text-lg mb-3 text-foreground">
-                      <i className="fas fa-medal mr-2"></i>
-                      ACHIEVEMENT UNLOCKED: VICTORY LAP
+                    <h3 className="font-serif font-bold text-2xl mb-2 text-amber-400">Dividend Distribution Phase</h3>
+                    <p className="text-sm text-amber-200/60 mb-3">Years 4 - 13 (10 Year Period)</p>
+                    <h4 className="font-semibold text-lg mb-3 text-amber-100">
+                      Annual Partnership Dividends
                     </h4>
-                    <p className="text-muted-foreground">
-                      Annual dividend of <span className="text-primary font-bold">R10,800</span> for 10 years 
-                      (45% annual return on original commitment).
+                    <p className="text-amber-200/80 leading-relaxed">
+                      Annual dividend distribution of <span className="text-amber-400 font-bold">R10,800</span> for 10 consecutive years, representing a 45% annual return on your original investment commitment.
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            <div className="relative h-64 rounded-lg overflow-hidden border border-amber-500/20">
+              <img 
+                src={meetingImage} 
+                alt="Investment Review Meeting" 
+                className="w-full h-full object-cover opacity-80"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end">
+                <p className="p-6 text-amber-100 text-sm italic">
+                  "Your partnership includes quarterly portfolio reviews and direct access to senior investment advisors"
+                </p>
+              </div>
+            </div>
           </motion.div>
 
           <motion.div 
@@ -87,48 +92,51 @@ export function QuestProgression() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            {/* Stats Display */}
-            <Card className="glass-morphism text-center" data-testid="mission-stats">
+            <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-amber-500/30 text-center" data-testid="investment-summary">
               <CardContent className="p-8">
-                <h3 className="font-orbitron font-bold text-2xl mb-6 text-primary">MISSION STATS</h3>
+                <h3 className="font-serif font-bold text-2xl mb-6 text-amber-400">Investment Summary</h3>
                 
-                <div className="grid grid-cols-3 gap-6">
-                  <div>
-                    <div className="text-3xl font-bold text-accent mb-2" data-testid="stat-total-collected">R132K</div>
-                    <div className="text-sm text-muted-foreground">Total Collected</div>
-                    <div className="text-xs text-muted-foreground">Complete return over investment period</div>
+                <div className="grid grid-cols-1 gap-6 mb-8">
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-total-return">R132,000</div>
+                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Total Returns</div>
+                    <div className="text-xs text-amber-200/60">Over 13-year investment period</div>
                   </div>
-                  <div>
-                    <div className="text-3xl font-bold text-primary mb-2" data-testid="stat-total-invested">R24K</div>
-                    <div className="text-sm text-muted-foreground">Total Invested</div>
-                    <div className="text-xs text-muted-foreground">Your initial commitment</div>
+                  
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-initial-investment">R24,000</div>
+                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Initial Investment</div>
+                    <div className="text-xs text-amber-200/60">Your partnership commitment</div>
                   </div>
-                  <div>
-                    <div className="text-3xl font-bold text-secondary mb-2" data-testid="stat-return">450%</div>
-                    <div className="text-sm text-muted-foreground">Return on Belief</div>
-                    <div className="text-xs text-muted-foreground">Total percentage return</div>
+                  
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                    <div className="text-4xl font-bold text-amber-400 mb-2" data-testid="stat-total-gain">550%</div>
+                    <div className="text-sm text-amber-200/80 font-semibold mb-1">Total Return</div>
+                    <div className="text-xs text-amber-200/60">On original investment</div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Progress Visualization */}
-            <Card className="glass-morphism" data-testid="quest-progress">
-              <CardContent className="p-6">
-                <h4 className="font-bold mb-4 text-foreground">Quest Progress</h4>
-                
-                <div className="space-y-4">
-                  <ProgressBar
-                    progress={100}
-                    label="Development Phase"
-                    status="completed"
+                <div className="relative h-48 rounded-lg overflow-hidden border border-amber-500/20 mb-6">
+                  <img 
+                    src={returnsImage} 
+                    alt="Investment Growth Chart" 
+                    className="w-full h-full object-cover"
                   />
-                  
-                  <ProgressBar
-                    progress={75}
-                    label="Dividend Phase"
-                    status="active"
-                  />
+                </div>
+
+                <div className="text-left space-y-3 text-sm text-amber-200/70 border-t border-amber-500/20 pt-6">
+                  <p className="flex items-start">
+                    <span className="text-amber-400 mr-2">•</span>
+                    <span>Investment period: 12 months</span>
+                  </p>
+                  <p className="flex items-start">
+                    <span className="text-amber-400 mr-2">•</span>
+                    <span>Total return timeline: 13 years</span>
+                  </p>
+                  <p className="flex items-start">
+                    <span className="text-amber-400 mr-2">•</span>
+                    <span>Certificate of Partnership issued upon completion</span>
+                  </p>
                 </div>
               </CardContent>
             </Card>

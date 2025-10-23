@@ -1,153 +1,115 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { StarsBackground } from "./stars-background";
+import { AlertTriangle, TrendingDown, Scale } from "lucide-react";
 
 export function RiskProtocol() {
-  const riskFactors = [
+  const disclosures = [
     {
-      title: "Every quest has risks. No guarantees.",
-      icon: "shield-alt",
-      color: "destructive",
-      description: "Our trading algorithm is in testing phase and all technology development carries inherent uncertainties. There is no guaranteed outcome in this partnership."
+      title: "Investment Risk Disclosure",
+      icon: AlertTriangle,
+      color: "amber",
+      description: "All investments carry inherent risks. Our investment strategies involve market exposure and technology development, which contain uncertainties. There are no guaranteed returns or outcomes in this partnership."
     },
     {
-      title: "Past performance ≠ future performance", 
-      icon: "chart-line",
-      color: "accent",
-      description: "This is a strategic partnership, not a traditional bank deposit or guaranteed investment vehicle. Your belief and commitment are your capital contributions to a shared vision."
+      title: "Past Performance Disclaimer", 
+      icon: TrendingDown,
+      color: "amber",
+      description: "This partnership represents a strategic investment opportunity, not a traditional deposit or guaranteed investment vehicle. Historical performance does not guarantee future results. Your investment commitment supports a shared vision for growth."
     },
     {
-      title: "Regulatory Compliance",
-      icon: "balance-scale",
-      color: "primary", 
-      description: "We operate under full regulatory compliance through our licensed FSP structure, but innovation always involves navigating uncharted territory."
+      title: "Regulatory Compliance & Oversight",
+      icon: Scale,
+      color: "amber", 
+      description: "We operate under full regulatory compliance as a licensed Financial Services Provider (FSP). All operations adhere to South African financial regulations and are subject to ongoing regulatory oversight and compliance audits."
     }
   ];
 
-  const getColorClasses = (color: string) => {
-    switch (color) {
-      case "destructive":
-        return {
-          bg: "bg-destructive/10",
-          border: "border-destructive", 
-          title: "text-destructive-foreground"
-        };
-      case "accent":
-        return {
-          bg: "bg-accent/10",
-          border: "border-accent",
-          title: "text-accent-foreground"
-        };
-      case "primary":
-        return {
-          bg: "bg-primary/10", 
-          border: "border-primary",
-          title: "text-primary-foreground"
-        };
-      default:
-        return {
-          bg: "bg-muted/10",
-          border: "border-border",
-          title: "text-foreground"
-        };
-    }
-  };
-
   return (
     <section id="briefing" className="py-20 relative overflow-hidden bg-black">
-      <StarsBackground className="opacity-60" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/70 to-background/95 pointer-events-none z-10"></div>
-      <div className="absolute inset-0 bg-black/30 pointer-events-none z-10"></div>
-      <div className="max-w-4xl mx-auto px-4 relative z-20">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
+      <div className="max-w-5xl mx-auto px-4 relative z-20">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <Card className="glass-morphism border-2 border-destructive relative overflow-hidden" data-testid="risk-protocol">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-destructive via-accent to-destructive"></div>
+          <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-2 border-amber-500/40 relative overflow-hidden" data-testid="risk-disclosure">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600"></div>
             
-            <CardContent className="p-8">
+            <CardContent className="p-8 sm:p-12">
               <motion.div 
-                className="text-center mb-8"
+                className="text-center mb-10"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 viewport={{ once: true }}
               >
-                <div className="inline-flex items-center space-x-3 mb-4">
-                  <motion.i 
-                    className="fas fa-exclamation-triangle text-3xl text-destructive"
-                    animate={{ 
-                      opacity: [0.7, 1, 0.7],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{ 
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatType: "reverse"
-                    }}
-                  />
-                  <h2 className="font-orbitron font-bold text-3xl text-destructive">
-                    MISSION BRIEFING: RISK PROTOCOL
-                  </h2>
-                  <motion.i 
-                    className="fas fa-exclamation-triangle text-3xl text-destructive"
-                    animate={{ 
-                      opacity: [0.7, 1, 0.7],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{ 
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      delay: 1
-                    }}
-                  />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-500 mb-4">
+                  <AlertTriangle className="h-8 w-8 text-amber-400" />
                 </div>
-                <p className="text-xl font-bold text-destructive-foreground">Critical Mission Parameters</p>
+                <h2 className="font-serif font-bold text-3xl sm:text-4xl text-amber-400 mb-3">
+                  Important Investment Disclosure
+                </h2>
+                <p className="text-amber-200/70 max-w-2xl mx-auto">
+                  Please carefully review the following information before proceeding with your investment decision
+                </p>
               </motion.div>
 
-              <div className="space-y-6">
-                {riskFactors.map((factor, index) => {
-                  const colors = getColorClasses(factor.color);
-                  
+              <div className="space-y-6 mb-8">
+                {disclosures.map((item, index) => {
+                  const Icon = item.icon;
                   return (
                     <motion.div
-                      key={factor.title}
-                      initial={{ opacity: 0, x: -30 }}
+                      key={item.title}
+                      className="flex gap-4 p-6 bg-amber-500/5 border border-amber-500/20 rounded-lg hover:bg-amber-500/10 transition-colors"
+                      initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
                       viewport={{ once: true }}
-                      className={`rounded-lg p-6 ${colors.bg} ${colors.border} border`}
-                      data-testid={`risk-factor-${index + 1}`}
+                      data-testid={`disclosure-${index + 1}`}
                     >
-                      <p className={`text-lg font-bold mb-3 ${colors.title}`}>
-                        <i className={`fas fa-${factor.icon} mr-2`}></i>
-                        {factor.title}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {factor.description}
-                      </p>
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                          <Icon className="h-6 w-6 text-amber-400" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2 text-amber-300">
+                          {item.title}
+                        </h3>
+                        <p className="text-amber-200/70 text-sm leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
                     </motion.div>
                   );
                 })}
               </div>
 
               <motion.div 
-                className="text-center mt-8 p-6 bg-muted/20 rounded-lg border border-border"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                className="border-t border-amber-500/30 pt-8"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
                 viewport={{ once: true }}
-                data-testid="risk-acknowledgment"
               >
-                <p className="text-lg font-bold text-foreground mb-2">
-                  By joining this mission, you're choosing to build the future rather than waiting for someone else to create it.
-                </p>
-                <p className="text-muted-foreground">
-                  Your participation acknowledges both the potential rewards and inherent risks of pioneering technology development.
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-6">
+                  <p className="text-sm text-amber-200/80 leading-relaxed text-center">
+                    <span className="font-semibold text-amber-400">Important Notice:</span> By proceeding with this investment, you acknowledge that you have read, understood, and accept these disclosures. We recommend consulting with an independent financial advisor before making any investment decisions. All investments are subject to the terms and conditions outlined in the Partnership Agreement.
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="mt-6 text-center"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <p className="text-xs text-amber-200/60">
+                  Licensed Financial Services Provider • FSP Registered • Regulatory Compliant
                 </p>
               </motion.div>
             </CardContent>

@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Shield, Building } from 'lucide-react';
+import opianBankLogo from "@assets/Opian bank_1760685427396.png";
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -27,8 +28,8 @@ export default function Login() {
     if (paymentStatus === 'success') {
       setPaymentSuccess(true);
       toast({
-        title: "Payment Successful! 🎉",
-        description: `Your investment has been processed successfully. Reference: ${reference}. Please login to access your portal.`,
+        title: "Payment Successful",
+        description: `Your investment has been processed successfully. Reference: ${reference}. Please login to access your investor portal.`,
       });
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (paymentStatus === 'failed') {
@@ -57,7 +58,7 @@ export default function Login() {
       
       setStep('otp');
       toast({
-        title: "Code Sent",
+        title: "Verification Code Sent",
         description: "If an account exists with this email, a verification code has been sent.",
       });
     } catch (error: any) {
@@ -77,22 +78,16 @@ export default function Login() {
 
     try {
       const response = await apiRequest('POST', '/api/auth/verify-otp', { email, code: otp });
-      console.log('OTP verification response:', response);
-
       const data = await response.json();
-      console.log('OTP verification data:', data);
       
       if (data.token) {
-        console.log('Token received, updating auth context');
         await setAuthToken(data.token);
-        console.log('Auth context updated, navigating to dashboard');
         toast({
           title: "Login Successful",
-          description: "Welcome back to Opian Rewards",
+          description: "Welcome to your Investor Portal",
         });
         setLocation('/dashboard');
       } else {
-        console.error('No token in response:', data);
         toast({
           title: "Verification Failed",
           description: "Server did not return authentication token",
@@ -100,7 +95,6 @@ export default function Login() {
         });
       }
     } catch (error: any) {
-      console.error('OTP verification error:', error);
       toast({
         title: "Verification Failed",
         description: error.message || "Invalid or expired verification code",
@@ -112,34 +106,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 p-4">
-      <Card className="w-full max-w-md bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-login">
-        <CardHeader className="space-y-1">
+    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-950/20 via-black to-yellow-950/10"></div>
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0iI0ZGRDcwMCIgc3Ryb2tlLW9wYWNpdHk9Ii4wNSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9nPjwvc3ZnPg==')] opacity-30"></div>
+
+      <Card className="w-full max-w-md bg-gradient-to-br from-zinc-900/95 to-zinc-800/95 border-amber-500/30 backdrop-blur-xl relative z-10" data-testid="card-login">
+        <CardHeader className="space-y-1 text-center pb-6">
           <div className="flex items-center justify-center mb-4">
-            <div className="text-4xl font-bold text-cyan-400">
-              OPIAN REWARDS
-            </div>
+            <img 
+              src={opianBankLogo} 
+              alt="Opian Investment Partners" 
+              className="h-16 w-auto object-contain"
+            />
           </div>
+          
           {paymentSuccess && (
-            <div className="flex items-center justify-center gap-2 mb-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-400" />
-              <p className="text-sm text-green-400 font-medium">Payment Successful!</p>
+            <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <CheckCircle2 className="h-5 w-5 text-amber-400" />
+              <p className="text-sm text-amber-400 font-medium">Investment Payment Successful</p>
             </div>
           )}
-          <CardTitle className="text-2xl font-bold text-center text-white">
-            {step === 'email' ? 'Investor Portal Login' : 'Enter Verification Code'}
+          
+          <CardTitle className="text-2xl font-serif font-bold text-amber-100">
+            {step === 'email' ? 'Investor Portal Access' : 'Verify Your Identity'}
           </CardTitle>
-          <CardDescription className="text-center text-gray-300">
+          <CardDescription className="text-center text-amber-200/70">
             {step === 'email' 
-              ? 'Enter your email to receive a login code'
-              : 'Check your email for the 6-digit code'}
+              ? 'Enter your registered email address to receive a secure verification code'
+              : 'Enter the 6-digit verification code sent to your email'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        
+        <CardContent className="pb-8">
           {step === 'email' ? (
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-200">Email Address</Label>
+                <Label htmlFor="email" className="text-amber-200">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -147,23 +149,23 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-gray-700/50 border-cyan-500/30 text-white placeholder:text-gray-400"
+                  className="bg-zinc-800/50 border-amber-500/30 text-amber-100 placeholder:text-amber-200/40 focus:border-amber-500 focus:ring-amber-500/20"
                   data-testid="input-email"
                 />
               </div>
               <Button
                 type="submit"
-                className="w-full bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold"
+                className="w-full bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold shadow-lg shadow-amber-500/30"
                 disabled={isLoading}
                 data-testid="button-request-otp"
               >
-                {isLoading ? 'Sending...' : 'Send Verification Code'}
+                {isLoading ? 'Sending Code...' : 'Send Verification Code'}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="otp" className="text-gray-200">Verification Code</Label>
+                <Label htmlFor="otp" className="text-amber-200">Verification Code</Label>
                 <Input
                   id="otp"
                   type="text"
@@ -172,25 +174,25 @@ export default function Login() {
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   maxLength={6}
                   required
-                  className="bg-gray-700/50 border-cyan-500/30 text-white placeholder:text-gray-400 text-center text-2xl tracking-widest"
+                  className="bg-zinc-800/50 border-amber-500/30 text-amber-100 placeholder:text-amber-200/40 text-center text-2xl tracking-widest focus:border-amber-500 focus:ring-amber-500/20"
                   data-testid="input-otp"
                 />
-                <p className="text-xs text-gray-400 text-center">
-                  Code expires in 10 minutes
+                <p className="text-xs text-amber-200/60 text-center">
+                  Verification code expires in 10 minutes
                 </p>
               </div>
               <Button
                 type="submit"
-                className="w-full bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold"
+                className="w-full bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold shadow-lg shadow-amber-500/30"
                 disabled={isLoading}
                 data-testid="button-verify-otp"
               >
-                {isLoading ? 'Verifying...' : 'Verify & Login'}
+                {isLoading ? 'Verifying...' : 'Verify & Access Portal'}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full text-cyan-400 hover:text-cyan-300 hover:bg-transparent"
+                className="w-full text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
                 onClick={() => {
                   setStep('email');
                   setOtp('');
@@ -201,9 +203,14 @@ export default function Login() {
               </Button>
             </form>
           )}
-          <div className="mt-4 text-center">
-            <a href="/" className="text-sm text-cyan-400 hover:text-cyan-300" data-testid="link-home">
-              ← Back to Home
+          
+          <div className="mt-6 pt-6 border-t border-amber-500/20">
+            <div className="flex items-center justify-center gap-2 text-xs text-amber-200/60 mb-4">
+              <Shield className="h-3 w-3" />
+              <span>Secure authentication • Bank-grade encryption</span>
+            </div>
+            <a href="/" className="block text-center text-sm text-amber-400 hover:text-amber-300 transition-colors" data-testid="link-home">
+              ← Return to Home
             </a>
           </div>
         </CardContent>
