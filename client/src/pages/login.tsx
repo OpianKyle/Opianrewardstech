@@ -119,7 +119,7 @@ export default function Login() {
             <img 
               src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
               alt="Opian Capital" 
-              className="h-16 w-auto object-contain"
+              className="h-24 w-auto object-contain"
             />
           </div>
           
