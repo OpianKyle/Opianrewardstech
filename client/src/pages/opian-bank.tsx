@@ -242,7 +242,7 @@ export default function OpianBank() {
           backgroundImage: `url(${wealthImage})`,
         }}
       >
-        <div className="absolute inset-0 bg-background/70 dark:bg-black/70" />
+        <div className="absolute inset-0 bg-white/80 dark:bg-black/70" />
         <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-primary mb-6">
             Excellence in Wealth Management
