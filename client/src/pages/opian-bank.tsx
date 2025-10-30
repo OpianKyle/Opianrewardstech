@@ -244,18 +244,18 @@ export default function OpianBank() {
           backgroundImage: `url(${wealthImage})`,
         }}
       >
-        <div className="absolute inset-0 bg-white/80 dark:bg-black/70" />
+        <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-primary mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-6">
             Excellence in Wealth Management
           </h2>
-          <p className="text-lg sm:text-xl md:text-2xl text-foreground leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl text-white leading-relaxed">
             "Your financial success is our legacy. We combine traditional values with modern strategies to deliver exceptional results for our investors."
           </p>
           <div className="mt-8 flex items-center justify-center space-x-4">
-            <div className="h-1 w-12 bg-primary"></div>
-            <span className="text-primary font-semibold">Since 2013</span>
-            <div className="h-1 w-12 bg-primary"></div>
+            <div className="h-1 w-12 bg-amber-400"></div>
+            <span className="text-amber-400 font-semibold">Since 2013</span>
+            <div className="h-1 w-12 bg-amber-400"></div>
           </div>
         </div>
       </section>
