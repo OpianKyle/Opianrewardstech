@@ -105,6 +105,11 @@
   }
 
   .glass-morphism {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(180, 83, 9, 0.2);
+  }
+  
+  .dark .glass-morphism {
     background: rgba(10, 15, 30, 0.7);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(0, 224, 255, 0.2);

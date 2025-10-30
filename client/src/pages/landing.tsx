@@ -20,6 +20,11 @@ export default function Landing() {
   const { toast } = useToast();
   const { theme } = useTheme();
 
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Handle payment return from Adumo
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
