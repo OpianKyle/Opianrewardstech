@@ -241,8 +241,8 @@ export function PaymentSection({
 
   return (
     <>
-      <section id="payment" className="py-20 relative overflow-hidden bg-black">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-black pointer-events-none z-10"></div>
+      <section id="payment" className="py-20 relative overflow-hidden bg-white dark:bg-black">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-transparent dark:to-black pointer-events-none z-10"></div>
         <div className="max-w-7xl mx-auto px-4 relative z-20">
           <div className="grid lg:grid-cols-12 gap-12">
             <motion.div 
@@ -252,10 +252,10 @@ export function PaymentSection({
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h2 className="font-serif font-bold text-4xl md:text-5xl mb-6 text-amber-400">
+              <h2 className="font-serif font-bold text-4xl md:text-5xl mb-6 text-amber-600 dark:text-amber-400">
                 Begin Your Investment Journey
               </h2>
-              <p className="text-xl text-amber-200/80 mb-8 leading-relaxed">
+              <p className="text-xl text-gray-700 dark:text-amber-200/80 mb-8 leading-relaxed">
                 Join Opian Bank as a valued investment partner. Secure your position as a founding investor 
                 in our exclusive partnership program with proven returns and professional wealth management.
               </p>
@@ -275,8 +275,8 @@ export function PaymentSection({
                     transition={{ duration: 0.4, delay: index * 0.1 }}
                     viewport={{ once: true }}
                   >
-                    <i className="fas fa-check-circle text-amber-400"></i>
-                    <span className="text-amber-200/80">{feature}</span>
+                    <i className="fas fa-check-circle text-amber-600 dark:text-amber-400"></i>
+                    <span className="text-gray-700 dark:text-amber-200/80">{feature}</span>
                   </motion.div>
                 ))}
               </div>
@@ -289,7 +289,7 @@ export function PaymentSection({
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <Card className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-amber-500/30" data-testid="payment-card">
+              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-900 dark:to-zinc-800 border border-amber-500/30" data-testid="payment-card">
                 <CardContent className="p-8">
                   <div className="grid grid-cols-1 gap-8">
                     <div className="grid grid-cols-2 gap-4">
@@ -314,8 +314,8 @@ export function PaymentSection({
                     <div className="text-center py-12">
                       <div className="w-full h-64 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-xl border border-amber-500/30 flex items-center justify-center">
                         <div className="text-center">
-                          <i className="fas fa-handshake text-6xl text-amber-400 mb-4" />
-                          <p className="text-lg font-serif font-semibold text-amber-300">
+                          <i className="fas fa-handshake text-6xl text-amber-600 dark:text-amber-400 mb-4" />
+                          <p className="text-lg font-serif font-semibold text-amber-700 dark:text-amber-300">
                             Your Wealth. Our Expertise.
                           </p>
                         </div>
@@ -331,9 +331,9 @@ export function PaymentSection({
 
       {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-2 border-amber-500/30 max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="payment-modal">
+        <DialogContent className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border-2 border-amber-500/30 max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="payment-modal">
           <DialogHeader>
-            <DialogTitle className="font-serif font-bold text-2xl text-amber-400 text-center">
+            <DialogTitle className="font-serif font-bold text-2xl text-amber-700 dark:text-amber-400 text-center">
               Investment Options
             </DialogTitle>
           </DialogHeader>
@@ -535,9 +535,9 @@ export function PaymentSection({
 
       {/* Contact Modal */}
       <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
-        <DialogContent className="bg-gradient-to-br from-zinc-900 to-zinc-800 border-2 border-amber-500/30 max-w-md" data-testid="contact-modal">
+        <DialogContent className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border-2 border-amber-500/30 max-w-md" data-testid="contact-modal">
           <DialogHeader>
-            <DialogTitle className="font-serif font-bold text-2xl text-amber-400 text-center">
+            <DialogTitle className="font-serif font-bold text-2xl text-amber-700 dark:text-amber-400 text-center">
               Contact Our Investment Team
             </DialogTitle>
           </DialogHeader>
