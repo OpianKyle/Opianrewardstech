@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award, Shield, TrendingUp } from "lucide-react";
+import { Award, TrendingUp } from "lucide-react";
 
 export function RewardsSection() {
   const benefits = [
@@ -9,12 +9,6 @@ export function RewardsSection() {
       Icon: Award,
       description: "Official partnership certificate issued in both digital and physical formats, documenting your investment commitment and partnership status with Opian Investment Partners.",
       feature: "Founding Partner Recognition"
-    },
-    {
-      title: "Investor Portal Access", 
-      Icon: Shield,
-      description: "Exclusive access to your secure investor dashboard with real-time portfolio tracking, quarterly reports, and direct communication with your dedicated investment advisor.",
-      feature: "24/7 Portfolio Management"
     },
     {
       title: "Future Opportunities",
@@ -43,7 +37,7 @@ export function RewardsSection() {
         </motion.div>
 
         <motion.div 
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12"
+          className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}

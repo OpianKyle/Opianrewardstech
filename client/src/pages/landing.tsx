@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { HeroSection } from "@/components/hero-section";
 import { TierSelection } from "@/components/tier-selection";
 import { ShaderBackground } from "@/components/shader-background";
 import { QuestProgression } from "@/components/quest-progression";
@@ -11,7 +10,6 @@ import { useTheme } from "@/contexts/theme-provider";
 import { useToast } from "@/hooks/use-toast";
 import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
 import opianCapitalLight from "@assets/GetAttachmentThumbnail_1761219213754.png";
-import wealthImage from "@assets/generated_images/Gold_and_wealth_management_681ca419.png";
 
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -177,33 +175,9 @@ export default function Landing() {
         </div>
       </nav>
 
-      <div id="hero">
-        <HeroSection onScrollToTiers={scrollToTiers} />
+      <div className="pt-20">
+        <TierSelection onTierSelect={handleTierSelect} />
       </div>
-
-      <section 
-        className="parallax-banner relative h-[400px] sm:h-[500px] md:h-[600px] flex items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage: `url(${wealthImage})`,
-        }}
-      >
-        <div className="absolute inset-0 bg-background/70" />
-        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-primary mb-6">
-            Strategic Investment Excellence
-          </h2>
-          <p className="text-lg sm:text-xl md:text-2xl text-foreground/90 leading-relaxed">
-            "Building generational wealth through disciplined investment strategies and proven partnership models. Your success is our commitment."
-          </p>
-          <div className="mt-8 flex items-center justify-center space-x-4">
-            <div className="h-1 w-12 bg-primary"></div>
-            <span className="text-primary font-semibold">Trusted Since 2013</span>
-            <div className="h-1 w-12 bg-primary"></div>
-          </div>
-        </div>
-      </section>
-
-      <TierSelection onTierSelect={handleTierSelect} />
 
       <QuestProgression />
 

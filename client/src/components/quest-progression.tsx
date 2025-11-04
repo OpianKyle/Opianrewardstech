@@ -31,7 +31,7 @@ export function QuestProgression() {
           >
             <Card className="bg-card border-primary/30 h-full" data-testid="investment-summary">
               <CardContent className="p-8">
-                <h3 className="font-serif font-bold text-2xl mb-6 text-primary text-center">Investment Summary</h3>
+                <h3 className="font-serif font-bold text-2xl mb-6 text-primary text-center">Investment Summary based on the Innovator package</h3>
                 
                 <div className="grid grid-cols-1 gap-6 mb-8">
                   <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
