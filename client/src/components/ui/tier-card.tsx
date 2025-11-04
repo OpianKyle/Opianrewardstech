@@ -61,8 +61,8 @@ export function TierCard({ tier, isSelected, onSelect, colorScheme }: TierCardPr
       className="relative"
     >
       {tier.popular && (
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-          <span className={cn("px-4 py-1 rounded-full text-sm font-bold", colors.popularBg)}>
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+          <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-600 to-yellow-500 text-black shadow-lg">
             MOST POPULAR
           </span>
         </div>
