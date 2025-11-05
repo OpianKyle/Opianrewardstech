@@ -724,10 +724,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           icon: "hammer",
           pricing: {
             lump_sum: 12000,
-            deposit: 6000,
-            monthly_12: { amount: 500, months: 12 }
+            deposit: null,
+            monthly_12: null
           },
-          description: "Perfect for early believers who want to participate in our growth journey with a manageable monthly commitment."
+          description: "Perfect for early believers who want to participate in our growth journey with a one-time investment."
         },
         innovator: {
           name: "The Innovator", 
@@ -736,8 +736,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           popular: true,
           pricing: {
             lump_sum: 24000,
-            deposit: 12000,
-            monthly_12: { amount: 1000, months: 12 }
+            deposit: null,
+            monthly_12: null
           },
           description: "Ideal for partners who see the significant potential and want a meaningful stake in our success story."
         },
@@ -747,8 +747,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           icon: "eye",
           pricing: {
             lump_sum: 36000,
-            deposit: 18000,
-            monthly_12: { amount: 1500, months: 12 }
+            deposit: null,
+            monthly_12: null
           },
           description: "For those who fully embrace our vision and want to maximize their partnership returns."
         },

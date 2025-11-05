@@ -341,13 +341,12 @@ export function PaymentSection({
             {selectedTier && selectedTier !== 'cornerstone' && (
               <div>
                 <Label htmlFor="paymentMethod">Payment Method</Label>
-                <Select onValueChange={setSelectedPaymentMethod} required>
+                <Select onValueChange={setSelectedPaymentMethod} value="lump_sum" required>
                   <SelectTrigger data-testid="select-payment-method">
                     <SelectValue placeholder="Choose payment method" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="lump_sum">One-off Payment</SelectItem>
-                    <SelectItem value="deposit_monthly">Deposit + 12 Monthly Payments</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
