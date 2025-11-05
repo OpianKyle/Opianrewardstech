@@ -14,7 +14,6 @@ import opianCapitalLight from "@assets/GetAttachmentThumbnail_1761219213754.png"
 export default function Landing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
   const { theme } = useTheme();
 
@@ -73,14 +72,6 @@ export default function Landing() {
     setShowPaymentModal(true);
   };
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Navigation */}
@@ -95,84 +86,21 @@ export default function Landing() {
                 data-testid="logo-image"
               />
             </div>
-            <div className="hidden md:flex space-x-8 items-center">
-              <a href="#hero" className="hover:text-primary transition-colors" data-testid="nav-mission">
-                Mission
-              </a>
-              <a href="#tiers" className="hover:text-primary transition-colors" data-testid="nav-tiers">
-                Tiers
-              </a>
-              <a href="#rewards" className="hover:text-primary transition-colors" data-testid="nav-rewards">
-                Rewards
-              </a>
-              <a href="#briefing" className="hover:text-primary transition-colors" data-testid="nav-protocol">
-                Protocol
-              </a>
+            <div className="hidden md:flex space-x-4 items-center">
               <ThemeToggle />
               <a href="/login" className="px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors shadow-lg shadow-amber-500/20" data-testid="nav-login">
                 Investor Login
               </a>
             </div>
-            <button 
-              className="md:hidden text-primary" 
-              onClick={toggleMobileMenu}
-              data-testid="nav-mobile-menu"
-            >
-              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'} text-xl`}></i>
-            </button>
+            <div className="md:hidden flex space-x-4 items-center">
+              <ThemeToggle />
+              <a href="/login" className="px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors shadow-lg shadow-amber-500/20" data-testid="nav-login">
+                Investor Login
+              </a>
+            </div>
           </div>
         </div>
         
-        {/* Mobile Menu */}
-        <div className={`md:hidden transition-all duration-300 ease-in-out ${
-          mobileMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-        } overflow-hidden bg-background/95 backdrop-blur-sm border-t border-primary/20`}>
-          <div className="px-4 py-6 space-y-4">
-            <a 
-              href="#hero" 
-              className="block text-foreground hover:text-primary transition-colors py-2"
-              onClick={closeMobileMenu}
-              data-testid="mobile-nav-mission"
-            >
-              Mission
-            </a>
-            <a 
-              href="#tiers" 
-              className="block text-foreground hover:text-primary transition-colors py-2"
-              onClick={closeMobileMenu}
-              data-testid="mobile-nav-tiers"
-            >
-              Tiers
-            </a>
-            <a 
-              href="#rewards" 
-              className="block text-foreground hover:text-primary transition-colors py-2"
-              onClick={closeMobileMenu}
-              data-testid="mobile-nav-rewards"
-            >
-              Rewards
-            </a>
-            <a 
-              href="#briefing" 
-              className="block text-foreground hover:text-primary transition-colors py-2"
-              onClick={closeMobileMenu}
-              data-testid="mobile-nav-protocol"
-            >
-              Protocol
-            </a>
-            <div className="py-2">
-              <ThemeToggle />
-            </div>
-            <a 
-              href="/login" 
-              className="block px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors text-center shadow-lg shadow-amber-500/20"
-              onClick={closeMobileMenu}
-              data-testid="mobile-nav-login"
-            >
-              Investor Login
-            </a>
-          </div>
-        </div>
       </nav>
 
       <div className="pt-20">
