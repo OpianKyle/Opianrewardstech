@@ -76,17 +76,17 @@ export default function Landing() {
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 glass-morphism" data-testid="navigation">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-3 sm:py-4">
             <div className="flex items-center space-x-2">
               <img 
                 src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
                 alt="Opian Capital" 
-                className="h-14 w-auto object-contain"
+                className="h-10 sm:h-12 md:h-14 w-auto object-contain"
                 data-testid="logo-image"
               />
             </div>
             <div className="flex items-center">
-              <a href="/login" className="px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors shadow-lg shadow-amber-500/20" data-testid="nav-login">
+              <a href="/login" className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-all duration-300 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40" data-testid="nav-login">
                 Investor Login
               </a>
             </div>
@@ -95,7 +95,7 @@ export default function Landing() {
         
       </nav>
 
-      <div className="pt-20">
+      <div className="pt-16 sm:pt-20">
         <TierSelection onTierSelect={handleTierSelect} />
       </div>
 
@@ -112,34 +112,34 @@ export default function Landing() {
       />
 
       {/* Footer */}
-      <footer className="py-12 relative overflow-hidden bg-card border-t border-border" data-testid="footer">
-        <div className="max-w-7xl mx-auto px-4 relative z-20">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div className="md:col-span-2">
+      <footer className="py-8 sm:py-12 relative overflow-hidden bg-card border-t border-border" data-testid="footer">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
+            <div className="sm:col-span-2 md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <img 
                   src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
                   alt="Opian Capital" 
-                  className="h-24 w-auto object-contain"
+                  className="h-16 sm:h-20 md:h-24 w-auto object-contain"
                   data-testid="footer-logo-image"
                 />
               </div>
-              <p className="text-foreground/70 mb-6 leading-relaxed">
+              <p className="text-sm sm:text-base text-foreground/70 mb-4 sm:mb-6 leading-relaxed">
                 Building generational wealth through disciplined investment strategies and proven partnership models. The Ascendancy Project represents a unique opportunity for discerning investors committed to long-term financial excellence.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-primary hover:text-primary/80 transition-colors" data-testid="social-linkedin">
-                  <i className="fab fa-linkedin text-xl"></i>
+                  <i className="fab fa-linkedin text-lg sm:text-xl"></i>
                 </a>
                 <a href="#" className="text-primary hover:text-primary/80 transition-colors" data-testid="social-twitter">
-                  <i className="fab fa-twitter text-xl"></i>
+                  <i className="fab fa-twitter text-lg sm:text-xl"></i>
                 </a>
               </div>
             </div>
 
             <div>
-              <h4 className="font-serif font-bold text-lg mb-4 text-primary">Investment</h4>
-              <div className="space-y-2 text-foreground/70">
+              <h4 className="font-serif font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">Investment</h4>
+              <div className="space-y-2 text-foreground/70 text-sm sm:text-base">
                 <a href="#tiers" className="block hover:text-primary transition-colors">Partnership Tiers</a>
                 <a href="#rewards" className="block hover:text-primary transition-colors">Benefits & Returns</a>
                 <a href="#progression" className="block hover:text-primary transition-colors">Investment Timeline</a>
@@ -148,8 +148,8 @@ export default function Landing() {
             </div>
 
             <div>
-              <h4 className="font-serif font-bold text-lg mb-4 text-primary">Compliance & Legal</h4>
-              <div className="space-y-2 text-foreground/70 text-sm">
+              <h4 className="font-serif font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">Compliance & Legal</h4>
+              <div className="space-y-2 text-foreground/70 text-xs sm:text-sm">
                 <p className="flex items-start">
                   <span className="text-primary mr-2">•</span>
                   <span>Licensed Financial Services Provider</span>
@@ -168,9 +168,9 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="border-t border-border pt-8">
+          <div className="border-t border-border pt-6 sm:pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-foreground/60 text-sm text-center md:text-left">
+              <p className="text-foreground/60 text-xs sm:text-sm text-center md:text-left">
                 © 2024 The Ascendancy Project by Opian Investment Partners. All rights reserved.
               </p>
               <div className="flex items-center gap-4 text-xs text-foreground/60">

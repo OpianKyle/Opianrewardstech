@@ -50,41 +50,41 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
   }
 
   return (
-    <section id="tiers" className="py-20 relative overflow-hidden bg-background">
-      <div className="max-w-7xl mx-auto px-4 relative z-20">
+    <section id="tiers" className="py-12 sm:py-16 md:py-20 relative overflow-hidden bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
         <motion.div 
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-10 md:mb-12"
           initial={{ opacity: 0, y: -50 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="font-serif font-bold text-4xl md:text-5xl mb-6 text-primary">
+          <h2 className="font-serif font-bold text-3xl sm:text-4xl md:text-5xl mb-4 sm:mb-6 text-primary px-2">
             Investment Partnership Tiers
           </h2>
-          <p className="text-lg text-foreground/80 mb-8 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg text-foreground/80 mb-6 sm:mb-8 leading-relaxed max-w-3xl mx-auto px-4">
             Choose the partnership level that aligns with your investment goals and commitment to our shared success. Each tier offers distinct benefits and return structures tailored to your investment horizon.
           </p>
-          <div className="flex flex-wrap justify-center gap-6 max-w-2xl mx-auto">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 sm:gap-6 max-w-2xl mx-auto px-4">
             <div className="flex items-start gap-3">
-              <i className="fas fa-shield-alt text-primary mt-1"></i>
-              <div>
-                <h4 className="font-semibold text-primary mb-1">Licensed & Regulated</h4>
-                <p className="text-sm text-foreground/70">FSP compliant with full regulatory oversight</p>
+              <i className="fas fa-shield-alt text-primary mt-1 text-lg sm:text-base"></i>
+              <div className="text-left">
+                <h4 className="font-semibold text-primary mb-1 text-sm sm:text-base">Licensed & Regulated</h4>
+                <p className="text-xs sm:text-sm text-foreground/70">FSP compliant with full regulatory oversight</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <i className="fas fa-chart-line text-primary mt-1"></i>
-              <div>
-                <h4 className="font-semibold text-primary mb-1">Proven Returns</h4>
-                <p className="text-sm text-foreground/70">Track record of sustainable growth since 2013</p>
+              <i className="fas fa-chart-line text-primary mt-1 text-lg sm:text-base"></i>
+              <div className="text-left">
+                <h4 className="font-semibold text-primary mb-1 text-sm sm:text-base">Proven Returns</h4>
+                <p className="text-xs sm:text-sm text-foreground/70">Track record of sustainable growth since 2013</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <i className="fas fa-handshake text-primary mt-1"></i>
-              <div>
-                <h4 className="font-semibold text-primary mb-1">Partnership Model</h4>
-                <p className="text-sm text-foreground/70">Shared success through aligned interests</p>
+              <i className="fas fa-handshake text-primary mt-1 text-lg sm:text-base"></i>
+              <div className="text-left">
+                <h4 className="font-semibold text-primary mb-1 text-sm sm:text-base">Partnership Model</h4>
+                <p className="text-xs sm:text-sm text-foreground/70">Shared success through aligned interests</p>
               </div>
             </div>
           </div>
@@ -96,7 +96,7 @@ export function TierSelection({ onTierSelect }: TierSelectionProps) {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {tiers && (
               <>
                 <TierCard

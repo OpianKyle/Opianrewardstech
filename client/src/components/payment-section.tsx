@@ -243,52 +243,55 @@ export function PaymentSection({
     <>
       {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border-2 border-amber-500/30 max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="payment-modal">
+        <DialogContent className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border-2 border-amber-500/30 max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6" data-testid="payment-modal">
           <DialogHeader>
-            <DialogTitle className="font-serif font-bold text-2xl text-amber-700 dark:text-amber-400 text-center">
+            <DialogTitle className="font-serif font-bold text-xl sm:text-2xl text-amber-700 dark:text-amber-400 text-center">
               Investment Options
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handlePaymentSubmit} className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handlePaymentSubmit} className="space-y-3 sm:space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName" className="text-sm sm:text-base">First Name</Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   required
+                  className="h-11 sm:h-12 text-sm sm:text-base"
                   data-testid="input-first-name"
                 />
               </div>
               <div>
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName" className="text-sm sm:text-base">Last Name</Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   required
+                  className="h-11 sm:h-12 text-sm sm:text-base"
                   data-testid="input-last-name"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  className="h-11 sm:h-12 text-sm sm:text-base"
                   data-testid="input-email"
                 />
               </div>
 
               <div>
-                <Label htmlFor="phone">Cell Phone Number</Label>
+                <Label htmlFor="phone" className="text-sm sm:text-base">Cell Phone Number</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -296,15 +299,16 @@ export function PaymentSection({
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+27 82 123 4567"
                   required
+                  className="h-11 sm:h-12 text-sm sm:text-base"
                   data-testid="input-phone"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="tier">Select Tier</Label>
+              <Label htmlFor="tier" className="text-sm sm:text-base">Select Tier</Label>
               <Select onValueChange={setSelectedTier} value={selectedTier || ""} required>
-                <SelectTrigger data-testid="select-tier">
+                <SelectTrigger data-testid="select-tier" className="h-11 sm:h-12 text-sm sm:text-base">
                   <SelectValue placeholder="Choose your tier" />
                 </SelectTrigger>
                 <SelectContent>
@@ -319,7 +323,7 @@ export function PaymentSection({
             {/* Custom Amount for Cornerstone Tier */}
             {selectedTier === 'cornerstone' && (
               <div>
-                <Label htmlFor="customAmount">Custom Amount (Minimum R36,000)</Label>
+                <Label htmlFor="customAmount" className="text-sm sm:text-base">Custom Amount (Minimum R36,000)</Label>
                 <Input
                   id="customAmount"
                   type="number"
@@ -329,6 +333,7 @@ export function PaymentSection({
                   onChange={(e) => setCustomAmount(e.target.value)}
                   placeholder="Enter amount (e.g., 50000)"
                   required
+                  className="h-11 sm:h-12 text-sm sm:text-base"
                   data-testid="input-custom-amount"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -340,9 +345,9 @@ export function PaymentSection({
             {/* Payment Method for non-Cornerstone tiers */}
             {selectedTier && selectedTier !== 'cornerstone' && (
               <div>
-                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Label htmlFor="paymentMethod" className="text-sm sm:text-base">Payment Method</Label>
                 <Select onValueChange={setSelectedPaymentMethod} value="lump_sum" required>
-                  <SelectTrigger data-testid="select-payment-method">
+                  <SelectTrigger data-testid="select-payment-method" className="h-11 sm:h-12 text-sm sm:text-base">
                     <SelectValue placeholder="Choose payment method" />
                   </SelectTrigger>
                   <SelectContent>
@@ -352,81 +357,75 @@ export function PaymentSection({
               </div>
             )}
 
-            <div className="space-y-4">
-              <div className="border-2 border-primary rounded-lg p-4 hover:bg-primary/10 cursor-pointer transition-colors">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="border-2 border-primary rounded-lg p-3 sm:p-4 hover:bg-primary/10 cursor-pointer transition-colors">
                 <div className="flex items-center space-x-3">
-                  <i className="fas fa-credit-card text-primary text-xl"></i>
+                  <i className="fas fa-credit-card text-primary text-lg sm:text-xl"></i>
                   <div>
-                    <p className="font-bold text-primary">Adumo Secure Payment</p>
-                    <p className="text-sm text-muted-foreground">Credit/Debit Cards, EFT</p>
+                    <p className="font-bold text-primary text-sm sm:text-base">Adumo Secure Payment</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Credit/Debit Cards, EFT</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Terms & Conditions and Privacy Policy */}
-            <div className="space-y-3 py-4 border-t border-border">
-              <div className="flex items-start space-x-3">
+            <div className="space-y-2 sm:space-y-3 py-3 sm:py-4 border-t border-border">
+              <label htmlFor="terms" className="flex items-center min-h-[44px] cursor-pointer group">
                 <Checkbox 
                   id="terms"
                   checked={acceptTerms}
                   onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                  className="w-5 h-5 sm:w-6 sm:h-6 mr-3 sm:mr-4"
                   data-testid="checkbox-terms"
                 />
-                <div className="grid gap-1.5 leading-none">
-                  <Label 
-                    htmlFor="terms" 
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                <span className="text-sm sm:text-base font-medium leading-relaxed">
+                  I accept the{" "}
+                  <a 
+                    href="/terms" 
+                    target="_blank"
+                    className="text-primary hover:text-primary/80 underline"
+                    onClick={(e) => e.stopPropagation()}
+                    data-testid="link-terms"
                   >
-                    I accept the{" "}
-                    <a 
-                      href="/terms" 
-                      target="_blank"
-                      className="text-primary hover:text-primary/80 underline"
-                      data-testid="link-terms"
-                    >
-                      Terms & Conditions
-                    </a>
-                  </Label>
-                </div>
-              </div>
+                    Terms & Conditions
+                  </a>
+                </span>
+              </label>
               
-              <div className="flex items-start space-x-3">
+              <label htmlFor="privacy" className="flex items-center min-h-[44px] cursor-pointer group">
                 <Checkbox 
                   id="privacy"
                   checked={acceptPrivacy}
                   onCheckedChange={(checked) => setAcceptPrivacy(checked as boolean)}
+                  className="w-5 h-5 sm:w-6 sm:h-6 mr-3 sm:mr-4"
                   data-testid="checkbox-privacy"
                 />
-                <div className="grid gap-1.5 leading-none">
-                  <Label 
-                    htmlFor="privacy" 
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                <span className="text-sm sm:text-base font-medium leading-relaxed">
+                  I accept the{" "}
+                  <a 
+                    href="/privacy" 
+                    target="_blank"
+                    className="text-primary hover:text-primary/80 underline"
+                    onClick={(e) => e.stopPropagation()}
+                    data-testid="link-privacy"
                   >
-                    I accept the{" "}
-                    <a 
-                      href="/privacy" 
-                      target="_blank"
-                      className="text-primary hover:text-primary/80 underline"
-                      data-testid="link-privacy"
-                    >
-                      Privacy Policy
-                    </a>
-                  </Label>
-                </div>
-              </div>
+                    Privacy Policy
+                  </a>
+                </span>
+              </label>
               
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 By proceeding, you confirm that you understand and agree to our terms regarding investment risks, payment processing, and data protection.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowPaymentModal(false)}
-                className="flex-1"
+                className="flex-1 h-11 sm:h-12 text-sm sm:text-base"
                 data-testid="button-cancel-payment"
               >
                 Cancel
@@ -434,7 +433,7 @@ export function PaymentSection({
               <AnimatedButton
                 type="submit"
                 disabled={paymentMutation.isPending}
-                className="flex-1 bg-primary text-primary-foreground font-bold"
+                className="flex-1 bg-primary text-primary-foreground font-bold h-11 sm:h-12 text-sm sm:text-base"
                 data-testid="button-continue-payment"
               >
                 {paymentMutation.isPending ? "Processing..." : "Continue"}
@@ -446,39 +445,41 @@ export function PaymentSection({
 
       {/* Contact Modal */}
       <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
-        <DialogContent className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border-2 border-amber-500/30 max-w-md" data-testid="contact-modal">
+        <DialogContent className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-900 dark:to-zinc-800 border-2 border-amber-500/30 max-w-[95vw] sm:max-w-md p-4 sm:p-6" data-testid="contact-modal">
           <DialogHeader>
-            <DialogTitle className="font-serif font-bold text-2xl text-amber-700 dark:text-amber-400 text-center">
+            <DialogTitle className="font-serif font-bold text-xl sm:text-2xl text-amber-700 dark:text-amber-400 text-center">
               Contact Our Investment Team
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleContactSubmit} className="space-y-4">
+          <form onSubmit={handleContactSubmit} className="space-y-3 sm:space-y-4">
             <div>
-              <Label htmlFor="contactName">Name</Label>
+              <Label htmlFor="contactName" className="text-sm sm:text-base">Name</Label>
               <Input
                 id="contactName"
                 name="name"
                 required
+                className="h-11 sm:h-12 text-sm sm:text-base"
                 data-testid="input-contact-name"
               />
             </div>
 
             <div>
-              <Label htmlFor="contactEmail">Email</Label>
+              <Label htmlFor="contactEmail" className="text-sm sm:text-base">Email</Label>
               <Input
                 id="contactEmail"
                 name="email"
                 type="email"
                 required
+                className="h-11 sm:h-12 text-sm sm:text-base"
                 data-testid="input-contact-email"
               />
             </div>
 
             <div>
-              <Label htmlFor="contactTier">Interested Tier</Label>
+              <Label htmlFor="contactTier" className="text-sm sm:text-base">Interested Tier</Label>
               <Select name="tier">
-                <SelectTrigger data-testid="select-contact-tier">
+                <SelectTrigger data-testid="select-contact-tier" className="h-11 sm:h-12 text-sm sm:text-base">
                   <SelectValue placeholder="Select tier (optional)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -491,23 +492,23 @@ export function PaymentSection({
             </div>
 
             <div>
-              <Label htmlFor="contactMessage">Message</Label>
+              <Label htmlFor="contactMessage" className="text-sm sm:text-base">Message</Label>
               <textarea
                 id="contactMessage"
                 name="message"
-                className="w-full p-3 bg-input border border-border rounded-md text-foreground"
+                className="w-full p-3 sm:p-4 bg-input border border-border rounded-md text-foreground text-sm sm:text-base min-h-[100px]"
                 rows={4}
                 required
                 data-testid="textarea-contact-message"
               />
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowContactModal(false)}
-                className="flex-1"
+                className="flex-1 h-11 sm:h-12 text-sm sm:text-base"
                 data-testid="button-cancel-contact"
               >
                 Cancel
@@ -515,7 +516,7 @@ export function PaymentSection({
               <AnimatedButton
                 type="submit"
                 disabled={contactMutation.isPending}
-                className="flex-1 bg-primary text-primary-foreground font-bold"
+                className="flex-1 bg-primary text-primary-foreground font-bold h-11 sm:h-12 text-sm sm:text-base"
                 data-testid="button-send-message"
               >
                 {contactMutation.isPending ? "Sending..." : "Send Message"}

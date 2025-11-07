@@ -179,7 +179,7 @@ export default function OpianBank() {
                       value={formData.firstName}
                       onChange={handleChange}
                       required
-                      className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                      className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                       data-testid="input-firstName"
                     />
                   </div>
@@ -191,7 +191,7 @@ export default function OpianBank() {
                       value={formData.lastName}
                       onChange={handleChange}
                       required
-                      className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                      className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                       data-testid="input-lastName"
                     />
                   </div>
@@ -206,7 +206,7 @@ export default function OpianBank() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                     data-testid="input-email"
                   />
                 </div>
@@ -220,7 +220,7 @@ export default function OpianBank() {
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                     data-testid="input-phone"
                   />
                 </div>
@@ -232,7 +232,7 @@ export default function OpianBank() {
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                    className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                     data-testid="input-company"
                   />
                 </div>
@@ -249,7 +249,7 @@ export default function OpianBank() {
                         value={formData.streetAddress}
                         onChange={handleChange}
                         required
-                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                         data-testid="input-streetAddress"
                       />
                     </div>
@@ -263,7 +263,7 @@ export default function OpianBank() {
                           value={formData.city}
                           onChange={handleChange}
                           required
-                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                           data-testid="input-city"
                         />
                       </div>
@@ -275,7 +275,7 @@ export default function OpianBank() {
                           value={formData.province}
                           onChange={handleChange}
                           required
-                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                           data-testid="input-province"
                         />
                       </div>
@@ -290,7 +290,7 @@ export default function OpianBank() {
                           value={formData.postalCode}
                           onChange={handleChange}
                           required
-                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                           data-testid="input-postalCode"
                         />
                       </div>
@@ -302,7 +302,7 @@ export default function OpianBank() {
                           value={formData.country}
                           onChange={handleChange}
                           required
-                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11"
+                          className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12"
                           data-testid="input-country"
                         />
                       </div>
@@ -323,7 +323,7 @@ export default function OpianBank() {
                         multiple
                         onChange={handleFileChange}
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-10 sm:h-11 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-amber-500/30"
+                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-amber-500/30"
                         data-testid="input-ficaDocuments"
                       />
                       <Upload className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500/50 pointer-events-none" />
@@ -336,32 +336,32 @@ export default function OpianBank() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-border space-y-4">
-                  <div className="flex items-start space-x-3">
+                <div className="pt-4 border-t border-border space-y-3 sm:space-y-4">
+                  <label htmlFor="acceptedTerms" className="flex items-center min-h-[44px] cursor-pointer group">
                     <Checkbox
                       id="acceptedTerms"
                       checked={formData.acceptedTerms}
                       onCheckedChange={handleCheckboxChange("acceptedTerms")}
-                      className="mt-1 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      className="w-5 h-5 sm:w-6 sm:h-6 mr-3 sm:mr-4 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       data-testid="checkbox-terms"
                     />
-                    <Label htmlFor="acceptedTerms" className="text-sm text-foreground cursor-pointer leading-relaxed">
+                    <span className="text-sm sm:text-base text-foreground leading-relaxed">
                       I accept the <span className="text-primary underline">Terms & Conditions</span> *
-                    </Label>
-                  </div>
+                    </span>
+                  </label>
 
-                  <div className="flex items-start space-x-3">
+                  <label htmlFor="acceptedPrivacy" className="flex items-center min-h-[44px] cursor-pointer group">
                     <Checkbox
                       id="acceptedPrivacy"
                       checked={formData.acceptedPrivacy}
                       onCheckedChange={handleCheckboxChange("acceptedPrivacy")}
-                      className="mt-1 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      className="w-5 h-5 sm:w-6 sm:h-6 mr-3 sm:mr-4 border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       data-testid="checkbox-privacy"
                     />
-                    <Label htmlFor="acceptedPrivacy" className="text-sm text-foreground cursor-pointer leading-relaxed">
+                    <span className="text-sm sm:text-base text-foreground leading-relaxed">
                       I accept the <span className="text-primary underline">Privacy Policy</span> *
-                    </Label>
-                  </div>
+                    </span>
+                  </label>
                 </div>
 
                 <Button
