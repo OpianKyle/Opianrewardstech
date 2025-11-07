@@ -5,7 +5,6 @@ import { QuestProgression } from "@/components/quest-progression";
 import { RewardsSection } from "@/components/rewards-section";
 import { RiskProtocol } from "@/components/risk-protocol";
 import { PaymentSection } from "@/components/payment-section";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/contexts/theme-provider";
 import { useToast } from "@/hooks/use-toast";
 import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
@@ -86,14 +85,7 @@ export default function Landing() {
                 data-testid="logo-image"
               />
             </div>
-            <div className="hidden md:flex space-x-4 items-center">
-              <ThemeToggle />
-              <a href="/login" className="px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors shadow-lg shadow-amber-500/20" data-testid="nav-login">
-                Investor Login
-              </a>
-            </div>
-            <div className="md:hidden flex space-x-4 items-center">
-              <ThemeToggle />
+            <div className="flex items-center">
               <a href="/login" className="px-4 py-2 rounded bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-bold transition-colors shadow-lg shadow-amber-500/20" data-testid="nav-login">
                 Investor Login
               </a>

@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Lock, Upload } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/contexts/theme-provider";
 import { apiRequest } from "@/lib/queryClient";
 import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
@@ -136,9 +135,6 @@ export default function OpianBank() {
                 className="h-10 sm:h-12 md:h-16 w-auto object-contain"
                 data-testid="bank-logo"
               />
-            </div>
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
             </div>
           </div>
         </div>
