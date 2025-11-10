@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, gte } from "drizzle-orm";
 import { db, isDatabaseConnected } from "./db";
 import { 
   InsertUser, 
@@ -18,6 +18,10 @@ import {
   Subscription,
   InsertAccessRequest,
   AccessRequest,
+  InsertTimeSlot,
+  TimeSlot,
+  InsertBooking,
+  Booking,
   users,
   invoices,
   payments,
@@ -25,7 +29,9 @@ import {
   paymentMethods,
   otps,
   subscriptions,
-  accessRequests
+  accessRequests,
+  timeSlots,
+  bookings
 } from "@shared/schema";
 
 export interface IStorage {
@@ -80,6 +86,21 @@ export interface IStorage {
   getAccessRequest(id: string): Promise<AccessRequest | undefined>;
   getAllAccessRequests(): Promise<AccessRequest[]>;
   updateAccessRequestStatus(id: string, status: string): Promise<AccessRequest>;
+  
+  // Time Slot operations
+  createTimeSlot(timeSlot: InsertTimeSlot): Promise<TimeSlot>;
+  getTimeSlot(id: string): Promise<TimeSlot | undefined>;
+  getAllTimeSlots(): Promise<TimeSlot[]>;
+  getAvailableTimeSlots(): Promise<TimeSlot[]>;
+  updateTimeSlot(id: string, updates: Partial<TimeSlot>): Promise<TimeSlot>;
+  deleteTimeSlot(id: string): Promise<void>;
+  
+  // Booking operations
+  createBooking(booking: InsertBooking): Promise<Booking>;
+  getBooking(id: string): Promise<Booking | undefined>;
+  getAllBookings(): Promise<Booking[]>;
+  getBookingsByTimeSlot(timeSlotId: string): Promise<Booking[]>;
+  updateBookingStatus(id: string, status: "confirmed" | "cancelled"): Promise<Booking>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -536,6 +557,116 @@ export class DatabaseStorage implements IStorage {
     }
     return result[0];
   }
+
+  async createTimeSlot(insertTimeSlot: InsertTimeSlot): Promise<TimeSlot> {
+    const id = randomUUID();
+    const newTimeSlot = {
+      ...insertTimeSlot,
+      id,
+      meetingUrl: insertTimeSlot.meetingUrl || null,
+    };
+    
+    await db.insert(timeSlots).values(newTimeSlot);
+    return newTimeSlot as TimeSlot;
+  }
+
+  async getTimeSlot(id: string): Promise<TimeSlot | undefined> {
+    const result = await db.select().from(timeSlots).where(eq(timeSlots.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getAllTimeSlots(): Promise<TimeSlot[]> {
+    return db.select().from(timeSlots);
+  }
+
+  async getAvailableTimeSlots(): Promise<TimeSlot[]> {
+    const now = new Date();
+    return db.select()
+      .from(timeSlots)
+      .where(
+        and(
+          eq(timeSlots.isAvailable, 1),
+          gte(timeSlots.startTime, now)
+        )
+      );
+  }
+
+  async updateTimeSlot(id: string, updates: Partial<TimeSlot>): Promise<TimeSlot> {
+    await db.update(timeSlots)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(timeSlots.id, id));
+    
+    const result = await db.select().from(timeSlots).where(eq(timeSlots.id, id)).limit(1);
+    if (!result[0]) {
+      throw new Error("Time slot not found");
+    }
+    return result[0];
+  }
+
+  async deleteTimeSlot(id: string): Promise<void> {
+    await db.delete(timeSlots).where(eq(timeSlots.id, id));
+  }
+
+  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    const id = randomUUID();
+    const newBooking = {
+      ...insertBooking,
+      id,
+      clientPhone: insertBooking.clientPhone || null,
+      clientCompany: insertBooking.clientCompany || null,
+      notes: insertBooking.notes || null,
+    };
+    
+    await db.insert(bookings).values(newBooking);
+    
+    await db.update(timeSlots)
+      .set({ isAvailable: 0 })
+      .where(eq(timeSlots.id, insertBooking.timeSlotId));
+    
+    return newBooking as Booking;
+  }
+
+  async getBooking(id: string): Promise<Booking | undefined> {
+    const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getAllBookings(): Promise<Booking[]> {
+    return db.select().from(bookings);
+  }
+
+  async getBookingsByTimeSlot(timeSlotId: string): Promise<Booking[]> {
+    return db.select().from(bookings).where(eq(bookings.timeSlotId, timeSlotId));
+  }
+
+  async updateBookingStatus(id: string, status: "confirmed" | "cancelled"): Promise<Booking> {
+    const booking = await this.getBooking(id);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+    
+    await db.update(bookings)
+      .set({
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(bookings.id, id));
+    
+    if (status === "cancelled") {
+      await db.update(timeSlots)
+        .set({ isAvailable: 1 })
+        .where(eq(timeSlots.id, booking.timeSlotId));
+    }
+    
+    const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    if (!result[0]) {
+      throw new Error("Booking not found");
+    }
+    return result[0];
+  }
 }
 
 // Legacy compatibility - fallback to MemStorage if database is not available
@@ -548,6 +679,8 @@ export class MemStorage implements IStorage {
   private otpsMap: Map<string, Otp>;
   private subscriptionsMap: Map<string, Subscription>;
   private accessRequestsMap: Map<string, AccessRequest>;
+  private timeSlotsMap: Map<string, TimeSlot>;
+  private bookingsMap: Map<string, Booking>;
 
   constructor() {
     this.users = new Map();
@@ -558,6 +691,8 @@ export class MemStorage implements IStorage {
     this.otpsMap = new Map();
     this.subscriptionsMap = new Map();
     this.accessRequestsMap = new Map();
+    this.timeSlotsMap = new Map();
+    this.bookingsMap = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -908,6 +1043,102 @@ export class MemStorage implements IStorage {
     if (!accessRequest) throw new Error("Access request not found");
     const updated = { ...accessRequest, status, updatedAt: new Date() };
     this.accessRequestsMap.set(id, updated);
+    return updated;
+  }
+
+  async createTimeSlot(insertTimeSlot: InsertTimeSlot): Promise<TimeSlot> {
+    const id = randomUUID();
+    const timeSlot: TimeSlot = {
+      id,
+      startTime: insertTimeSlot.startTime,
+      endTime: insertTimeSlot.endTime,
+      meetingType: insertTimeSlot.meetingType || "google_meet",
+      meetingUrl: insertTimeSlot.meetingUrl || null,
+      isAvailable: insertTimeSlot.isAvailable ?? 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.timeSlotsMap.set(id, timeSlot);
+    return timeSlot;
+  }
+
+  async getTimeSlot(id: string): Promise<TimeSlot | undefined> {
+    return this.timeSlotsMap.get(id);
+  }
+
+  async getAllTimeSlots(): Promise<TimeSlot[]> {
+    return Array.from(this.timeSlotsMap.values());
+  }
+
+  async getAvailableTimeSlots(): Promise<TimeSlot[]> {
+    const now = new Date();
+    return Array.from(this.timeSlotsMap.values()).filter(
+      slot => slot.isAvailable === 1 && slot.startTime >= now
+    );
+  }
+
+  async updateTimeSlot(id: string, updates: Partial<TimeSlot>): Promise<TimeSlot> {
+    const timeSlot = this.timeSlotsMap.get(id);
+    if (!timeSlot) throw new Error("Time slot not found");
+    const updated = { ...timeSlot, ...updates, updatedAt: new Date() };
+    this.timeSlotsMap.set(id, updated);
+    return updated;
+  }
+
+  async deleteTimeSlot(id: string): Promise<void> {
+    this.timeSlotsMap.delete(id);
+  }
+
+  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    const id = randomUUID();
+    const booking: Booking = {
+      id,
+      timeSlotId: insertBooking.timeSlotId,
+      clientName: insertBooking.clientName,
+      clientEmail: insertBooking.clientEmail,
+      clientPhone: insertBooking.clientPhone || null,
+      clientCompany: insertBooking.clientCompany || null,
+      notes: insertBooking.notes || null,
+      status: insertBooking.status || "confirmed",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.bookingsMap.set(id, booking);
+    
+    const timeSlot = this.timeSlotsMap.get(insertBooking.timeSlotId);
+    if (timeSlot) {
+      this.timeSlotsMap.set(timeSlot.id, { ...timeSlot, isAvailable: 0 });
+    }
+    
+    return booking;
+  }
+
+  async getBooking(id: string): Promise<Booking | undefined> {
+    return this.bookingsMap.get(id);
+  }
+
+  async getAllBookings(): Promise<Booking[]> {
+    return Array.from(this.bookingsMap.values());
+  }
+
+  async getBookingsByTimeSlot(timeSlotId: string): Promise<Booking[]> {
+    return Array.from(this.bookingsMap.values()).filter(b => b.timeSlotId === timeSlotId);
+  }
+
+  async updateBookingStatus(id: string, status: "confirmed" | "cancelled"): Promise<Booking> {
+    const booking = this.bookingsMap.get(id);
+    if (!booking) throw new Error("Booking not found");
+    
+    const updated = { ...booking, status, updatedAt: new Date() };
+    this.bookingsMap.set(id, updated);
+    
+    if (status === "cancelled") {
+      const timeSlot = this.timeSlotsMap.get(booking.timeSlotId);
+      if (timeSlot) {
+        this.timeSlotsMap.set(timeSlot.id, { ...timeSlot, isAvailable: 1 });
+      }
+    }
+    
     return updated;
   }
 }

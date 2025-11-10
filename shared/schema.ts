@@ -136,6 +136,30 @@ export const accessRequests = mysqlTable("access_requests", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+export const timeSlots = mysqlTable("time_slots", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  meetingType: mysqlEnum("meeting_type", ["google_meet", "teams"]).notNull().default("google_meet"),
+  meetingUrl: varchar("meeting_url", { length: 500 }),
+  isAvailable: int("is_available").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+export const bookings = mysqlTable("bookings", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(uuid())`),
+  timeSlotId: varchar("time_slot_id", { length: 36 }).notNull().references(() => timeSlots.id),
+  clientName: varchar("client_name", { length: 255 }).notNull(),
+  clientEmail: varchar("client_email", { length: 191 }).notNull(),
+  clientPhone: varchar("client_phone", { length: 20 }),
+  clientCompany: varchar("client_company", { length: 255 }),
+  notes: text("notes"),
+  status: mysqlEnum("status", ["confirmed", "cancelled"]).notNull().default("confirmed"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -183,6 +207,25 @@ export const insertAccessRequestSchema = createInsertSchema(accessRequests).omit
   updatedAt: true,
 });
 
+export const insertTimeSlotSchema = createInsertSchema(timeSlots).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+});
+
+export const insertBookingSchema = createInsertSchema(bookings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  timeSlotId: z.string(),
+  clientName: z.string(),
+  clientEmail: z.string().email(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
@@ -199,3 +242,7 @@ export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertAccessRequest = z.infer<typeof insertAccessRequestSchema>;
 export type AccessRequest = typeof accessRequests.$inferSelect;
+export type InsertTimeSlot = z.infer<typeof insertTimeSlotSchema>;
+export type TimeSlot = typeof timeSlots.$inferSelect;
+export type InsertBooking = z.infer<typeof insertBookingSchema>;
+export type Booking = typeof bookings.$inferSelect;

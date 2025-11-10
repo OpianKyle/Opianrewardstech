@@ -267,6 +267,31 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
       status VARCHAR(50) NOT NULL DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    `CREATE TABLE IF NOT EXISTS time_slots (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      start_time TIMESTAMP NOT NULL,
+      end_time TIMESTAMP NOT NULL,
+      meeting_type ENUM('google_meet', 'teams') NOT NULL DEFAULT 'google_meet',
+      meeting_url VARCHAR(500),
+      is_available INT NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    
+    `CREATE TABLE IF NOT EXISTS bookings (
+      id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+      time_slot_id VARCHAR(36) NOT NULL,
+      client_name VARCHAR(255) NOT NULL,
+      client_email VARCHAR(191) NOT NULL,
+      client_phone VARCHAR(20),
+      client_company VARCHAR(255),
+      notes TEXT,
+      status ENUM('confirmed', 'cancelled') NOT NULL DEFAULT 'confirmed',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (time_slot_id) REFERENCES time_slots(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
   ];
 

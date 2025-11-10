@@ -12,6 +12,8 @@ import Dashboard from "@/pages/dashboard";
 import PaymentTest from "@/pages/payment-test";
 import SubscriptionTest from "@/pages/subscription-test";
 import SubscriptionSetup from "@/pages/subscription-setup";
+import Booking from "@/pages/booking";
+import BookingAdmin from "@/pages/booking-admin";
 import NotFound from "@/pages/not-found";
 
 function ProtectedAscendancy() {
@@ -34,6 +36,8 @@ function Router() {
       <Route path="/payment-test" component={PaymentTest} />
       <Route path="/subscription-test" component={SubscriptionTest} />
       <Route path="/subscription-setup" component={SubscriptionSetup} />
+      <Route path="/booking" component={Booking} />
+      <Route path="/booking-admin" component={BookingAdmin} />
       <Route component={NotFound} />
     </Switch>
   );

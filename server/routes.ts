@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertPaymentSchema, insertAccessRequestSchema } from "@shared/schema";
+import { insertPaymentSchema, insertAccessRequestSchema, insertTimeSlotSchema, insertBookingSchema } from "@shared/schema";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { randomUUID, randomInt } from "crypto";
@@ -1275,6 +1275,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ message: "Error creating access request: " + error.message });
       }
+    }
+  });
+
+  // Time Slots API Routes
+  
+  // Get all time slots (admin)
+  app.get("/api/time-slots", async (req, res) => {
+    try {
+      const timeSlots = await storage.getAllTimeSlots();
+      res.json(timeSlots);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching time slots: " + error.message });
+    }
+  });
+
+  // Get available time slots (public)
+  app.get("/api/time-slots/available", async (req, res) => {
+    try {
+      const timeSlots = await storage.getAvailableTimeSlots();
+      res.json(timeSlots);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching available time slots: " + error.message });
+    }
+  });
+
+  // Create time slot (admin)
+  app.post("/api/time-slots", async (req, res) => {
+    try {
+      const validatedData = insertTimeSlotSchema.parse(req.body);
+      const timeSlot = await storage.createTimeSlot(validatedData);
+      res.status(201).json(timeSlot);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Error creating time slot: " + error.message });
+      }
+    }
+  });
+
+  // Update time slot (admin)
+  app.patch("/api/time-slots/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const timeSlot = await storage.updateTimeSlot(id, req.body);
+      res.json(timeSlot);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error updating time slot: " + error.message });
+    }
+  });
+
+  // Delete time slot (admin)
+  app.delete("/api/time-slots/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTimeSlot(id);
+      res.json({ success: true, message: "Time slot deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error deleting time slot: " + error.message });
+    }
+  });
+
+  // Booking API Routes
+  
+  // Get all bookings (admin)
+  app.get("/api/bookings", async (req, res) => {
+    try {
+      const bookings = await storage.getAllBookings();
+      res.json(bookings);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching bookings: " + error.message });
+    }
+  });
+
+  // Create booking (public)
+  app.post("/api/bookings", async (req, res) => {
+    try {
+      const validatedData = insertBookingSchema.parse(req.body);
+      
+      const timeSlot = await storage.getTimeSlot(validatedData.timeSlotId);
+      if (!timeSlot) {
+        return res.status(404).json({ message: "Time slot not found" });
+      }
+      
+      if (timeSlot.isAvailable === 0) {
+        return res.status(400).json({ message: "Time slot is no longer available" });
+      }
+      
+      const booking = await storage.createBooking(validatedData);
+      res.status(201).json({
+        success: true,
+        booking,
+        message: "Booking created successfully",
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Error creating booking: " + error.message });
+      }
+    }
+  });
+
+  // Cancel booking (public/admin)
+  app.patch("/api/bookings/:id/cancel", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const booking = await storage.updateBookingStatus(id, "cancelled");
+      res.json({
+        success: true,
+        booking,
+        message: "Booking cancelled successfully",
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error cancelling booking: " + error.message });
     }
   });
 
