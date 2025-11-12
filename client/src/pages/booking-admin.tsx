@@ -16,6 +16,8 @@ type TimeSlot = {
   endTime: Date;
   meetingType: "google_meet" | "teams";
   meetingUrl: string | null;
+  creatorName: string | null;
+  creatorEmail: string | null;
   isAvailable: number;
   createdAt: Date;
   updatedAt: Date;
@@ -41,6 +43,8 @@ export default function BookingAdmin() {
   const [endTime, setEndTime] = useState("");
   const [meetingType, setMeetingType] = useState<"google_meet" | "teams">("google_meet");
   const [meetingUrl, setMeetingUrl] = useState("");
+  const [creatorName, setCreatorName] = useState("");
+  const [creatorEmail, setCreatorEmail] = useState("");
 
   const { data: timeSlots, isLoading: loadingSlots } = useQuery<TimeSlot[]>({
     queryKey: ["/api/time-slots"],
@@ -56,6 +60,8 @@ export default function BookingAdmin() {
       endTime: Date;
       meetingType: "google_meet" | "teams";
       meetingUrl?: string;
+      creatorName?: string;
+      creatorEmail?: string;
     }) => {
       return await apiRequest("POST", "/api/time-slots", data);
     },
@@ -66,6 +72,8 @@ export default function BookingAdmin() {
       setStartTime("");
       setEndTime("");
       setMeetingUrl("");
+      setCreatorName("");
+      setCreatorEmail("");
     },
     onError: (error: Error) => {
       toast({
@@ -111,6 +119,8 @@ export default function BookingAdmin() {
       endTime: endDateTime,
       meetingType,
       meetingUrl: meetingUrl || undefined,
+      creatorName: creatorName || undefined,
+      creatorEmail: creatorEmail || undefined,
     });
   };
 
@@ -204,6 +214,37 @@ export default function BookingAdmin() {
                   onChange={(e) => setMeetingUrl(e.target.value)}
                   data-testid="input-meeting-url"
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="creator-name" data-testid="label-creator-name">
+                  Your Name (Optional)
+                </Label>
+                <Input
+                  id="creator-name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={creatorName}
+                  onChange={(e) => setCreatorName(e.target.value)}
+                  data-testid="input-creator-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="creator-email" data-testid="label-creator-email">
+                  Your Email (Optional)
+                </Label>
+                <Input
+                  id="creator-email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={creatorEmail}
+                  onChange={(e) => setCreatorEmail(e.target.value)}
+                  data-testid="input-creator-email"
+                />
+                <p className="text-xs text-muted-foreground">
+                  You'll receive an email when someone books this time slot
+                </p>
               </div>
             </div>
             <Button
