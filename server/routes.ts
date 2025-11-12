@@ -7,7 +7,7 @@ import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { randomUUID, randomInt } from "crypto";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
-import { sendOtpEmail, testEmailConnection } from "./email";
+import { sendOtpEmail, testEmailConnection, sendBookingConfirmationEmail, sendCreatorNotificationEmail } from "./email";
 
 // Adumo payment configuration using environment variables (required)
 const ADUMO_CONFIG = {
@@ -1364,6 +1364,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const booking = await storage.createBooking(validatedData);
+      
+      try {
+        await sendBookingConfirmationEmail({
+          clientName: booking.clientName,
+          clientEmail: booking.clientEmail,
+          startTime: timeSlot.startTime,
+          endTime: timeSlot.endTime,
+          meetingType: timeSlot.meetingType,
+          meetingUrl: timeSlot.meetingUrl,
+          notes: booking.notes,
+        });
+        
+        if (timeSlot.creatorEmail) {
+          await sendCreatorNotificationEmail({
+            creatorName: timeSlot.creatorName,
+            creatorEmail: timeSlot.creatorEmail,
+            clientName: booking.clientName,
+            clientEmail: booking.clientEmail,
+            clientPhone: booking.clientPhone,
+            startTime: timeSlot.startTime,
+            endTime: timeSlot.endTime,
+            meetingType: timeSlot.meetingType,
+            meetingUrl: timeSlot.meetingUrl,
+            notes: booking.notes,
+          });
+        }
+      } catch (emailError) {
+        console.error('Email notification failed:', emailError);
+      }
+      
       res.status(201).json({
         success: true,
         booking,
