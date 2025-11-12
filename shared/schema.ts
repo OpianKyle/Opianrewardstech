@@ -142,6 +142,8 @@ export const timeSlots = mysqlTable("time_slots", {
   endTime: timestamp("end_time").notNull(),
   meetingType: mysqlEnum("meeting_type", ["google_meet", "teams"]).notNull().default("google_meet"),
   meetingUrl: varchar("meeting_url", { length: 500 }),
+  creatorName: varchar("creator_name", { length: 255 }),
+  creatorEmail: varchar("creator_email", { length: 191 }),
   isAvailable: int("is_available").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),

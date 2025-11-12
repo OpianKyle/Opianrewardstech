@@ -1054,6 +1054,8 @@ export class MemStorage implements IStorage {
       endTime: insertTimeSlot.endTime,
       meetingType: insertTimeSlot.meetingType || "google_meet",
       meetingUrl: insertTimeSlot.meetingUrl || null,
+      creatorName: insertTimeSlot.creatorName || null,
+      creatorEmail: insertTimeSlot.creatorEmail || null,
       isAvailable: insertTimeSlot.isAvailable ?? 1,
       createdAt: new Date(),
       updatedAt: new Date(),

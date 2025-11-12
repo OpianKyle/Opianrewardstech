@@ -133,6 +133,34 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
         }
       }
     }
+
+    // Check if time_slots table exists and add missing columns
+    const [timeSlotsTables] = await connection.execute(
+      `SELECT TABLE_NAME FROM information_schema.TABLES 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'time_slots'`
+    ) as any;
+
+    if (timeSlotsTables.length > 0) {
+      // Table exists, check for missing columns
+      const timeSlotColumnsToAdd = [
+        { name: 'creator_name', sql: 'ALTER TABLE time_slots ADD COLUMN creator_name VARCHAR(255)' },
+        { name: 'creator_email', sql: 'ALTER TABLE time_slots ADD COLUMN creator_email VARCHAR(191)' }
+      ];
+      
+      for (const column of timeSlotColumnsToAdd) {
+        const [columns] = await connection.execute(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS 
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'time_slots' AND COLUMN_NAME = ?`,
+          [column.name]
+        ) as any;
+
+        if (columns.length === 0) {
+          // Column doesn't exist, add it
+          await connection.execute(column.sql);
+          console.log(`✅ Added column ${column.name} to time_slots table`);
+        }
+      }
+    }
   } catch (error: any) {
     console.error('Migration error:', error);
     throw error; // Fail fast on migration errors
@@ -275,6 +303,8 @@ async function createTablesIfNotExist(connection: mysql.PoolConnection) {
       end_time TIMESTAMP NOT NULL,
       meeting_type ENUM('google_meet', 'teams') NOT NULL DEFAULT 'google_meet',
       meeting_url VARCHAR(500),
+      creator_name VARCHAR(255),
+      creator_email VARCHAR(191),
       is_available INT NOT NULL DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
