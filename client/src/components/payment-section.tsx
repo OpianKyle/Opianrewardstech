@@ -34,7 +34,7 @@ export function PaymentSection({
   const setShowPaymentModal = externalSetShowPaymentModal ?? internalSetShowPaymentModal;
   const selectedTier = externalSelectedTier ?? internalSelectedTier;
   const setSelectedTier = externalSetSelectedTier ?? internalSetSelectedTier;
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("lump_sum");
   const [customAmount, setCustomAmount] = useState("");
   const [formData, setFormData] = useState({
     firstName: "",
@@ -346,12 +346,12 @@ export function PaymentSection({
             {selectedTier && selectedTier !== 'cornerstone' && (
               <div>
                 <Label htmlFor="paymentMethod" className="text-sm sm:text-base">Payment Method</Label>
-                <Select onValueChange={setSelectedPaymentMethod} value="lump_sum" required>
+                <Select onValueChange={setSelectedPaymentMethod} value={selectedPaymentMethod} required>
                   <SelectTrigger data-testid="select-payment-method" className="h-11 sm:h-12 text-sm sm:text-base">
                     <SelectValue placeholder="Choose payment method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lump_sum">One-off Payment</SelectItem>
+                    <SelectItem value="lump_sum">Once-off Payment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
