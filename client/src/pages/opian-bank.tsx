@@ -11,7 +11,7 @@ import { useTheme } from "@/contexts/theme-provider";
 import { apiRequest } from "@/lib/queryClient";
 import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
 import opianCapitalLight from "@assets/GetAttachmentThumbnail_1761219213754.png";
-import heroImage from "@assets/generated_images/Classic_investment_banking_office_91d0af6c.png";
+import heroImage from "@assets/stock_images/sophisticated_modern_786a3bb0.jpg";
 
 export default function OpianBank() {
   const [, setLocation] = useLocation();
