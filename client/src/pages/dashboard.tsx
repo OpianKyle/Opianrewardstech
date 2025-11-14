@@ -9,10 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { LogOut, TrendingUp, Wallet, ListChecks, Receipt, AlertCircle, ArrowRight, CreditCard } from 'lucide-react';
 import { PaymentMethods } from '@/components/payment-methods';
+import { useTheme } from '@/contexts/theme-provider';
+import opianCapitalDark from "@assets/GetAttachmentThumbnail_1761219193395.png";
+import opianCapitalLight from "@assets/GetAttachmentThumbnail_1761219213754.png";
 
 export default function Dashboard() {
   const { investor, token, logout, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!isLoading && !investor) {
@@ -41,8 +45,8 @@ export default function Dashboard() {
 
   if (isLoading || !investor) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-foreground text-xl">Loading...</div>
       </div>
     );
   }
@@ -52,17 +56,20 @@ export default function Dashboard() {
 
   if (!hasInvestmentDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-        <header className="bg-gray-800/50 border-b border-cyan-500/30 backdrop-blur">
+      <div className="min-h-screen bg-background">
+        <header className="glass-morphism border-b">
           <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-cyan-400" data-testid="text-title">OPIAN REWARDS</h1>
-              <p className="text-sm text-gray-300">Investor Portal</p>
+            <div className="flex items-center space-x-2">
+              <img 
+                src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
+                alt="Opian Capital" 
+                className="h-10 sm:h-12 w-auto object-contain"
+                data-testid="logo-image"
+              />
             </div>
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
               data-testid="button-logout"
             >
               <LogOut className="w-4 h-4 mr-2" />
@@ -72,36 +79,36 @@ export default function Dashboard() {
         </header>
 
         <div className="container mx-auto px-4 py-16 max-w-4xl">
-          <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-incomplete">
+          <Card data-testid="card-incomplete">
             <CardHeader>
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-3 bg-yellow-500/10 rounded-full">
-                  <AlertCircle className="w-8 h-8 text-yellow-400" />
+                  <AlertCircle className="w-8 h-8 text-yellow-500" />
                 </div>
                 <div>
-                  <CardTitle className="text-white text-2xl">Complete Your Investment</CardTitle>
-                  <CardDescription className="text-gray-300 mt-2">
+                  <CardTitle className="text-2xl">Complete Your Investment</CardTitle>
+                  <CardDescription className="mt-2">
                     Welcome, {investor.firstName || 'Investor'}! Your account is almost ready.
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-                <p className="text-white mb-4">
+              <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg">
+                <p className="mb-4">
                   To access your full investor dashboard, you need to complete your investment signup and select a tier.
                 </p>
-                <ul className="text-gray-300 space-y-2 mb-6">
+                <ul className="text-muted-foreground space-y-2 mb-6">
                   <li className="flex items-start gap-2">
-                    <span className="text-cyan-400 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>Choose your investment tier (Builder, Innovator, or Visionary)</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-cyan-400 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>Select your payment method</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-cyan-400 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>Complete secure payment to activate your account</span>
                   </li>
                 </ul>
@@ -110,7 +117,7 @@ export default function Dashboard() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   onClick={() => setLocation('/')}
-                  className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-gray-900 font-bold"
+                  className="flex-1 font-bold"
                   data-testid="button-complete-signup"
                 >
                   Complete Signup
@@ -119,16 +126,16 @@ export default function Dashboard() {
                 <Button
                   onClick={handleLogout}
                   variant="outline"
-                  className="flex-1 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                  className="flex-1"
                   data-testid="button-logout-incomplete"
                 >
                   Logout
                 </Button>
               </div>
 
-              <Separator className="bg-cyan-500/20" />
+              <Separator />
 
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-muted-foreground">
                 <p className="mb-2">Need help?</p>
                 <p>Contact our support team at support@opianrewards.com</p>
               </div>
@@ -153,13 +160,13 @@ export default function Dashboard() {
     
     // Return rates based on tier (annual percentage returns)
     const returnRates: Record<string, number> = {
-      'builder': 0.15,      // 15% annual return
-      'innovator': 0.18,    // 18% annual return
-      'visionary': 0.22,    // 22% annual return
-      'cornerstone': 0.25   // 25% annual return
+      'builder': 0.09,      // 9% annual return
+      'innovator': 0.09,    // 9% annual return
+      'visionary': 0.09,    // 9% annual return
+      'cornerstone': 0.09   // 9% annual return
     };
 
-    const annualReturnRate = returnRates[investor.tier] || 0.15;
+    const annualReturnRate = returnRates[investor.tier] || 0.09;
 
     // Calculate returns for years 1-5
     const yearlyReturns = [];
@@ -196,18 +203,21 @@ export default function Dashboard() {
   const investmentReturns = getInvestmentReturns();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-gray-800/50 border-b border-cyan-500/30 backdrop-blur">
+      <header className="glass-morphism border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-cyan-400" data-testid="text-title">OPIAN REWARDS</h1>
-            <p className="text-sm text-gray-300">Investor Portal</p>
+          <div className="flex items-center space-x-2">
+            <img 
+              src={theme === 'dark' ? opianCapitalLight : opianCapitalDark} 
+              alt="Opian Capital" 
+              className="h-10 sm:h-12 w-auto object-contain"
+              data-testid="logo-image"
+            />
           </div>
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
             data-testid="button-logout"
           >
             <LogOut className="w-4 h-4 mr-2" />
@@ -218,14 +228,14 @@ export default function Dashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
-        <Card className="mb-6 bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-welcome">
+        <Card className="mb-6" data-testid="card-welcome">
           <CardHeader>
-            <CardTitle className="text-white text-2xl">
+            <CardTitle className="text-2xl">
               Welcome back, {investor.firstName} {investor.lastName}
             </CardTitle>
-            <CardDescription className="text-gray-300">
+            <CardDescription>
               <div className="flex items-center gap-2 mt-2">
-                <span>Tier: <span className="text-cyan-400 font-bold">{tierName}</span></span>
+                <span>Tier: <span className="text-primary font-bold">{tierName}</span></span>
                 <Badge className={`${paymentStatusColor} text-white`} data-testid="badge-status">
                   {investor.paymentStatus}
                 </Badge>
@@ -236,24 +246,24 @@ export default function Dashboard() {
 
         {/* Dashboard Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="bg-gray-800/50 border-cyan-500/30 mb-6">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-gray-900" data-testid="tab-overview">
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview" data-testid="tab-overview">
               <TrendingUp className="w-4 h-4 mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="transactions" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-gray-900" data-testid="tab-transactions">
+            <TabsTrigger value="transactions" data-testid="tab-transactions">
               <Wallet className="w-4 h-4 mr-2" />
               Transactions
             </TabsTrigger>
-            <TabsTrigger value="progress" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-gray-900" data-testid="tab-progress">
+            <TabsTrigger value="progress" data-testid="tab-progress">
               <ListChecks className="w-4 h-4 mr-2" />
               Progress
             </TabsTrigger>
-            <TabsTrigger value="invoices" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-gray-900" data-testid="tab-invoices">
+            <TabsTrigger value="invoices" data-testid="tab-invoices">
               <Receipt className="w-4 h-4 mr-2" />
               Invoices
             </TabsTrigger>
-            <TabsTrigger value="payment-methods" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-gray-900" data-testid="tab-payment-methods">
+            <TabsTrigger value="payment-methods" data-testid="tab-payment-methods">
               <CreditCard className="w-4 h-4 mr-2" />
               Payment Methods
             </TabsTrigger>
@@ -262,51 +272,51 @@ export default function Dashboard() {
           {/* Overview Tab */}
           <TabsContent value="overview">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-investment">
+              <Card data-testid="card-investment">
                 <CardHeader>
-                  <CardTitle className="text-white text-lg">Initial Investment</CardTitle>
+                  <CardTitle className="text-lg">Initial Investment</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-cyan-400" data-testid="text-amount">
+                  <p className="text-3xl font-bold text-primary" data-testid="text-amount">
                     R {investmentReturns.totalAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-sm text-gray-400 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     {investmentReturns.monthsElapsed} month{investmentReturns.monthsElapsed !== 1 ? 's' : ''} invested
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-current-value">
+              <Card data-testid="card-current-value">
                 <CardHeader>
-                  <CardTitle className="text-white text-lg">Current Value</CardTitle>
+                  <CardTitle className="text-lg">Current Value</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-green-400" data-testid="text-current-value">
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400" data-testid="text-current-value">
                     R {investmentReturns.currentValue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-sm text-gray-400 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     +R {investmentReturns.currentGain.toLocaleString('en-ZA', { minimumFractionDigits: 2 })} gain
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-tier">
+              <Card data-testid="card-tier">
                 <CardHeader>
-                  <CardTitle className="text-white text-lg">Annual Return</CardTitle>
+                  <CardTitle className="text-lg">Annual Return</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-cyan-400">{(investmentReturns.annualReturnRate * 100).toFixed(0)}%</p>
-                  <p className="text-sm text-gray-400 mt-2">
+                  <p className="text-3xl font-bold text-primary">{(investmentReturns.annualReturnRate * 100).toFixed(0)}%</p>
+                  <p className="text-sm text-muted-foreground mt-2">
                     {tierName} tier rate
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="mt-6 bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-details">
+            <Card className="mt-6" data-testid="card-details">
               <CardHeader>
-                <CardTitle className="text-white">Projected Returns Over Time</CardTitle>
-                <CardDescription className="text-gray-300">
+                <CardTitle>Projected Returns Over Time</CardTitle>
+                <CardDescription>
                   Estimated investment value growth at {(investmentReturns.annualReturnRate * 100).toFixed(0)}% annual return
                 </CardDescription>
               </CardHeader>
@@ -315,25 +325,25 @@ export default function Dashboard() {
                   {investmentReturns.yearlyReturns.map((yearData) => (
                     <div 
                       key={yearData.year} 
-                      className="p-4 bg-gray-700/30 rounded-lg border border-cyan-500/20 hover-elevate"
+                      className="p-4 bg-muted/50 rounded-lg border hover-elevate"
                       data-testid={`year-${yearData.year}`}
                     >
                       <div className="flex justify-between items-center mb-2">
-                        <p className="text-white font-semibold">Year {yearData.year}</p>
-                        <Badge className="bg-cyan-500 text-white">
+                        <p className="font-semibold">Year {yearData.year}</p>
+                        <Badge className="bg-primary text-primary-foreground">
                           +{yearData.percentage.toFixed(1)}%
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="text-gray-400">Portfolio Value</p>
-                          <p className="text-green-400 font-bold text-lg">
+                          <p className="text-muted-foreground">Portfolio Value</p>
+                          <p className="text-green-600 dark:text-green-400 font-bold text-lg">
                             R {yearData.value.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-400">Total Gain</p>
-                          <p className="text-cyan-400 font-bold text-lg">
+                          <p className="text-muted-foreground">Total Gain</p>
+                          <p className="text-primary font-bold text-lg">
                             +R {yearData.gain.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
@@ -342,15 +352,15 @@ export default function Dashboard() {
                   ))}
                 </div>
                 
-                <div className="mt-6 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-                  <p className="text-sm text-gray-300 mb-2">Investment Details</p>
+                <div className="mt-6 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+                  <p className="text-sm mb-2">Investment Details</p>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-400">Tier</p>
-                      <p className="text-cyan-400 font-semibold">{tierName}</p>
+                      <p className="text-muted-foreground">Tier</p>
+                      <p className="text-primary font-semibold">{tierName}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Status</p>
+                      <p className="text-muted-foreground">Status</p>
                       <Badge className={`${paymentStatusColor} text-white`}>
                         {investor.paymentStatus}
                       </Badge>
@@ -363,32 +373,32 @@ export default function Dashboard() {
 
           {/* Transactions Tab */}
           <TabsContent value="transactions">
-            <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-transactions">
+            <Card data-testid="card-transactions">
               <CardHeader>
-                <CardTitle className="text-white">Transaction History</CardTitle>
-                <CardDescription className="text-gray-300">
+                <CardTitle>Transaction History</CardTitle>
+                <CardDescription>
                   View all your payment transactions
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingTransactions ? (
-                  <p className="text-gray-400 text-center py-8">Loading transactions...</p>
+                  <p className="text-muted-foreground text-center py-8">Loading transactions...</p>
                 ) : transactions && transactions.length > 0 ? (
                   <div className="space-y-4">
                     {transactions.map((transaction: any, index: number) => (
                       <div
                         key={transaction.id}
-                        className="flex justify-between items-center p-4 bg-gray-700/30 rounded-lg border border-cyan-500/20"
+                        className="flex justify-between items-center p-4 bg-muted/50 rounded-lg border"
                         data-testid={`transaction-${index}`}
                       >
                         <div>
-                          <p className="text-white font-medium">
+                          <p className="font-medium">
                             R {(transaction.amount / 100).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                           </p>
-                          <p className="text-sm text-gray-400">
+                          <p className="text-sm text-muted-foreground">
                             {new Date(transaction.createdAt).toLocaleString('en-ZA')}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Method: {transaction.method}
                           </p>
                         </div>
@@ -408,7 +418,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400 text-center py-8">No transactions found</p>
+                  <p className="text-muted-foreground text-center py-8">No transactions found</p>
                 )}
               </CardContent>
             </Card>
@@ -416,10 +426,10 @@ export default function Dashboard() {
 
           {/* Progress Tab */}
           <TabsContent value="progress">
-            <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-progress">
+            <Card data-testid="card-progress">
               <CardHeader>
-                <CardTitle className="text-white">Quest Progress</CardTitle>
-                <CardDescription className="text-gray-300">
+                <CardTitle>Quest Progress</CardTitle>
+                <CardDescription>
                   Track your investment milestones
                 </CardDescription>
               </CardHeader>
@@ -427,28 +437,28 @@ export default function Dashboard() {
                 {investor.questProgress ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-700/30 rounded-lg border border-cyan-500/20">
-                        <p className="text-gray-400 text-sm">Level</p>
-                        <p className="text-2xl font-bold text-cyan-400" data-testid="text-level">
+                      <div className="p-4 bg-muted/50 rounded-lg border">
+                        <p className="text-muted-foreground text-sm">Level</p>
+                        <p className="text-2xl font-bold text-primary" data-testid="text-level">
                           {investor.questProgress.level || 1}
                         </p>
                       </div>
-                      <div className="p-4 bg-gray-700/30 rounded-lg border border-cyan-500/20">
-                        <p className="text-gray-400 text-sm">Phase</p>
-                        <p className="text-xl font-semibold text-white" data-testid="text-phase">
+                      <div className="p-4 bg-muted/50 rounded-lg border">
+                        <p className="text-muted-foreground text-sm">Phase</p>
+                        <p className="text-xl font-semibold" data-testid="text-phase">
                           {investor.questProgress.phase || 'N/A'}
                         </p>
                       </div>
                     </div>
                     
-                    <Separator className="bg-cyan-500/20" />
+                    <Separator />
                     
                     <div>
-                      <p className="text-gray-400 text-sm mb-2">Milestones</p>
+                      <p className="text-muted-foreground text-sm mb-2">Milestones</p>
                       <div className="space-y-2">
                         {investor.questProgress.milestones && Object.entries(investor.questProgress.milestones).map(([key, value]: [string, any]) => (
-                          <div key={key} className="flex items-center justify-between p-3 bg-gray-700/30 rounded border border-cyan-500/20" data-testid={`milestone-${key}`}>
-                            <span className="text-white capitalize">
+                          <div key={key} className="flex items-center justify-between p-3 bg-muted/50 rounded border" data-testid={`milestone-${key}`}>
+                            <span className="capitalize">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
                             </span>
                             <Badge className={value ? 'bg-green-500' : 'bg-gray-500'}>
@@ -460,9 +470,9 @@ export default function Dashboard() {
                     </div>
 
                     {investor.questProgress.startDate && (
-                      <div className="mt-4 p-4 bg-gray-700/30 rounded-lg border border-cyan-500/20">
-                        <p className="text-gray-400 text-sm">Started On</p>
-                        <p className="text-white">
+                      <div className="mt-4 p-4 bg-muted/50 rounded-lg border">
+                        <p className="text-muted-foreground text-sm">Started On</p>
+                        <p>
                           {new Date(investor.questProgress.startDate).toLocaleDateString('en-ZA', {
                             weekday: 'long',
                             year: 'numeric',
@@ -474,7 +484,7 @@ export default function Dashboard() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-400 text-center py-8">
+                  <p className="text-muted-foreground text-center py-8">
                     Quest progress will be initialized after your first payment
                   </p>
                 )}
@@ -484,41 +494,41 @@ export default function Dashboard() {
 
           {/* Invoices Tab - Now Returns Projection */}
           <TabsContent value="invoices">
-            <Card className="bg-gray-800/50 border-cyan-500/30 backdrop-blur" data-testid="card-invoices">
+            <Card data-testid="card-invoices">
               <CardHeader>
-                <CardTitle className="text-white">Investment Growth Timeline</CardTitle>
-                <CardDescription className="text-gray-300">
+                <CardTitle>Investment Growth Timeline</CardTitle>
+                <CardDescription>
                   Your investment value progression over 5 years at {(investmentReturns.annualReturnRate * 100).toFixed(0)}% annual return
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {/* Current Investment Status */}
-                  <div className="p-6 bg-gradient-to-r from-green-500/20 to-cyan-500/20 border border-green-500/30 rounded-lg">
+                  <div className="p-6 bg-gradient-to-r from-green-500/20 to-primary/20 border border-green-500/30 rounded-lg">
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <p className="text-gray-300 text-sm mb-1">Initial Investment</p>
-                        <p className="text-white font-bold text-2xl">
+                        <p className="text-muted-foreground text-sm mb-1">Initial Investment</p>
+                        <p className="font-bold text-2xl">
                           R {investmentReturns.totalAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-300 text-sm mb-1">Current Value</p>
-                        <p className="text-green-400 font-bold text-2xl">
+                        <p className="text-muted-foreground text-sm mb-1">Current Value</p>
+                        <p className="text-green-600 dark:text-green-400 font-bold text-2xl">
                           R {investmentReturns.currentValue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                     </div>
                     <div className="pt-3 border-t border-green-500/30">
-                      <p className="text-gray-300 text-sm">Total Gain: <span className="text-cyan-400 font-semibold">+R {investmentReturns.currentGain.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</span></p>
-                      <p className="text-gray-400 text-xs mt-1">Investment period: {investmentReturns.monthsElapsed} months</p>
+                      <p className="text-sm">Total Gain: <span className="text-primary font-semibold">+R {investmentReturns.currentGain.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</span></p>
+                      <p className="text-muted-foreground text-xs mt-1">Investment period: {investmentReturns.monthsElapsed} months</p>
                     </div>
                   </div>
 
-                  <Separator className="bg-cyan-500/20" />
+                  <Separator />
 
                   {/* Year-by-Year Returns */}
-                  <p className="text-gray-300 font-semibold text-lg">Year-by-Year Projections</p>
+                  <p className="font-semibold text-lg">Year-by-Year Projections</p>
                   <div className="space-y-3">
                     {investmentReturns.yearlyReturns.map((yearData) => {
                       const investmentDate = new Date(investmentReturns.investmentStartDate);
@@ -529,33 +539,33 @@ export default function Dashboard() {
                       return (
                         <div
                           key={yearData.year}
-                          className="p-4 bg-gray-700/30 rounded-lg border border-cyan-500/20 hover-elevate"
+                          className="p-4 bg-muted/50 rounded-lg border hover-elevate"
                           data-testid={`year-projection-${yearData.year}`}
                         >
                           <div className="flex justify-between items-center mb-3">
                             <div>
-                              <p className="text-white font-semibold text-lg">Year {yearData.year}</p>
-                              <p className="text-gray-400 text-sm">
+                              <p className="font-semibold text-lg">Year {yearData.year}</p>
+                              <p className="text-muted-foreground text-sm">
                                 {projectedDate.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}
                               </p>
                             </div>
-                            <Badge className={isInFuture ? 'bg-cyan-500 text-white' : 'bg-green-500 text-white'}>
+                            <Badge className={isInFuture ? 'bg-primary text-primary-foreground' : 'bg-green-500 text-white'}>
                               {isInFuture ? 'Projected' : 'Current Period'}
                             </Badge>
                           </div>
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="p-3 bg-gray-800/50 rounded">
-                              <p className="text-gray-400 text-xs mb-1">Portfolio Value</p>
-                              <p className="text-green-400 font-bold text-xl">
+                            <div className="p-3 bg-background/50 rounded">
+                              <p className="text-muted-foreground text-xs mb-1">Portfolio Value</p>
+                              <p className="text-green-600 dark:text-green-400 font-bold text-xl">
                                 R {yearData.value.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                               </p>
                             </div>
-                            <div className="p-3 bg-gray-800/50 rounded">
-                              <p className="text-gray-400 text-xs mb-1">Total Return</p>
-                              <p className="text-cyan-400 font-bold text-xl">
+                            <div className="p-3 bg-background/50 rounded">
+                              <p className="text-muted-foreground text-xs mb-1">Total Return</p>
+                              <p className="text-primary font-bold text-xl">
                                 +{yearData.percentage.toFixed(1)}%
                               </p>
-                              <p className="text-gray-400 text-xs">
+                              <p className="text-muted-foreground text-xs">
                                 +R {yearData.gain.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                               </p>
                             </div>
@@ -565,12 +575,12 @@ export default function Dashboard() {
                     })}
                   </div>
 
-                  <div className="mt-6 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-                    <p className="text-sm text-gray-300 mb-2">
-                      <i className="fas fa-info-circle text-cyan-400 mr-2"></i>
+                  <div className="mt-6 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+                    <p className="text-sm mb-2">
+                      <i className="fas fa-info-circle text-primary mr-2"></i>
                       Returns Disclaimer
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Projected returns are estimates based on historical performance and the {tierName} tier's {(investmentReturns.annualReturnRate * 100).toFixed(0)}% annual rate. 
                       Actual returns may vary based on market conditions and investment performance.
                     </p>
