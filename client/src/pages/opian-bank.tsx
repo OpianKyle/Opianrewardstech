@@ -323,10 +323,10 @@ export default function OpianBank() {
                         multiple
                         onChange={handleFileChange}
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/20 file:text-primary hover:file:bg-amber-500/30"
+                        className="bg-input border-border text-card-foreground focus:border-primary focus:ring-primary/20 h-11 sm:h-12 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-muted file:text-foreground hover:file:bg-muted/80"
                         data-testid="input-ficaDocuments"
                       />
-                      <Upload className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500/50 pointer-events-none" />
+                      <Upload className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
                     {ficaFiles.length > 0 && (
                       <p className="text-xs text-primary mt-1">
