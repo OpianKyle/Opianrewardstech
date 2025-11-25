@@ -757,11 +757,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subtitle: "Special Deal",
           icon: "crown",
           pricing: {
-            lump_sum: 36000,
+            lump_sum: 10,
             deposit: null,
             monthly_12: null
           },
-          description: "Equivalent to any amount over R36000, paid upfront for partners who prefer immediate full commitment and a special deal."
+          description: "Equivalent to any amount from R10 upward, paid upfront for partners who prefer immediate full commitment and a special deal."
         }
       };
       

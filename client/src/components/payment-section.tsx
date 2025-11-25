@@ -199,12 +199,12 @@ export function PaymentSection({
     let amount = 0;
     
     if (selectedTier === 'cornerstone') {
-      // For cornerstone, use custom amount (must be over R36,000)
-      amount = parseInt(customAmount) || 36000;
-      if (amount < 36000) {
+      // For cornerstone, use custom amount (must be over R10)
+      amount = parseInt(customAmount) || 10;
+      if (amount < 10) {
         toast({
           title: "Invalid Amount",
-          description: "Cornerstone tier requires a minimum of R36,000.",
+          description: "Cornerstone tier requires a minimum of R10.",
           variant: "destructive",
         });
         return;
@@ -315,7 +315,7 @@ export function PaymentSection({
                   <SelectItem value="builder">The Builder - from R12,000</SelectItem>
                   <SelectItem value="innovator">The Innovator - from R24,000</SelectItem>
                   <SelectItem value="visionary">The Visionary - from R36,000</SelectItem>
-                  <SelectItem value="cornerstone">The Cornerstone - R36,000+</SelectItem>
+                  <SelectItem value="cornerstone">The Cornerstone - from R10</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -323,11 +323,11 @@ export function PaymentSection({
             {/* Custom Amount for Cornerstone Tier */}
             {selectedTier === 'cornerstone' && (
               <div>
-                <Label htmlFor="customAmount" className="text-sm sm:text-base">Custom Amount (Minimum R36,000)</Label>
+                <Label htmlFor="customAmount" className="text-sm sm:text-base">Custom Amount (Minimum R10)</Label>
                 <Input
                   id="customAmount"
                   type="number"
-                  min="36000"
+                  min="10"
                   step="1000"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
@@ -337,7 +337,7 @@ export function PaymentSection({
                   data-testid="input-custom-amount"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Cornerstone tier: Single lump sum payment over R36,000
+                  Cornerstone tier: Single lump sum payment from R10
                 </p>
               </div>
             )}
