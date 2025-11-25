@@ -90,7 +90,7 @@ export function TierCard({ tier, isSelected, onSelect, colorScheme }: TierCardPr
               colorScheme === "primary" ? "border-2 border-primary bg-primary/10" : "border border-border"
             )}>
               <p className="font-bold text-base sm:text-lg">
-                One-off: <span className={cn(colorScheme === "primary" ? "text-primary" : "text-foreground")}>
+                Once-off: <span className={cn(colorScheme === "primary" ? "text-primary" : "text-foreground")}>
                   R{tier.pricing.lump_sum.toLocaleString()}
                 </span>
               </p>
@@ -101,13 +101,6 @@ export function TierCard({ tier, isSelected, onSelect, colorScheme }: TierCardPr
                 <p className="font-semibold mb-1 text-sm sm:text-base">OR</p>
                 <p className="text-sm sm:text-base">R{tier.pricing.deposit.toLocaleString()} deposit</p>
                 <p className="text-xs sm:text-sm">+ R{tier.pricing.monthly_12.amount.toLocaleString()}/mo × {tier.pricing.monthly_12.months} months</p>
-              </div>
-            )}
-            
-            {tier.pricing.deposit === null && tier.pricing.monthly_12 === null && (
-              <div className={cn("border rounded p-2 sm:p-3", colorScheme === "primary" ? "border-primary" : "border-border")}>
-                <p className="text-xs sm:text-sm font-semibold">Single lump sum payment</p>
-                <p className="text-xs mt-1">Any amount over R{tier.pricing.lump_sum.toLocaleString()}</p>
               </div>
             )}
           </div>
